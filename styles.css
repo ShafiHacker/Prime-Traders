@@ -1,0 +1,20 @@
+/* Custom CSS for Prime Traders */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #printableSlip, #printableSlip * {
+        visibility: visible;
+    }
+    #printableSlip {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 10px;
+    }
+    .no-print {
+        display: none !important;
+    }
+}
