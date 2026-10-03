@@ -27,7 +27,7 @@
 
     <!-- Header Navigation -->
     <header class="bg-brandDark text-white sticky top-0 z-50 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center py-4 gap-4">
             <div class="flex items-center space-x-3">
                 <div class="bg-brandGold text-brandDark font-black text-2xl w-10 h-10 flex items-center justify-center rounded-md">P</div>
                 <div>
@@ -35,15 +35,26 @@
                     <p class="text-xs text-amber-400 tracking-widest uppercase">Express & Logistics</p>
                 </div>
             </div>
-            <nav class="hidden md:flex space-x-6 text-sm font-semibold">
+            
+            <nav class="hidden lg:flex space-x-6 text-sm font-semibold">
                 <a href="#tracking" class="hover:text-amber-400 transition">Track Shipment</a>
                 <a href="#services" class="hover:text-amber-400 transition">Our Services</a>
                 <a href="#about" class="hover:text-amber-400 transition">About Us</a>
                 <a href="#contact" class="hover:text-amber-400 transition">Contact</a>
             </nav>
-            <a href="https://wa.me/923162947371?text=Hi%20Prime%20Traders,%20I%20want%20to%20book%20a%20shipment" target="_blank" class="bg-brandGold hover:bg-amber-600 text-slate-900 font-bold px-4 py-2 rounded-lg transition text-sm flex items-center">
-                <i class="fa-brands font-bold fa-whatsapp mr-2 text-lg"></i> Book Parcel
-            </a>
+
+            <!-- Top Header Buttons (All 3 Departments) -->
+            <div class="flex flex-wrap items-center justify-center gap-2">
+                <a href="https://wa.me/923162947371?text=Hi%20Prime%20Traders,%20I%20want%20to%20book%20a%20shipment" target="_blank" class="bg-brandGold hover:bg-amber-600 text-slate-900 font-bold px-3 py-1.5 rounded-lg transition text-xs flex items-center shadow">
+                    <i class="fa-brands fa-whatsapp mr-1.5 text-sm"></i> Book Parcel
+                </a>
+                <a href="https://wa.me/923108819764?text=Hi,%20I%20need%20help%20with%20my%20shipment" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg transition text-xs flex items-center shadow">
+                    <i class="fa-brands fa-whatsapp mr-1.5 text-sm"></i> Support
+                </a>
+                <a href="https://wa.me/923313534676?text=Hi,%20I%20want%20to%20discuss%20business" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg transition text-xs flex items-center shadow">
+                    <i class="fa-brands fa-whatsapp mr-1.5 text-sm"></i> Wholesale
+                </a>
+            </div>
         </div>
     </header>
 
