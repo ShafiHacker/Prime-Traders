@@ -1,11 +1,12 @@
-// Firebase Configuration (Replace with your actual Firebase Console Config)
+// Firebase Configuration
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCRkKoE48FjYIjYfUNFEYzcxNueKUm6YOM",
+  authDomain: "prime-traders-f3eec.firebaseapp.com",
+  projectId: "prime-traders-f3eec",
+  storageBucket: "prime-traders-f3eec.firebasestorage.app",
+  messagingSenderId: "499740236001",
+  appId: "1:499740236001:web:e623dfe11f6f96df22ffa0",
+  measurementId: "G-6CGVKBZFJK"
 };
 
 // Initialize Firebase
@@ -15,7 +16,7 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Tab Switcher for Login/Register
+// Tab Switcher for Login / Register
 function switchTab(type) {
     const lForm = document.getElementById('loginForm');
     const rForm = document.getElementById('registerForm');
@@ -92,7 +93,7 @@ function handleLogout() {
     });
 }
 
-// Authentication Listener & Dashboard Data Loading
+// Global Auth State Listener
 auth.onAuthStateChanged(async (user) => {
     const path = window.location.pathname;
 
@@ -116,12 +117,14 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
-// Load Customer Statistics & Render Graphs
+// Load Customer Statistics & Graphs
 async function loadUserDashboard(uid) {
     const snapshot = await db.collection('parcels').where('userId', '==', uid).get();
     
     let total = 0, pending = 0, inTransit = 0, delivered = 0;
     const tableBody = document.getElementById('userParcelTable');
+    if (!tableBody) return;
+    
     tableBody.innerHTML = '';
 
     if (snapshot.empty) {
@@ -137,30 +140,30 @@ async function loadUserDashboard(uid) {
 
         tableBody.innerHTML += `
             <tr class="border-b hover:bg-slate-50">
-                <td class="p-3.5 font-bold font-mono">${data.trackId}</td>
-                <td class="p-3.5">${data.custName}</td>
-                <td class="p-3.5">${data.custCity}</td>
-                <td class="p-3.5 font-bold">PKR ${data.totalCod}</td>
+                <td class="p-3.5 font-bold font-mono">${data.trackId || 'N/A'}</td>
+                <td class="p-3.5">${data.custName || 'N/A'}</td>
+                <td class="p-3.5">${data.custCity || 'N/A'}</td>
+                <td class="p-3.5 font-bold">PKR ${data.totalCod || 0}</td>
                 <td class="p-3.5">
                     <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${
                         data.status === 'Delivered' ? 'bg-green-100 text-green-700' :
                         data.status === 'In Transit' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
-                    }">${data.status}</span>
+                    }">${data.status || 'Pending'}</span>
                 </td>
             </tr>
         `;
     });
 
-    document.getElementById('cardTotal').innerText = total;
-    document.getElementById('cardPending').innerText = pending;
-    document.getElementById('cardInTransit').innerText = inTransit;
-    document.getElementById('cardDelivered').innerText = delivered;
+    if (document.getElementById('cardTotal')) document.getElementById('cardTotal').innerText = total;
+    if (document.getElementById('cardPending')) document.getElementById('cardPending').innerText = pending;
+    if (document.getElementById('cardInTransit')) document.getElementById('cardInTransit').innerText = inTransit;
+    if (document.getElementById('cardDelivered')) document.getElementById('cardDelivered').innerText = delivered;
 
     renderPieChart(pending, inTransit, delivered);
     renderBarChart(total);
 }
 
-// Render Pie Chart via Chart.js
+// Render Pie Chart
 function renderPieChart(p, t, d) {
     const ctx = document.getElementById('statusPieChart');
     if (!ctx) return;
@@ -177,7 +180,7 @@ function renderPieChart(p, t, d) {
     });
 }
 
-// Render Bar Chart via Chart.js
+// Render Bar Chart
 function renderBarChart(total) {
     const ctx = document.getElementById('monthlyBarChart');
     if (!ctx) return;
@@ -195,20 +198,22 @@ function renderBarChart(total) {
     });
 }
 
-// Load Admin Panel
+// Load Admin Panel Data
 async function loadAdminDashboard() {
     const snapshot = await db.collection('parcels').get();
     const tableBody = document.getElementById('adminParcelTable');
+    if (!tableBody) return;
+
     tableBody.innerHTML = '';
 
     snapshot.forEach((doc) => {
         const data = doc.data();
         tableBody.innerHTML += `
             <tr class="border-b border-slate-700">
-                <td class="p-3 font-bold font-mono text-amber-400">${data.trackId}</td>
+                <td class="p-3 font-bold font-mono text-amber-400">${data.trackId || 'N/A'}</td>
                 <td class="p-3">${data.senderName || 'Merchant'}</td>
-                <td class="p-3">${data.custName} (${data.custCity})</td>
-                <td class="p-3 font-bold">PKR ${data.totalCod}</td>
+                <td class="p-3">${data.custName || 'N/A'} (${data.custCity || ''})</td>
+                <td class="p-3 font-bold">PKR ${data.totalCod || 0}</td>
                 <td class="p-3">
                     <select onchange="updateStatus('${doc.id}', this.value)" class="bg-slate-900 border border-slate-600 text-xs text-white p-1 rounded">
                         <option value="Pending" ${data.status === 'Pending' ? 'selected' : ''}>Pending</option>
@@ -224,8 +229,24 @@ async function loadAdminDashboard() {
     });
 }
 
-// Admin Status Update Function
+// Update Parcel Status (Admin Action)
 async function updateStatus(docId, newStatus) {
-    await db.collection('parcels').doc(docId).update({ status: newStatus });
-    alert('Status updated successfully!');
+    try {
+        await db.collection('parcels').doc(docId).update({ status: newStatus });
+        alert('Status updated successfully!');
+    } catch (err) {
+        alert('Error updating status: ' + err.message);
+    }
+}
+
+// Delete Parcel Record (Admin Action)
+async function deleteParcel(docId) {
+    if (confirm('Are you sure you want to delete this parcel?')) {
+        try {
+            await db.collection('parcels').doc(docId).delete();
+            loadAdminDashboard();
+        } catch (err) {
+            alert('Error deleting parcel: ' + err.message);
+        }
+    }
 }
