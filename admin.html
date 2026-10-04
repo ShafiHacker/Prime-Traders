@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Portal | Prime Traders</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans antialiased min-h-screen">
+
+    <header class="bg-slate-800 border-b border-slate-700 py-4 px-6 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <span class="bg-red-600 text-white font-extrabold text-xs px-2.5 py-1 rounded-md uppercase tracking-wider">Master Admin</span>
+            <h1 class="text-lg font-bold">Prime Traders Control Panel</h1>
+        </div>
+        <button onclick="handleLogout()" class="bg-slate-700 hover:bg-slate-600 text-xs px-3 py-1.5 rounded-lg">Logout</button>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6 space-y-6">
+
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+            <h2 class="text-xl font-bold mb-4 flex items-center">
+                <i class="fa-solid fa-sliders text-amber-500 mr-2"></i> Manage All Customer Parcels
+            </h2>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-900 text-slate-400 font-bold uppercase border-b border-slate-700">
+                        <tr>
+                            <th class="p-3">Tracking ID</th>
+                            <th class="p-3">Customer (Sender)</th>
+                            <th class="p-3">Receiver & City</th>
+                            <th class="p-3">COD Total</th>
+                            <th class="p-3">Current Status</th>
+                            <th class="p-3">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminParcelTable" class="divide-y divide-slate-700 text-slate-300">
+                        <tr>
+                            <td colspan="6" class="p-4 text-center text-slate-500">Loading all parcel database...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>
