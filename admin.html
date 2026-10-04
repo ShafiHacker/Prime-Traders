@@ -3,42 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Portal | Prime Traders</title>
+    <title>Master Admin Control | Prime Traders</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans antialiased min-h-screen">
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen">
 
-    <header class="bg-slate-800 border-b border-slate-700 py-4 px-6 flex justify-between items-center">
-        <div class="flex items-center space-x-3">
-            <span class="bg-red-600 text-white font-extrabold text-xs px-2.5 py-1 rounded-md uppercase tracking-wider">Master Admin</span>
-            <h1 class="text-lg font-bold">Prime Traders Control Panel</h1>
+    <!-- Top Admin Header -->
+    <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="bg-red-600 text-white font-black px-2.5 py-1 rounded-md text-xs uppercase tracking-wider">Master Admin</span>
+                <h1 class="text-xl font-bold text-white">Prime Traders Control Center</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="userNameDisplay" class="text-sm font-semibold text-amber-400">Loading Admin...</span>
+                <button onclick="handleLogout()" class="bg-slate-800 hover:bg-slate-700 text-red-400 font-bold px-3 py-1.5 rounded-lg text-xs border border-red-500/30">
+                    <i class="fa-solid fa-right-from-bracket mr-1"></i> Logout
+                </button>
+            </div>
         </div>
-        <button onclick="handleLogout()" class="bg-slate-700 hover:bg-slate-600 text-xs px-3 py-1.5 rounded-lg">Logout</button>
     </header>
 
-    <main class="max-w-7xl mx-auto p-6 space-y-6">
+    <main class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
 
-        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
-            <h2 class="text-xl font-bold mb-4 flex items-center">
-                <i class="fa-solid fa-sliders text-amber-500 mr-2"></i> Manage All Customer Parcels
-            </h2>
+        <!-- Analytics Overview Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                <p class="text-xs font-bold text-slate-400 uppercase">Total Shipments</p>
+                <h2 id="cardTotal" class="text-3xl font-black text-white mt-1">0</h2>
+            </div>
+            <div class="bg-slate-900 border border-amber-500/20 p-5 rounded-2xl">
+                <p class="text-xs font-bold text-amber-400 uppercase">Pending Parcels</p>
+                <h2 id="cardPending" class="text-3xl font-black text-amber-400 mt-1">0</h2>
+            </div>
+            <div class="bg-slate-900 border border-blue-500/20 p-5 rounded-2xl">
+                <p class="text-xs font-bold text-blue-400 uppercase">In Transit</p>
+                <h2 id="cardInTransit" class="text-3xl font-black text-blue-400 mt-1">0</h2>
+            </div>
+            <div class="bg-slate-900 border border-emerald-500/20 p-5 rounded-2xl">
+                <p class="text-xs font-bold text-emerald-400 uppercase">Delivered Revenue</p>
+                <h2 id="cardRevenue" class="text-3xl font-black text-emerald-400 mt-1">PKR 0</h2>
+            </div>
+        </div>
+
+        <!-- Master Parcels Table -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                    <h3 class="text-lg font-bold text-white flex items-center">
+                        <i class="fa-solid fa-boxes-stacked text-amber-400 mr-2"></i> User Activity & Parcel Bookings
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Live tracking and status management for all customer orders</p>
+                </div>
+                <input type="text" id="adminSearchInput" onkeyup="filterAdminTable()" placeholder="Search by Track ID or Customer Name..." class="bg-slate-950 border border-slate-700 text-xs text-white rounded-xl px-4 py-2.5 w-full sm:w-72 focus:outline-none focus:border-amber-500">
+            </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs">
-                    <thead class="bg-slate-900 text-slate-400 font-bold uppercase border-b border-slate-700">
+                <table class="w-full text-left text-xs text-slate-300">
+                    <thead class="bg-slate-950 text-slate-400 uppercase font-mono text-[11px] border-b border-slate-800">
                         <tr>
-                            <th class="p-3">Tracking ID</th>
-                            <th class="p-3">Customer (Sender)</th>
-                            <th class="p-3">Receiver & City</th>
-                            <th class="p-3">COD Total</th>
-                            <th class="p-3">Current Status</th>
+                            <th class="p-3">Track ID</th>
+                            <th class="p-3">Merchant / Sender</th>
+                            <th class="p-3">Customer & City</th>
+                            <th class="p-3">COD Amount</th>
+                            <th class="p-3">Status Control</th>
                             <th class="p-3">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="adminParcelTable" class="divide-y divide-slate-700 text-slate-300">
+                    <tbody id="adminParcelTable">
                         <tr>
-                            <td colspan="6" class="p-4 text-center text-slate-500">Loading all parcel database...</td>
+                            <td colspan="6" class="p-4 text-center text-slate-500">Loading master database...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -47,9 +86,6 @@
 
     </main>
 
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="dashboard.js"></script>
 </body>
 </html>
