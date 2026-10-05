@@ -3,145 +3,113 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prime Traders | Express & Logistics Portal</title>
-  <!-- Tailwind CSS CDN -->
+  <title>Prime Traders | Express & Logistics Solutions</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
 
-  <!-- Navigation Bar -->
-  <nav class="bg-slate-950 border-b border-slate-800 py-4 px-6 md:px-12 flex flex-col md:flex-row justify-between items-center gap-4">
+  <!-- Header Navigation -->
+  <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 flex flex-wrap justify-between items-center gap-4">
     <div class="flex items-center gap-3">
-      <div class="bg-amber-500 text-slate-950 font-black text-2xl w-10 h-10 flex items-center justify-center rounded-lg shadow-md">
-        P
-      </div>
+      <div class="bg-amber-500 text-slate-950 font-black text-2xl w-10 h-10 flex items-center justify-center rounded-xl shadow">P</div>
       <div>
-        <h1 class="font-extrabold text-xl tracking-wider text-white">PRIME TRADERS</h1>
-        <p class="text-xs text-amber-500 font-semibold tracking-widest uppercase">Express & Logistics</p>
+        <h1 class="font-black text-xl tracking-wide text-white uppercase leading-none">Prime Traders</h1>
+        <p class="text-[10px] text-amber-500 font-bold tracking-widest uppercase mt-0.5">Express & Logistics</p>
       </div>
     </div>
 
-    <div class="flex items-center gap-3 flex-wrap justify-center">
-      <a href="login.html" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-sm transition shadow flex items-center gap-2">
-        <i class="fa-solid font-bold fa-right-to-bracket"></i> Client Login / Dashboard
+    <!-- Right Header Actions (Public Page) -->
+    <div class="flex items-center gap-3">
+      <a href="login.html" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-sm transition shadow flex items-center gap-2">
+        <i class="fa-solid fa-right-to-bracket"></i> Client Login / Dashboard
       </a>
-      <button onclick="accessCodGenerator()" class="bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold border border-amber-500/30 px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
-        <i class="fa-solid fa-file-invoice-dollar"></i> Create COD Bill
-      </button>
-      <a href="https://wa.me/" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-sm transition flex items-center gap-2">
+      <a href="https://wa.me/923000000000" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl text-sm transition flex items-center gap-2">
         <i class="fa-brands fa-whatsapp"></i> Support
       </a>
     </div>
-  </nav>
+  </header>
 
   <!-- Hero Section -->
-  <main class="container mx-auto px-6 py-12 flex-grow flex flex-col items-center justify-center text-center">
-    <h2 class="text-4xl md:text-6xl font-black text-white max-w-4xl leading-tight mb-4">
+  <main class="container mx-auto px-6 py-12 flex-grow flex flex-col justify-center items-center text-center">
+    
+    <h2 class="text-3xl sm:text-5xl font-black text-white max-w-3xl leading-tight mb-4">
       Fast, Reliable & Nationwide Delivery Solutions
     </h2>
-    <p class="text-slate-400 text-base md:text-lg max-w-2xl mb-8">
+    <p class="text-slate-400 text-sm sm:text-base max-w-xl mb-8">
       Your trusted partner for Express Courier, Dropshipping Fulfillment, and Wholesale Supply Chain Services.
     </p>
 
-    <!-- Single Main Action Button -->
-    <div class="mb-10">
-      <button onclick="accessCodGenerator()" class="bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-bold px-8 py-3.5 rounded-xl shadow-lg transition flex items-center gap-3 text-lg">
-        <i class="fa-solid fa-barcode text-amber-500"></i> Open COD Bill Generator
-      </button>
-    </div>
-
-    <!-- Tracking Section -->
-    <div class="w-full max-w-2xl bg-slate-950 p-6 md:p-8 rounded-2xl border border-slate-800 shadow-2xl">
-      <h3 class="text-lg font-bold text-slate-200 mb-4 flex items-center justify-center gap-2">
+    <!-- Track Your Parcel Box -->
+    <div class="w-full max-w-xl bg-slate-900 p-6 sm:p-8 rounded-2xl border border-slate-800 shadow-2xl">
+      <h3 class="text-lg font-bold text-white mb-4 flex items-center justify-center gap-2">
         <i class="fa-solid fa-truck-fast text-amber-500"></i> Track Your Parcel
       </h3>
-      <form id="trackingForm" onsubmit="handleTrack(event)" class="flex flex-col sm:flex-row gap-3">
-        <input 
-          type="text" 
-          id="trackingInput" 
-          placeholder="Enter Tracking ID (e.g. PT-1002)" 
-          class="flex-1 bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl focus:outline-none focus:border-amber-500 transition text-sm"
-          required
-        >
-        <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-3 rounded-xl transition shadow flex items-center justify-center gap-2">
+      
+      <form onsubmit="trackOrder(event)" class="flex flex-col sm:flex-row gap-3">
+        <input type="text" id="trackInput" placeholder="Enter Tracking ID (e.g. PT-1002)" class="flex-grow bg-slate-950 border border-slate-700 px-4 py-3 rounded-xl text-sm text-slate-100 focus:outline-none focus:border-amber-500 transition" required>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-3 rounded-xl text-sm transition flex items-center justify-center gap-2 shadow">
           <i class="fa-solid fa-magnifying-glass"></i> Track
         </button>
       </form>
 
-      <div id="trackingResult" class="mt-6 hidden text-left bg-slate-900 p-4 rounded-xl border border-slate-800">
-        <!-- Tracking Information Output -->
+      <!-- Tracking Result Container -->
+      <div id="trackingResult" class="mt-6 hidden text-left bg-slate-950 p-4 rounded-xl border border-slate-800">
+        <!-- Live result will populate here -->
       </div>
     </div>
+
   </main>
 
   <!-- Footer -->
-  <footer class="bg-slate-950 border-t border-slate-800 py-6 text-center text-xs text-slate-500">
-    <p>&copy; 2026 Prime Traders Express & Logistics. All Rights Reserved.</p>
+  <footer class="bg-slate-900 border-t border-slate-800 py-4 text-center text-xs text-slate-500">
+    &copy; Prime Traders. All rights reserved.
   </footer>
 
   <script src="dashboard.js"></script>
   <script>
-    // Protect COD Bill Generator with Authentication Check
-    function accessCodGenerator() {
-      firebase.auth().onAuthStateChanged((user) => {
-        if (user) {
-          window.location.href = "cod_bill.html";
-        } else {
-          alert("Please login first to access the COD Bill Generator.");
-          window.location.href = "login.html";
-        }
-      });
-    }
-
-    // Basic Parcel Tracking Functionality
-    function handleTrack(e) {
+    function trackOrder(e) {
       e.preventDefault();
-      const trackId = document.getElementById("trackingInput").value.trim();
-      const resultDiv = document.getElementById("trackingResult");
-      
-      if(!trackId) return;
+      const trackId = document.getElementById("trackInput").value.trim();
+      const resBox = document.getElementById("trackingResult");
 
-      resultDiv.classList.remove("hidden");
-      resultDiv.innerHTML = `<p class="text-amber-400 font-semibold text-center"><i class="fa-solid fa-spinner animate-spin"></i> Searching tracking records for ${trackId}...</p>`;
+      if (!trackId) return;
+
+      resBox.classList.remove("hidden");
+      resBox.innerHTML = `<p class="text-xs text-slate-400 text-center"><i class="fa-solid fa-spinner animate-spin"></i> Searching tracking records...</p>`;
 
       db.collection("parcels").where("trackingId", "==", trackId).get()
         .then((snapshot) => {
-          if(snapshot.empty) {
-            resultDiv.innerHTML = `<p class="text-rose-500 font-medium text-center"><i class="fa-solid fa-triangle-exclamation"></i> No shipment found with Tracking ID: <strong>${trackId}</strong></p>`;
+          if (snapshot.empty) {
+            resBox.innerHTML = `<p class="text-xs text-rose-400 text-center font-semibold"><i class="fa-solid fa-circle-xmark"></i> No record found for Tracking ID: ${trackId}</p>`;
           } else {
-            snapshot.forEach(doc => {
+            snapshot.forEach((doc) => {
               const data = doc.data();
-              resultDiv.innerHTML = `
-                <div class="space-y-2 text-sm">
-                  <div class="flex justify-between border-b border-slate-800 pb-2">
-                    <span class="text-slate-400">Status:</span>
-                    <span class="font-bold text-amber-400 uppercase">${data.status || 'In Transit'}</span>
+              let statusBadge = 'bg-amber-950 text-amber-400 border-amber-800/50';
+              if (data.status === 'Delivered') statusBadge = 'bg-emerald-950 text-emerald-400 border-emerald-800/50';
+              if (data.status === 'In Transit') statusBadge = 'bg-blue-950 text-blue-400 border-blue-800/50';
+
+              resBox.innerHTML = `
+                <div class="space-y-2">
+                  <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <span class="text-xs font-mono font-bold text-amber-400">${data.trackingId}</span>
+                    <span class="px-2 py-0.5 text-[10px] font-bold rounded border ${statusBadge}">${(data.status || 'Pending').toUpperCase()}</span>
                   </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-400">Receiver Name:</span>
-                    <span class="text-slate-200 font-medium">${data.customerName || 'N/A'}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-400">Destination:</span>
-                    <span class="text-slate-200 font-medium">${data.city || 'N/A'}</span>
-                  </div>
-                  <div class="flex justify-between">
-                    <span class="text-slate-400">COD Amount:</span>
-                    <span class="text-emerald-400 font-bold">Rs. ${data.codAmount || 0}</span>
-                  </div>
+                  <p class="text-xs text-slate-300"><strong>Receiver:</strong> ${data.customerName || 'N/A'}</p>
+                  <p class="text-xs text-slate-300"><strong>Destination:</strong> ${data.city || 'N/A'}</p>
+                  <p class="text-xs text-slate-300"><strong>COD Amount:</strong> Rs. ${data.codAmount || 0}</p>
                 </div>
               `;
             });
           }
         })
         .catch(err => {
-          resultDiv.innerHTML = `<p class="text-rose-500 text-center">Error fetching tracking info: ${err.message}</p>`;
+          resBox.innerHTML = `<p class="text-xs text-rose-400 text-center">Error fetching status: ${err.message}</p>`;
         });
     }
   </script>
