@@ -250,3 +250,35 @@ async function deleteParcel(docId) {
         }
     }
 }
+// ==========================================
+// 5-MINUTE AUTOMATIC LOGOUT ON INACTIVITY
+// ==========================================
+(function() {
+  const TIMEOUT_DURATION = 5 * 60 * 1000; // 5 Minutes in milliseconds
+  let inactivityTimer;
+
+  // Function to perform auto logout
+  function autoLogout() {
+    firebase.auth().signOut().then(() => {
+      alert("Aap 5 minute se inactive thay, is liye safety ke liye automatic logout kar diya gaya hai.");
+      window.location.href = "login.html";
+    }).catch((error) => {
+      console.error("Auto logout error:", error);
+    });
+  }
+
+  // Function to reset timer on user activity
+  function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(autoLogout, TIMEOUT_DURATION);
+  }
+
+  // Listen for user interactions
+  window.addEventListener('mousemove', resetInactivityTimer);
+  window.addEventListener('keypress', resetInactivityTimer);
+  window.addEventListener('click', resetInactivityTimer);
+  window.addEventListener('scroll', resetInactivityTimer);
+
+  // Initialize timer on page load
+  resetInactivityTimer();
+})();
