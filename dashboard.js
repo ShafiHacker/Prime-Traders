@@ -62,17 +62,75 @@ async function handleRegister(e) {
         msg.classList.remove('hidden');
     }
 }
+// --- Complete Login Handler (Admin & User Routing) ---
+async function handleLogin(email, password) {
+  try {
+    const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+    const user = userCredential.user;
 
-// User Login
-async function handleLogin(e) {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value;
-    const pass = document.getElementById('loginPassword').value;
-    const msg = document.getElementById('authMsg');
+    // 1. Direct Admin Bypass (If logging in as Admin)
+    if (email === "admin@primetraders.com") {
+      window.location.href = "admin.html";
+      return;
+    }
 
-    try {
-        const userCred = await auth.signInWithEmailAndPassword(email, pass);
-        const userDoc = await db.collection('users').doc(userCred.user.uid).get();
+    // 2. Regular Customer / User Verification
+    const userDoc = await firebase.firestore().collection("users").doc(user.uid).get();
+
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+
+      // Check for Admin Role in Firestore
+      if (userData.role === "admin") {
+        window.location.href = "admin.html";
+        return;
+      }
+
+      // Check User Status
+      if (userData.status === "pending") {
+        await firebase.auth().signOut();
+        alert(
+`Account Under Verification
+
+Thank you for signing up with [PRIME TRADERS].
+
+Your account has been successfully submitted and is currently under verification. Our team will review the information and documents you provided.
+
+Status: Pending Approval ⏳`
+        );
+        return;
+      }
+
+      if (userData.status === "rejected") {
+        await firebase.auth().signOut();
+        alert("Aapki registration request reject ho chuki hai.");
+        return;
+      }
+
+      if (userData.status === "approved") {
+        alert(
+`Account Approved 🎉
+
+Congratulations! Your account has been successfully verified and approved by our team.
+
+You can now log in and start using [PRIME TRADERS] to create shipments, manage orders, and track your deliveries.
+
+Status: Approved ✅
+
+Thank you for choosing [PRIME TRADERS].`
+        );
+
+        if (typeof sendEmailNotification === "function") {
+          sendEmailNotification(`🔓 Prime Traders - User Login Alert\nEmail: ${email}\nTime: ${new Date().toLocaleString()}`);
+        }
+
+        window.location.href = "dashboard.html";
+      }
+    }
+  } catch (error) {
+    alert("Login Error: " + error.message);
+  }
+}
         const userData = userDoc.data();
 
         if (userData && userData.role === 'admin') {
