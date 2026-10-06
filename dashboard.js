@@ -357,3 +357,89 @@ async function deleteParcel(docId) {
 
   resetInactivityTimer();
 })();
+// ==========================================
+// LOAD REGISTERED USERS DIRECTORY (ADMIN)
+// ==========================================
+async function loadUsersTable() {
+  const tableBody = document.getElementById('userTableBody') || document.querySelector('tbody');
+  const userCardCount = document.getElementById('cardUsers') || document.getElementById('totalUsersCount');
+
+  if (!tableBody) return;
+
+  tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading users list...</td></tr>`;
+
+  try {
+    const snapshot = await db.collection('users').get();
+    tableBody.innerHTML = '';
+
+    if (snapshot.empty) {
+      tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">No registered users found.</td></tr>`;
+      if (userCardCount) userCardCount.innerText = '0';
+      return;
+    }
+
+    if (userCardCount) userCardCount.innerText = snapshot.size;
+
+    snapshot.forEach((doc) => {
+      const u = doc.data();
+      const uid = doc.id;
+      const status = u.status || 'approved';
+      const role = u.role || 'customer';
+
+      tableBody.innerHTML += `
+        <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition">
+          <td class="p-3.5">
+            <div class="font-bold text-slate-100">${u.name || 'N/A'}</div>
+            <div class="text-xs text-slate-400">${u.phone || 'No Phone'}</div>
+          </td>
+          <td class="p-3.5 text-slate-300 text-xs">${u.email || 'N/A'}</td>
+          <td class="p-3.5">
+            <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+              role === 'admin' ? 'bg-purple-900/50 text-purple-300 border border-purple-500/30' : 'bg-slate-700 text-slate-300'
+            }">${role}</span>
+          </td>
+          <td class="p-3.5">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-1 rounded-full text-[10px] font-bold ${
+                status === 'approved' ? 'bg-emerald-900/40 text-emerald-400 border border-emerald-500/30' :
+                status === 'pending' ? 'bg-amber-900/40 text-amber-400 border border-amber-500/30' :
+                'bg-rose-900/40 text-rose-400 border border-rose-500/30'
+              }">${status.toUpperCase()}</span>
+              
+              ${role !== 'admin' ? `
+                <select onchange="updateUserStatus('${uid}', this.value)" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2 py-1 focus:outline-none focus:border-amber-400">
+                  <option value="approved" ${status === 'approved' ? 'selected' : ''}>Approve</option>
+                  <option value="pending" ${status === 'pending' ? 'selected' : ''}>Pending</option>
+                  <option value="rejected" ${status === 'rejected' ? 'selected' : ''}>Reject</option>
+                </select>
+              ` : ''}
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+  } catch (err) {
+    console.error("Error loading users:", err);
+    tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-rose-400">Error loading users: ${err.message}</td></tr>`;
+  }
+}
+
+// Update User Account Status (Approve / Reject)
+async function updateUserStatus(uid, newStatus) {
+  try {
+    await db.collection('users').doc(uid).update({ status: newStatus });
+    alert(`User status updated to ${newStatus.toUpperCase()} successfully!`);
+    loadUsersTable();
+  } catch (err) {
+    alert("Error updating status: " + err.message);
+  }
+}
+
+// Global Tab Handler for Admin
+function showAdminTab(tabName) {
+  if (tabName === 'users') {
+    loadUsersTable();
+  } else if (tabName === 'parcels') {
+    loadAdminDashboard();
+  }
+}
