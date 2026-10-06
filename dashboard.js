@@ -435,3 +435,108 @@ async function handleLogin(email, password) {
     alert("Login Error: " + error.message);
   }
 }
+// --- SignUp Handler with Custom Alert ---
+async function handleSignUp(e) {
+  if (e) e.preventDefault();
+  
+  const email = document.getElementById("regEmail") ? document.getElementById("regEmail").value : "";
+  const password = document.getElementById("regPassword") ? document.getElementById("regPassword").value : "";
+  const phone = document.getElementById("regPhone") ? document.getElementById("regPhone").value : "";
+
+  try {
+    const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+
+    await firebase.firestore().collection("users").doc(user.uid).set({
+      uid: user.uid,
+      email: email,
+      phone: phone,
+      status: "pending",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Send Admin Notification
+    if (typeof sendEmailNotification === "function") {
+      sendEmailNotification(`🔔 Prime Traders - New Registration Request\nEmail: ${email}\nPhone: ${phone}\nStatus: Pending Approval`);
+    }
+
+    // Force Sign Out immediately so dashboard cannot open
+    await firebase.auth().signOut();
+
+    // Show Custom Verification Message
+    alert(
+`Account Under Verification
+
+Thank you for signing up with [PRIME TRADERS].
+
+Your account has been successfully submitted and is currently under verification. Our team will review the information and documents you provided.
+
+Once your account has been verified and approved, you will receive a confirmation notification and will be able to access all courier services.
+
+Status: Pending Approval ⏳
+
+Thank you for choosing [PRIME TRADERS].`
+    );
+
+    window.location.href = "login.html";
+
+  } catch (error) {
+    alert("Registration Error: " + error.message);
+  }
+}
+
+// --- Login Handler with Custom Approval & Pending Checks ---
+async function handleLogin(email, password) {
+  try {
+    const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+
+    const userDoc = await firebase.firestore().collection("users").doc(user.uid).get();
+
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+
+      if (userData.status === "pending") {
+        await firebase.auth().signOut();
+        alert(
+`Account Under Verification
+
+Thank you for signing up with [PRIME TRADERS].
+
+Your account has been successfully submitted and is currently under verification. Our team will review the information and documents you provided.
+
+Status: Pending Approval ⏳`
+        );
+        return;
+      }
+
+      if (userData.status === "rejected") {
+        await firebase.auth().signOut();
+        alert("Aapki registration request reject ho chuki hai.");
+        return;
+      }
+
+      if (userData.status === "approved") {
+        alert(
+`Account Approved 🎉
+
+Congratulations! Your account has been successfully verified and approved by our team.
+
+You can now log in and start using [PRIME TRADERS] to create shipments, manage orders, and track your deliveries.
+
+Status: Approved ✅
+
+Thank you for choosing [PRIME TRADERS].`
+        );
+
+        if (typeof sendEmailNotification === "function") {
+          sendEmailNotification(`🔓 Prime Traders - User Login Alert\nEmail: ${email}\nTime: ${new Date().toLocaleString()}`);
+        }
+
+        window.location.href = "dashboard.html";
+      }
+    }
+  } catch (error) {
+    alert("Login Error: " + error.message);
+  }
+}
