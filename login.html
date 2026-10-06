@@ -31,7 +31,7 @@
         </div>
 
         <!-- Login Form -->
-        <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+        <form id="loginForm" onsubmit="event.preventDefault(); handleLogin(document.getElementById('loginEmail').value, document.getElementById('loginPassword').value);" class="space-y-4">
             <div>
                 <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
                 <input type="email" id="loginEmail" required placeholder="user@example.com" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:ring-2 focus:ring-amber-500 outline-none">
@@ -40,9 +40,9 @@
                 <label class="block text-xs font-semibold text-slate-300 mb-1">Password</label>
                 <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:ring-2 focus:ring-amber-500 outline-none">
             </div>
-            <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-extrabold py-3 rounded-lg transition shadow-lg text-sm">
-                Sign In to Dashboard
-            </button>
+            <button type="button" onclick="handleLogin(document.getElementById('loginEmail').value, document.getElementById('loginPassword').value)" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-extrabold py-3 rounded-lg transition shadow-md">
+   Sign In to Dashboard
+</button>
         </form>
 
         <!-- Signup Form -->
