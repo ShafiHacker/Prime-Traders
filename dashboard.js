@@ -62,71 +62,75 @@ async function handleRegister(e) {
         msg.classList.remove('hidden');
     }
 }
-// --- Complete Login Handler (Admin & User Routing) ---
-async function handleLogin(email, password) {
+// --- Unified Login Handler ---
+async function handleLogin(e) {
+  if (e && e.preventDefault) e.preventDefault();
+
+  const emailInput = document.getElementById('loginEmail');
+  const passwordInput = document.getElementById('loginPassword');
+  const authMsg = document.getElementById('authMsg');
+
+  if (!emailInput || !passwordInput) {
+    alert("Error: Login fields missing in HTML.");
+    return;
+  }
+
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+
   try {
     const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
 
-    // 1. Direct Admin Bypass (If logging in as Admin)
+    // 1. Admin Email Direct Bypass
     if (email === "admin@primetraders.com") {
       window.location.href = "admin.html";
       return;
     }
 
-    // 2. Regular Customer / User Verification
+    // 2. Fetch User Data from Firestore
     const userDoc = await firebase.firestore().collection("users").doc(user.uid).get();
 
     if (userDoc.exists) {
       const userData = userDoc.data();
 
-      // Check for Admin Role in Firestore
+      // Check Role
       if (userData.role === "admin") {
         window.location.href = "admin.html";
         return;
       }
 
-      // Check User Status
+      // Check Status
       if (userData.status === "pending") {
         await firebase.auth().signOut();
-        alert(
-`Account Under Verification
-
-Thank you for signing up with [PRIME TRADERS].
-
-Your account has been successfully submitted and is currently under verification. Our team will review the information and documents you provided.
-
-Status: Pending Approval ⏳`
-        );
+        alert("Account Under Verification ⏳\n\nYour account is currently under review by the admin team.");
         return;
       }
 
       if (userData.status === "rejected") {
         await firebase.auth().signOut();
-        alert("Aapki registration request reject ho chuki hai.");
+        alert("Account Rejected ❌\n\nYour registration request has been rejected.");
         return;
       }
 
       if (userData.status === "approved") {
-        alert(
-`Account Approved 🎉
-
-Congratulations! Your account has been successfully verified and approved by our team.
-
-You can now log in and start using [PRIME TRADERS] to create shipments, manage orders, and track your deliveries.
-
-Status: Approved ✅
-
-Thank you for choosing [PRIME TRADERS].`
-        );
-
         if (typeof sendEmailNotification === "function") {
           sendEmailNotification(`🔓 Prime Traders - User Login Alert\nEmail: ${email}\nTime: ${new Date().toLocaleString()}`);
         }
-
         window.location.href = "dashboard.html";
       }
+    } else {
+      window.location.href = "dashboard.html";
     }
+  } catch (error) {
+    if (authMsg) {
+      authMsg.innerText = error.message;
+      authMsg.classList.remove('hidden');
+    } else {
+      alert("Login Error: " + error.message);
+    }
+  }
+}
   } catch (error) {
     alert("Login Error: " + error.message);
   }
