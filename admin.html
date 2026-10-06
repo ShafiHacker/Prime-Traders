@@ -304,7 +304,54 @@
 
     function handleLogout() {
       firebase.auth().signOut().then(() => window.location.href = "login.html");
-    }
+   // Firestore se pending users load karna
+function loadPendingUsers() {
+  const userListContainer = document.getElementById("pending-users-list");
+  if (!userListContainer) return;
+
+  firebase.firestore().collection("users").where("status", "==", "pending")
+    .onSnapshot((snapshot) => {
+      userListContainer.innerHTML = "";
+      if (snapshot.empty) {
+        userListContainer.innerHTML = "<p class='text-slate-400 p-2'>Koi pending registration request nahi hai.</p>";
+        return;
+      }
+
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const userRow = `
+          <div class="flex items-center justify-between p-3 bg-slate-800 rounded border border-slate-700 mb-2">
+            <div>
+              <p class="text-white font-bold">${data.email || 'No Email'}</p>
+              <p class="text-xs text-slate-400">Phone: ${data.phone || 'N/A'}</p>
+            </div>
+            <div class="space-x-2">
+              <button onclick="updateUserStatus('${doc.id}', 'approved')" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded">Approve</button>
+              <button onclick="updateUserStatus('${doc.id}', 'rejected')" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded">Reject</button>
+            </div>
+          </div>
+        `;
+        userListContainer.innerHTML += userRow;
+      });
+    });
+}
+
+// User status update karna
+async function updateUserStatus(userId, newStatus) {
+  try {
+    await firebase.firestore().collection("users").doc(userId).update({
+      status: newStatus
+    });
+    alert(`User status successfully updated to: ${newStatus}`);
+  } catch (error) {
+    alert("Error updating status: " + error.message);
+  }
+}
+
+// Auto load
+document.addEventListener("DOMContentLoaded", () => {
+  loadPendingUsers();
+}); }
   </script>
 </body>
 </html>
