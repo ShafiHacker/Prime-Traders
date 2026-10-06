@@ -6,358 +6,156 @@
   <title>Master Admin Control | Prime Traders</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- EmailJS SDK Initialization -->
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<script type="text/javascript">
-   (function(){
-      emailjs.init("Vb2gIAifYSFFhRxnJ");
-   })();
-</script>
+  
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col">
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
 
-  <!-- Top Navigation Bar -->
-  <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 flex flex-wrap justify-between items-center gap-4">
-    <div class="flex items-center gap-3">
-      <span class="bg-rose-600 text-white font-black text-xs px-2.5 py-1 rounded tracking-widest uppercase">Master Admin</span>
-      <h1 class="font-bold text-lg md:text-xl text-white">Prime Traders Control Center</h1>
-    </div>
-
-    <!-- Navigation & Action Buttons -->
-    <div class="flex items-center gap-3">
-      <button onclick="switchTab('parcels')" id="btn-parcels" class="bg-amber-500 text-slate-950 font-bold px-3.5 py-1.5 rounded-lg text-sm transition">
-        <i class="fa-solid fa-box"></i> Parcels & Bookings
-      </button>
-      <button onclick="switchTab('users')" id="btn-users" class="bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold px-3.5 py-1.5 rounded-lg text-sm transition">
-        <i class="fa-solid fa-users"></i> Registered Users
-      </button>
-      <a href="cod_bill.html" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-1.5 rounded-lg text-sm transition flex items-center gap-1.5">
-        <i class="fa-solid fa-plus-circle"></i> Create COD Bill
-      </a>
-      <button onclick="handleLogout()" class="bg-slate-800 hover:bg-rose-900/40 text-rose-400 border border-rose-800/40 font-bold px-3.5 py-1.5 rounded-lg text-sm transition">
-        <i class="fa-solid fa-right-from-bracket"></i> Logout
-      </button>
+  <!-- Header / Navigation -->
+  <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="bg-rose-600 text-white font-black text-xs px-2.5 py-1 rounded tracking-wider uppercase">Master Admin</span>
+        <h1 class="text-xl font-bold text-white tracking-wide">Prime Traders Control Center</h1>
+      </div>
+      
+      <div class="flex flex-wrap items-center gap-2">
+        <button onclick="switchAdminTab('parcels')" id="btnParcels" class="px-3.5 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition flex items-center gap-2">
+          <i class="fa-solid fa-box-archive"></i> Parcels & Bookings
+        </button>
+        <button onclick="switchAdminTab('users')" id="btnUsers" class="px-3.5 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-500 transition flex items-center gap-2">
+          <i class="fa-solid fa-users-gear"></i> Registered Users
+        </button>
+        <a href="cod_bill.html" target="_blank" class="px-3.5 py-2 rounded-lg text-sm font-semibold bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30 transition flex items-center gap-2">
+          <i class="fa-solid fa-circle-plus"></i> Create COD Bill
+        </a>
+        <button onclick="handleLogout()" class="px-3.5 py-2 rounded-lg text-sm font-semibold bg-rose-600/20 text-rose-400 border border-rose-500/30 hover:bg-rose-600/30 transition flex items-center gap-2">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
+      </div>
     </div>
   </header>
 
-  <!-- Main Analytics Cards -->
-  <main class="container mx-auto px-6 py-8 flex-grow">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-      <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow">
-        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total Shipments</p>
-        <h3 id="stat-total" class="text-3xl font-black text-white">0</h3>
+  <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+
+    <!-- Counter Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <p class="text-xs uppercase font-semibold text-slate-400">Total Shipments</p>
+        <h2 id="cardTotalShipments" class="text-3xl font-black text-white mt-1">0</h2>
       </div>
-      <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow">
-        <p class="text-xs font-bold text-amber-500 uppercase tracking-wider mb-1">Pending Parcels</p>
-        <h3 id="stat-pending" class="text-3xl font-black text-amber-400">0</h3>
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <p class="text-xs uppercase font-semibold text-amber-400">Pending Parcels</p>
+        <h2 id="cardPendingParcels" class="text-3xl font-black text-amber-400 mt-1">0</h2>
       </div>
-      <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow">
-        <p class="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">In Transit</p>
-        <h3 id="stat-transit" class="text-3xl font-black text-blue-400">0</h3>
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <p class="text-xs uppercase font-semibold text-blue-400">In Transit</p>
+        <h2 id="cardInTransitParcels" class="text-3xl font-black text-blue-400 mt-1">0</h2>
       </div>
-      <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow">
-        <p class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">Total Registered Users</p>
-        <h3 id="stat-users" class="text-3xl font-black text-emerald-400">0</h3>
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <p class="text-xs uppercase font-semibold text-emerald-400">Total Registered Users</p>
+        <h2 id="cardUsers" class="text-3xl font-black text-emerald-400 mt-1">0</h2>
       </div>
     </div>
 
-    <!-- TAB 1: Parcels & User Activity Table -->
-    <section id="section-parcels" class="bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-xl">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <!-- REGISTERED USERS SECTION -->
+    <section id="usersSection" class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
         <div>
           <h2 class="text-lg font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-boxes-packing text-amber-500"></i> User Activity & Parcel Bookings
+            <i class="fa-solid fa-users text-emerald-400"></i> Registered Users Directory
           </h2>
-          <p class="text-xs text-slate-400">Live tracking and status management for all customer orders</p>
+          <p class="text-xs text-slate-400 mt-0.5">Manage user accounts, update verification statuses, and view user profiles.</p>
         </div>
-        <input type="text" id="parcelSearch" oninput="filterParcels()" placeholder="Search Track ID or Merchant..." class="bg-slate-950 border border-slate-700 px-4 py-2 rounded-xl text-sm w-full sm:w-72 text-slate-200 focus:outline-none focus:border-amber-500">
+        <button onclick="loadUsersTable()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded text-slate-300 transition">
+          <i class="fa-solid fa-rotate mr-1"></i> Refresh List
+        </button>
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-slate-300">
-          <thead class="bg-slate-950 uppercase text-xs text-slate-400 font-bold border-b border-slate-800">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-950 text-slate-400 text-xs uppercase font-bold border-b border-slate-800">
             <tr>
-              <th class="py-3 px-4">Track ID</th>
-              <th class="py-3 px-4">Merchant / Sender</th>
-              <th class="py-3 px-4">Customer & City</th>
-              <th class="py-3 px-4">COD Amount</th>
-              <th class="py-3 px-4">Status Control</th>
-              <th class="py-3 px-4">Action</th>
+              <th class="p-3.5">Name / Contact</th>
+              <th class="p-3.5">Email</th>
+              <th class="p-3.5">Role</th>
+              <th class="p-3.5">Account Status & Actions</th>
             </tr>
           </thead>
-          <tbody id="parcelTableBody" class="divide-y divide-slate-800">
+          <tbody id="userTableBody" class="divide-y divide-slate-800">
             <tr>
-              <td colspan="6" class="py-6 text-center text-slate-500"><i class="fa-solid fa-spinner animate-spin"></i> Loading bookings data...</td>
+              <td colspan="4" class="p-4 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading users list...</td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <!-- TAB 2: Registered Users Directory -->
-    <section id="section-users" class="bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-xl hidden">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <!-- PARCELS & BOOKINGS SECTION -->
+    <section id="parcelsSection" class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
         <div>
           <h2 class="text-lg font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-users-gear text-emerald-400"></i> Registered Users Directory
+            <i class="fa-solid fa-boxes-stacking text-amber-400"></i> Parcels & Bookings Directory
           </h2>
-          <p class="text-xs text-slate-400">Manage user accounts, view profiles, and send password resets</p>
+          <p class="text-xs text-slate-400 mt-0.5">Manage tracking statuses and customer delivery records.</p>
         </div>
+        <button onclick="loadAdminDashboard()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded text-slate-300 transition">
+          <i class="fa-solid fa-rotate mr-1"></i> Refresh Parcels
+        </button>
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-slate-300">
-          <thead class="bg-slate-950 uppercase text-xs text-slate-400 font-bold border-b border-slate-800">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-950 text-slate-400 text-xs uppercase font-bold border-b border-slate-800">
             <tr>
-              <th class="py-3 px-4">Name / Business</th>
-              <th class="py-3 px-4">Email</th>
-              <th class="py-3 px-4">Role</th>
-              <th class="py-3 px-4 text-center">Account Security</th>
+              <th class="p-3.5">Tracking ID</th>
+              <th class="p-3.5">Sender</th>
+              <th class="p-3.5">Customer & City</th>
+              <th class="p-3.5">Amount (COD)</th>
+              <th class="p-3.5">Status</th>
+              <th class="p-3.5">Action</th>
             </tr>
           </thead>
-          <tbody id="usersTableBody" class="divide-y divide-slate-800">
+          <tbody id="adminParcelTable" class="divide-y divide-slate-800">
             <tr>
-              <td colspan="4" class="py-6 text-center text-slate-500"><i class="fa-solid fa-spinner animate-spin"></i> Loading users list...</td>
+              <td colspan="6" class="p-4 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading parcels...</td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
+
   </main>
 
-  <script src="dashboard.js"></script>
+  <!-- JS File Link with Cache-Bypass -->
+  <script src="dashboard.js?v=3.0"></script>
+  
   <script>
-    let allParcels = [];
-    let allUsers = [];
+    function switchAdminTab(tab) {
+      const usersSec = document.getElementById('usersSection');
+      const parcelsSec = document.getElementById('parcelsSection');
+      const btnUsers = document.getElementById('btnUsers');
+      const btnParcels = document.getElementById('btnParcels');
 
-    // Switch between Parcels and Users Tabs
-    function switchTab(tab) {
-      const pSec = document.getElementById('section-parcels');
-      const uSec = document.getElementById('section-users');
-      const pBtn = document.getElementById('btn-parcels');
-      const uBtn = document.getElementById('btn-users');
-
-      if (tab === 'parcels') {
-        pSec.classList.remove('hidden');
-        uSec.classList.add('hidden');
-        pBtn.className = "bg-amber-500 text-slate-950 font-bold px-3.5 py-1.5 rounded-lg text-sm transition";
-        uBtn.className = "bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold px-3.5 py-1.5 rounded-lg text-sm transition";
+      if (tab === 'users') {
+        usersSec.classList.remove('hidden');
+        parcelsSec.classList.add('hidden');
+        btnUsers.className = "px-3.5 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white transition flex items-center gap-2";
+        btnParcels.className = "px-3.5 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition flex items-center gap-2";
+        loadUsersTable();
       } else {
-        uSec.classList.remove('hidden');
-        pSec.classList.add('hidden');
-        uBtn.className = "bg-emerald-500 text-slate-950 font-bold px-3.5 py-1.5 rounded-lg text-sm transition";
-        pBtn.className = "bg-slate-800 text-slate-300 hover:bg-slate-700 font-bold px-3.5 py-1.5 rounded-lg text-sm transition";
+        parcelsSec.classList.remove('hidden');
+        usersSec.classList.add('hidden');
+        btnParcels.className = "px-3.5 py-2 rounded-lg text-sm font-semibold bg-amber-600 text-white transition flex items-center gap-2";
+        btnUsers.className = "px-3.5 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition flex items-center gap-2";
+        loadAdminDashboard();
       }
     }
-
-    // Initialize Admin Verification & Load Live Data
-    firebase.auth().onAuthStateChanged((user) => {
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
-
-      // Verify Admin Role
-      db.collection("users").doc(user.uid).get().then((doc) => {
-        if (!doc.exists || doc.data().role !== "admin") {
-          alert("Access Denied! Admin permissions required.");
-          window.location.href = "index.html";
-        } else {
-          loadAdminDashboardData();
-        }
-      }).catch(err => {
-        console.error("Permission check failed:", err);
-      });
-    });
-
-    // Fetch Parcels and Users from Firestore
-    function loadAdminDashboardData() {
-      // 1. Fetch Parcels
-      db.collection("parcels").onSnapshot((snapshot) => {
-        allParcels = [];
-        let total = 0, pending = 0, transit = 0;
-
-        snapshot.forEach((doc) => {
-          const data = { id: doc.id, ...doc.data() };
-          allParcels.push(data);
-
-          total++;
-          if (data.status === 'Pending') pending++;
-          if (data.status === 'In Transit') transit++;
-        });
-
-        document.getElementById("stat-total").innerText = total;
-        document.getElementById("stat-pending").innerText = pending;
-        document.getElementById("stat-transit").innerText = transit;
-
-        renderParcels(allParcels);
-      });
-
-      // 2. Fetch Users
-      db.collection("users").onSnapshot((snapshot) => {
-        allUsers = [];
-        snapshot.forEach((doc) => {
-          allUsers.push({ id: doc.id, ...doc.data() });
-        });
-
-        document.getElementById("stat-users").innerText = allUsers.length;
-        renderUsers(allUsers);
-      });
-    }
-
-    // Render Parcels Table
-    function renderParcels(list) {
-      const tbody = document.getElementById("parcelTableBody");
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-500">No parcel bookings recorded yet.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = list.map(p => `
-        <tr class="hover:bg-slate-900/60 transition">
-          <td class="py-3 px-4 font-mono font-bold text-amber-400">${p.trackingId || p.id}</td>
-          <td class="py-3 px-4 font-medium text-slate-200">${p.senderName || 'N/A'}</td>
-          <td class="py-3 px-4">
-            <div class="font-medium text-slate-100">${p.customerName || 'N/A'}</div>
-            <div class="text-xs text-slate-400">${p.city || ''}</div>
-          </td>
-          <td class="py-3 px-4 font-bold text-emerald-400">Rs. ${p.codAmount || 0}</td>
-          <td class="py-3 px-4">
-            <select onchange="updateParcelStatus('${p.id}', this.value)" class="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none">
-              <option value="Pending" ${p.status === 'Pending' ? 'selected' : ''}>Pending</option>
-              <option value="In Transit" ${p.status === 'In Transit' ? 'selected' : ''}>In Transit</option>
-              <option value="Delivered" ${p.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
-              <option value="Cancelled" ${p.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-            </select>
-          </td>
-          <td class="py-3 px-4">
-            <button onclick="deleteParcel('${p.id}')" class="text-rose-400 hover:text-rose-300 text-xs font-bold">
-              <i class="fa-solid fa-trash"></i> Delete
-            </button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    // Render Users Table
-    function renderUsers(list) {
-      const tbody = document.getElementById("usersTableBody");
-      if (list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-500">No registered users found.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = list.map(u => `
-        <tr class="hover:bg-slate-900/60 transition">
-          <td class="py-3 px-4 font-semibold text-slate-100">${u.name || 'N/A'}</td>
-          <td class="py-3 px-4 text-slate-300">${u.email || 'N/A'}</td>
-          <td class="py-3 px-4">
-            <span class="px-2 py-0.5 rounded text-xs font-bold ${u.role === 'admin' ? 'bg-rose-950 text-rose-400 border border-rose-800/50' : 'bg-slate-800 text-slate-300'}">
-              ${(u.role || 'customer').toUpperCase()}
-            </span>
-          </td>
-          <td class="py-3 px-4 text-center">
-            <button onclick="sendPasswordReset('${u.email}')" class="bg-blue-900/40 hover:bg-blue-800/60 text-blue-300 border border-blue-700/50 px-3 py-1 rounded text-xs font-semibold transition">
-              <i class="fa-solid fa-key"></i> Reset Password Link
-            </button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    // Admin Action: Update Parcel Status
-    function updateParcelStatus(id, newStatus) {
-      db.collection("parcels").doc(id).update({ status: newStatus })
-        .then(() => console.log("Status updated!"))
-        .catch(err => alert("Error updating status: " + err.message));
-    }
-
-    // Admin Action: Delete Parcel
-    function deleteParcel(id) {
-      if (confirm("Are you sure you want to delete this parcel record?")) {
-        db.collection("parcels").doc(id).delete()
-          .catch(err => alert("Error deleting parcel: " + err.message));
-      }
-    }
-
-    // Admin Action: Send Reset Password Email
-    function sendPasswordReset(email) {
-      if (!email || email === 'N/A') {
-        alert("Invalid email address.");
-        return;
-      }
-      if (confirm(`Send a password reset email to ${email}?`)) {
-        firebase.auth().sendPasswordResetEmail(email)
-          .then(() => alert(`Password reset email successfully sent to ${email}!`))
-          .catch(err => alert("Error sending reset email: " + err.message));
-      }
-    }
-
-    // Filter Parcels Function
-    function filterParcels() {
-      const query = document.getElementById("parcelSearch").value.toLowerCase();
-      const filtered = allParcels.filter(p => 
-        (p.trackingId && p.trackingId.toLowerCase().includes(query)) ||
-        (p.senderName && p.senderName.toLowerCase().includes(query)) ||
-        (p.customerName && p.customerName.toLowerCase().includes(query))
-      );
-      renderParcels(filtered);
-    }
-
-    function handleLogout() {
-      firebase.auth().signOut().then(() => window.location.href = "login.html");
-   // Firestore se pending users load karna
-function loadPendingUsers() {
-  const userListContainer = document.getElementById("pending-users-list");
-  if (!userListContainer) return;
-
-  firebase.firestore().collection("users").where("status", "==", "pending")
-    .onSnapshot((snapshot) => {
-      userListContainer.innerHTML = "";
-      if (snapshot.empty) {
-        userListContainer.innerHTML = "<p class='text-slate-400 p-2'>Koi pending registration request nahi hai.</p>";
-        return;
-      }
-
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const userRow = `
-          <div class="flex items-center justify-between p-3 bg-slate-800 rounded border border-slate-700 mb-2">
-            <div>
-              <p class="text-white font-bold">${data.email || 'No Email'}</p>
-              <p class="text-xs text-slate-400">Phone: ${data.phone || 'N/A'}</p>
-            </div>
-            <div class="space-x-2">
-              <button onclick="updateUserStatus('${doc.id}', 'approved')" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white font-bold text-xs rounded">Approve</button>
-              <button onclick="updateUserStatus('${doc.id}', 'rejected')" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded">Reject</button>
-            </div>
-          </div>
-        `;
-        userListContainer.innerHTML += userRow;
-      });
-    });
-}
-
-// User status update karna
-async function updateUserStatus(userId, newStatus) {
-  try {
-    await firebase.firestore().collection("users").doc(userId).update({
-      status: newStatus
-    });
-    alert(`User status successfully updated to: ${newStatus}`);
-  } catch (error) {
-    alert("Error updating status: " + error.message);
-  }
-}
-
-// Auto load
-document.addEventListener("DOMContentLoaded", () => {
-  loadPendingUsers();
-}); }
   </script>
 </body>
 </html>
