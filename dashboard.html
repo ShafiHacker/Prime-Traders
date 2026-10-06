@@ -9,7 +9,20 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans antialiased">
+<script>
+  firebase.auth().onAuthStateChanged(async (user) => {
+    if (!user) {
+      window.location.href = "login.html";
+    } else {
+      const doc = await firebase.firestore().collection("users").doc(user.uid).get();
+      if (!doc.exists || doc.data().status !== "approved") {
+        await firebase.auth().signOut();
+        alert("Access Denied: Aapka account abhi approve nahi hua hai.");
+        window.location.href = "login.html";
+      }
+    }
+  });
+</script><body class="bg-slate-100 text-slate-800 font-sans antialiased">
 
     <!-- Top Navigation -->
     <header class="bg-slate-900 text-white shadow-md py-4 px-6 flex justify-between items-center">
