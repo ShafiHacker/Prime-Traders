@@ -339,3 +339,19 @@ async function handleLogin(email, password) {
     alert("Login Error: " + error.message);
   }
 }
+// --- EmailJS Instant Notification System ---
+function sendEmailNotification(messageText) {
+  const serviceID = "primetraders.express";
+  const templateID = "7te01mn";
+
+  const templateParams = {
+    message_text: messageText
+  };
+
+  emailjs.send(serviceID, templateID, templateParams)
+    .then(() => {
+      console.log('Email Notification Sent Successfully!');
+    }, (err) => {
+      console.error('Email Notification Failed:', err);
+    });
+}
