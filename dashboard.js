@@ -355,3 +355,83 @@ function sendEmailNotification(messageText) {
       console.error('Email Notification Failed:', err);
     });
 }
+// --- EmailJS Notification Function ---
+function sendEmailNotification(messageText) {
+  const serviceID = "primetraders.express";
+  const templateID = "7te01mn";
+
+  const templateParams = {
+    message_text: messageText
+  };
+
+  emailjs.send(serviceID, templateID, templateParams)
+    .then(() => {
+      console.log('Email Notification Sent!');
+    }, (err) => {
+      console.error('Email Notification Error:', err);
+    });
+}
+
+// --- SignUp Handler ---
+async function handleSignUp(e) {
+  if (e) e.preventDefault();
+  
+  const email = document.getElementById("regEmail") ? document.getElementById("regEmail").value : "";
+  const password = document.getElementById("regPassword") ? document.getElementById("regPassword").value : "";
+  const phone = document.getElementById("regPhone") ? document.getElementById("regPhone").value : "";
+
+  try {
+    const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+
+    await firebase.firestore().collection("users").doc(user.uid).set({
+      uid: user.uid,
+      email: email,
+      phone: phone,
+      status: "pending",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Send Email Alert to Admin
+    sendEmailNotification(`🔔 Prime Traders - New Registration Request\nEmail: ${email}\nPhone: ${phone}\nStatus: Pending Approval`);
+
+    await firebase.auth().signOut();
+    alert("Aapka account register ho gaya hai! Admin approval ke baad activate hoga.");
+
+  } catch (error) {
+    alert("Registration Error: " + error.message);
+  }
+}
+
+// --- Login Handler ---
+async function handleLogin(email, password) {
+  try {
+    const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+
+    const userDoc = await firebase.firestore().collection("users").doc(user.uid).get();
+
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+
+      if (userData.status === "pending") {
+        await firebase.auth().signOut();
+        alert("Aapka account abhi pending hai. Admin approval ke baad activate hoga.");
+        return;
+      }
+
+      if (userData.status === "rejected") {
+        await firebase.auth().signOut();
+        alert("Aapki registration request reject ho chuki hai.");
+        return;
+      }
+
+      // Send Login Alert to Admin
+      sendEmailNotification(`🔓 Prime Traders - User Login Alert\nEmail: ${email}\nTime: ${new Date().toLocaleString()}`);
+
+      window.location.href = "dashboard.html";
+    }
+  } catch (error) {
+    alert("Login Error: " + error.message);
+  }
+}
