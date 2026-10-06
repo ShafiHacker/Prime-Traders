@@ -282,3 +282,60 @@ async function deleteParcel(docId) {
   // Initialize timer on page load
   resetInactivityTimer();
 })();
+// --- Pending Approval & Registration Handler ---
+async function handleSignUp(e) {
+  if (e) e.preventDefault();
+  
+  const email = document.getElementById("regEmail") ? document.getElementById("regEmail").value : "";
+  const password = document.getElementById("regPassword") ? document.getElementById("regPassword").value : "";
+  const phone = document.getElementById("regPhone") ? document.getElementById("regPhone").value : "";
+
+  try {
+    const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+
+    await firebase.firestore().collection("users").doc(user.uid).set({
+      uid: user.uid,
+      email: email,
+      phone: phone,
+      status: "pending",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    await firebase.auth().signOut();
+    alert("Aapka account register ho gaya hai! Admin approval ke baad 24 ghante ke andar aapki email par notification bhej diya jayega.");
+
+  } catch (error) {
+    alert("Registration Error: " + error.message);
+  }
+}
+
+// --- Login Check for Pending Status ---
+async function handleLogin(email, password) {
+  try {
+    const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+
+    const userDoc = await firebase.firestore().collection("users").doc(user.uid).get();
+
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+
+      if (userData.status === "pending") {
+        await firebase.auth().signOut();
+        alert("Aapka account abhi pending hai. Admin approval ke baad activate hoga.");
+        return;
+      }
+
+      if (userData.status === "rejected") {
+        await firebase.auth().signOut();
+        alert("Aapki registration request reject ho chuki hai.");
+        return;
+      }
+
+      window.location.href = "dashboard.html";
+    }
+  } catch (error) {
+    alert("Login Error: " + error.message);
+  }
+}
