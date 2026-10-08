@@ -69,7 +69,7 @@
           <h2 class="text-lg font-bold text-white flex items-center gap-2">
             <i class="fa-solid fa-users text-emerald-400"></i> Registered Users Directory
           </h2>
-          <p class="text-xs text-slate-400 mt-0.5">Manage user accounts, update verification statuses, and view user profiles.</p>
+          <p class="text-xs text-slate-400 mt-0.5">Manage user accounts, update verification statuses, and view uploaded proof documents.</p>
         </div>
         <button onclick="loadUsersTable()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded text-slate-300 transition">
           <i class="fa-solid fa-rotate mr-1"></i> Refresh List
@@ -77,18 +77,20 @@
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
+        <table class="w-full text-left text-sm" id="usersTable">
           <thead class="bg-slate-950 text-slate-400 text-xs uppercase font-bold border-b border-slate-800">
             <tr>
-              <th class="p-3.5">Name / Contact</th>
+              <th class="p-3.5">User & Business</th>
               <th class="p-3.5">Email</th>
+              <th class="p-3.5">Type</th>
               <th class="p-3.5">Role</th>
-              <th class="p-3.5">Account Status & Actions</th>
+              <th class="p-3.5">Status</th>
+              <th class="p-3.5 text-center">Action</th>
             </tr>
           </thead>
           <tbody id="userTableBody" class="divide-y divide-slate-800">
             <tr>
-              <td colspan="4" class="p-4 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading users list...</td>
+              <td colspan="6" class="p-4 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading users list...</td>
             </tr>
           </tbody>
         </table>
@@ -132,8 +134,38 @@
 
   </main>
 
+  <!-- USER DETAILS & DOCUMENTS VERIFICATION MODAL -->
+  <div id="userModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+    <div class="bg-slate-800 border border-slate-700 w-full max-w-2xl rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
+        <h3 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+          <i class="fa-solid fa-id-card"></i> User Verification & Proof Documents
+        </h3>
+        <button onclick="closeUserModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+      </div>
+
+      <!-- User Information Details Grid -->
+      <div id="modalUserDetails" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs mb-6 bg-slate-900 p-4 rounded-xl border border-slate-700">
+        <!-- Dynamic data injected by dashboard.js -->
+      </div>
+
+      <!-- Document Previews -->
+      <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+        <i class="fa-solid fa-file-invoice text-amber-400"></i> Uploaded Document Proofs
+      </h4>
+      <div id="modalUserDocs" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Dynamic Document Previews injected by dashboard.js -->
+      </div>
+
+      <!-- Action Footer (Approve / Reject) -->
+      <div class="mt-6 border-t border-slate-700 pt-4 flex justify-end gap-3" id="modalActions">
+        <!-- Dynamic Approve / Reject Buttons -->
+      </div>
+    </div>
+  </div>
+
   <!-- JS File Link with Cache-Bypass -->
-  <script src="dashboard.js?v=3.0"></script>
+  <script src="dashboard.js?v=4.0"></script>
   
   <script>
     function switchAdminTab(tab) {
