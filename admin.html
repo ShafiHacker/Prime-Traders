@@ -28,7 +28,10 @@
           <i class="fa-solid fa-box-archive"></i> Parcels & Bookings
         </button>
         <button onclick="switchAdminTab('users')" id="btnUsers" class="px-3.5 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-500 transition flex items-center gap-2">
-          <i class="fa-solid fa-users-gear"></i> Registered Users
+          <i class="fa-solid fa-users-gear"></i> Active Users
+        </button>
+        <button onclick="switchAdminTab('deleted')" id="btnDeleted" class="px-3.5 py-2 rounded-lg text-sm font-semibold bg-rose-900/40 text-rose-300 border border-rose-500/30 hover:bg-rose-900/60 transition flex items-center gap-2">
+          <i class="fa-solid fa-trash-can"></i> Deleted Users Archive
         </button>
         <a href="cod_bill.html" target="_blank" class="px-3.5 py-2 rounded-lg text-sm font-semibold bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/30 transition flex items-center gap-2">
           <i class="fa-solid fa-circle-plus"></i> Create COD Bill
@@ -43,35 +46,39 @@
   <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
 
     <!-- Counter Stats Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
       <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-        <p class="text-xs uppercase font-semibold text-slate-400">Total Shipments</p>
-        <h2 id="cardTotalShipments" class="text-3xl font-black text-white mt-1">0</h2>
+        <p class="text-[11px] uppercase font-semibold text-slate-400">Total Shipments</p>
+        <h2 id="cardTotalShipments" class="text-2xl font-black text-white mt-1">0</h2>
       </div>
       <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-        <p class="text-xs uppercase font-semibold text-amber-400">Pending Parcels</p>
-        <h2 id="cardPendingParcels" class="text-3xl font-black text-amber-400 mt-1">0</h2>
+        <p class="text-[11px] uppercase font-semibold text-amber-400">Pending Parcels</p>
+        <h2 id="cardPendingParcels" class="text-2xl font-black text-amber-400 mt-1">0</h2>
       </div>
       <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-        <p class="text-xs uppercase font-semibold text-blue-400">In Transit</p>
-        <h2 id="cardInTransitParcels" class="text-3xl font-black text-blue-400 mt-1">0</h2>
+        <p class="text-[11px] uppercase font-semibold text-blue-400">In Transit</p>
+        <h2 id="cardInTransitParcels" class="text-2xl font-black text-blue-400 mt-1">0</h2>
       </div>
       <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-        <p class="text-xs uppercase font-semibold text-emerald-400">Total Registered Users</p>
-        <h2 id="cardUsers" class="text-3xl font-black text-emerald-400 mt-1">0</h2>
+        <p class="text-[11px] uppercase font-semibold text-emerald-400">Active Users</p>
+        <h2 id="cardUsers" class="text-2xl font-black text-emerald-400 mt-1">0</h2>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <p class="text-[11px] uppercase font-semibold text-rose-400">Deleted / Rejected</p>
+        <h2 id="cardDeletedUsers" class="text-2xl font-black text-rose-400 mt-1">0</h2>
       </div>
     </div>
 
-    <!-- REGISTERED USERS SECTION -->
+    <!-- REGISTERED ACTIVE USERS SECTION -->
     <section id="usersSection" class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
       <div class="p-4 border-b border-slate-800 flex items-center justify-between">
         <div>
           <h2 class="text-lg font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-users text-emerald-400"></i> Registered Users Directory
+            <i class="fa-solid fa-users text-emerald-400"></i> Active Users Directory
           </h2>
-          <p class="text-xs text-slate-400 mt-0.5">Manage user accounts, update verification statuses, and view uploaded proof documents.</p>
+          <p class="text-xs text-slate-400 mt-0.5">Manage pending & approved user accounts.</p>
         </div>
-        <button onclick="loadUsersTable()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded text-slate-300 transition">
+        <button onclick="loadUsersTable('active')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded text-slate-300 transition">
           <i class="fa-solid fa-rotate mr-1"></i> Refresh List
         </button>
       </div>
@@ -85,12 +92,46 @@
               <th class="p-3.5">Type</th>
               <th class="p-3.5">Role</th>
               <th class="p-3.5">Status</th>
-              <th class="p-3.5 text-center">Action</th>
+              <th class="p-3.5 text-center">Actions</th>
             </tr>
           </thead>
           <tbody id="userTableBody" class="divide-y divide-slate-800">
             <tr>
               <td colspan="6" class="p-4 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading users list...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- DELETED USERS ARCHIVE SECTION -->
+    <section id="deletedUsersSection" class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl hidden">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-rose-400 flex items-center gap-2">
+            <i class="fa-solid fa-trash-arrow-up"></i> Deleted / Archived Users Record
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Historical records of rejected and removed user accounts.</p>
+        </div>
+        <button onclick="loadUsersTable('deleted')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded text-slate-300 transition">
+          <i class="fa-solid fa-rotate mr-1"></i> Refresh Archive
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-950 text-slate-400 text-xs uppercase font-bold border-b border-slate-800">
+            <tr>
+              <th class="p-3.5">User & Business</th>
+              <th class="p-3.5">Email</th>
+              <th class="p-3.5">Type</th>
+              <th class="p-3.5">Deleted Status</th>
+              <th class="p-3.5 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="deletedUserTableBody" class="divide-y divide-slate-800">
+            <tr>
+              <td colspan="5" class="p-4 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading deleted users archive...</td>
             </tr>
           </tbody>
         </table>
@@ -157,34 +198,54 @@
         <!-- Dynamic Document Previews injected by dashboard.js -->
       </div>
 
-      <!-- Action Footer (Approve / Reject) -->
+      <!-- Action Footer (Approve / Reject / Restore) -->
       <div class="mt-6 border-t border-slate-700 pt-4 flex justify-end gap-3" id="modalActions">
-        <!-- Dynamic Approve / Reject Buttons -->
+        <!-- Dynamic Buttons -->
       </div>
     </div>
   </div>
 
   <!-- JS File Link with Cache-Bypass -->
-  <script src="dashboard.js?v=4.0"></script>
+  <script src="dashboard.js?v=5.0"></script>
   
   <script>
     function switchAdminTab(tab) {
       const usersSec = document.getElementById('usersSection');
+      const deletedSec = document.getElementById('deletedUsersSection');
       const parcelsSec = document.getElementById('parcelsSection');
+      
       const btnUsers = document.getElementById('btnUsers');
+      const btnDeleted = document.getElementById('btnDeleted');
       const btnParcels = document.getElementById('btnParcels');
 
       if (tab === 'users') {
         usersSec.classList.remove('hidden');
+        deletedSec.classList.add('hidden');
         parcelsSec.classList.add('hidden');
+
         btnUsers.className = "px-3.5 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white transition flex items-center gap-2";
+        btnDeleted.className = "px-3.5 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition flex items-center gap-2";
         btnParcels.className = "px-3.5 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition flex items-center gap-2";
-        loadUsersTable();
+        loadUsersTable('active');
+
+      } else if (tab === 'deleted') {
+        deletedSec.classList.remove('hidden');
+        usersSec.classList.add('hidden');
+        parcelsSec.classList.add('hidden');
+
+        btnDeleted.className = "px-3.5 py-2 rounded-lg text-sm font-semibold bg-rose-600 text-white transition flex items-center gap-2";
+        btnUsers.className = "px-3.5 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition flex items-center gap-2";
+        btnParcels.className = "px-3.5 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition flex items-center gap-2";
+        loadUsersTable('deleted');
+
       } else {
         parcelsSec.classList.remove('hidden');
         usersSec.classList.add('hidden');
+        deletedSec.classList.add('hidden');
+
         btnParcels.className = "px-3.5 py-2 rounded-lg text-sm font-semibold bg-amber-600 text-white transition flex items-center gap-2";
         btnUsers.className = "px-3.5 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition flex items-center gap-2";
+        btnDeleted.className = "px-3.5 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition flex items-center gap-2";
         loadAdminDashboard();
       }
     }
