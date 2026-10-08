@@ -164,11 +164,22 @@ async function handleRegister(e) {
     window.location.href = "login.html";
 
   } catch (err) {
+    let customErrorMsg = err.message;
+
+    // Custom English Error Messages for Registration
+    if (err.code === 'auth/email-already-in-use') {
+      customErrorMsg = "This email address is already registered. Please use another email or Sign In.";
+    } else if (err.code === 'auth/weak-password') {
+      customErrorMsg = "Password is too weak. Please enter at least 6 characters.";
+    } else if (err.code === 'auth/invalid-email') {
+      customErrorMsg = "Invalid email format. Please check your email address.";
+    }
+
     if (authMsg) {
-      authMsg.innerText = err.message;
+      authMsg.innerText = customErrorMsg;
       authMsg.classList.remove('hidden');
     } else {
-      alert("Registration Error: " + err.message);
+      alert("Registration Error: " + customErrorMsg);
     }
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -232,11 +243,20 @@ async function handleLogin(e) {
     }
 
   } catch (error) {
+    let customErrorMsg = error.message;
+
+    // Custom English Error Messages for Login
+    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+      customErrorMsg = "Invalid email or password. Please check your credentials and try again.";
+    } else if (error.code === 'auth/invalid-email') {
+      customErrorMsg = "Invalid email format. Please check your email address.";
+    }
+
     if (authMsg) {
-      authMsg.innerText = error.message;
+      authMsg.innerText = customErrorMsg;
       authMsg.classList.remove('hidden');
     } else {
-      alert("Login Error: " + error.message);
+      alert("Login Error: " + customErrorMsg);
     }
   }
 }
