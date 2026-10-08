@@ -129,7 +129,6 @@ async function handleRegister(e) {
   const fBank = document.getElementById('fileBank') ? document.getElementById('fileBank').files[0] : null;
 
   try {
-    // Convert documents to Base64 strings for direct Firestore persistence
     const cnicFrontBase64 = await fileToBase64(fCnicFront);
     const cnicBackBase64 = await fileToBase64(fCnicBack);
     const ntnDocBase64 = await fileToBase64(fNTN);
@@ -198,13 +197,11 @@ async function handleLogin(e) {
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
 
-    // Direct Bypass for Admin Email
     if (email === "admin@primetraders.com") {
       window.location.href = "admin.html";
       return;
     }
 
-    // Fetch User Data from Firestore
     const userDoc = await db.collection("users").doc(user.uid).get();
 
     if (userDoc.exists) {
@@ -267,6 +264,7 @@ auth.onAuthStateChanged(async (user) => {
       loadUserDashboard(user.uid);
     } else if (path.includes('admin.html')) {
       loadAdminDashboard();
+      loadUsersTable();
     }
   } else {
     if (path.includes('dashboard.html') || path.includes('admin.html')) {
@@ -440,19 +438,19 @@ async function deleteParcel(docId) {
 // LOAD REGISTERED USERS DIRECTORY (ADMIN)
 // ==========================================
 async function loadUsersTable() {
-  const tableBody = document.getElementById('userTableBody') || document.querySelector('tbody');
+  const tableBody = document.getElementById('userTableBody') || document.querySelector('#usersTable tbody');
   const userCardCount = document.getElementById('cardUsers') || document.getElementById('totalUsersCount');
 
   if (!tableBody) return;
 
-  tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading users list...</td></tr>`;
+  tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading users list...</td></tr>`;
 
   try {
     const snapshot = await db.collection('users').get();
     tableBody.innerHTML = '';
 
     if (snapshot.empty) {
-      tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No registered users found.</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">No registered users found.</td></tr>`;
       if (userCardCount) userCardCount.innerText = '0';
       return;
     }
@@ -468,46 +466,135 @@ async function loadUsersTable() {
 
       tableBody.innerHTML += `
         <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition text-xs">
-          <td class="p-3.5">
+          <td class="p-3">
             <div class="font-bold text-slate-100">${u.name || 'N/A'}</div>
             <div class="text-[11px] text-amber-400">${u.businessName || 'N/A'}</div>
             <div class="text-[10px] text-slate-400">${u.phone || 'No Phone'}</div>
           </td>
-          <td class="p-3.5 text-slate-300">${u.email || 'N/A'}</td>
-          <td class="p-3.5">
+          <td class="p-3 text-slate-300">${u.email || 'N/A'}</td>
+          <td class="p-3">
             <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
               type === 'business' ? 'bg-amber-900/50 text-amber-300 border border-amber-500/30' : 'bg-blue-900/50 text-blue-300 border border-blue-500/30'
             }">${type}</span>
           </td>
-          <td class="p-3.5">
+          <td class="p-3">
             <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
               role === 'admin' ? 'bg-purple-900/50 text-purple-300 border border-purple-500/30' : 'bg-slate-700 text-slate-300'
             }">${role}</span>
           </td>
-          <td class="p-3.5">
-            <div class="flex items-center gap-2">
-              <span class="px-2 py-1 rounded-full text-[10px] font-bold ${
-                status === 'approved' ? 'bg-emerald-900/40 text-emerald-400 border border-emerald-500/30' :
-                status === 'pending' ? 'bg-amber-900/40 text-amber-400 border border-amber-500/30' :
-                'bg-rose-900/40 text-rose-400 border border-rose-500/30'
-              }">${status.toUpperCase()}</span>
-              
-              ${role !== 'admin' ? `
-                <select onchange="updateUserStatus('${uid}', this.value)" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2 py-1 focus:outline-none focus:border-amber-400">
-                  <option value="approved" ${status === 'approved' ? 'selected' : ''}>Approve</option>
-                  <option value="pending" ${status === 'pending' ? 'selected' : ''}>Pending</option>
-                  <option value="rejected" ${status === 'rejected' ? 'selected' : ''}>Reject</option>
-                </select>
-              ` : ''}
-            </div>
+          <td class="p-3">
+            <span class="px-2 py-1 rounded-full text-[10px] font-bold ${
+              status === 'approved' ? 'bg-emerald-900/40 text-emerald-400 border border-emerald-500/30' :
+              status === 'pending' ? 'bg-amber-900/40 text-amber-400 border border-amber-500/30' :
+              'bg-rose-900/40 text-rose-400 border border-rose-500/30'
+            }">${status.toUpperCase()}</span>
+          </td>
+          <td class="p-3 text-center">
+            <button onclick="viewUserData('${uid}')" class="bg-amber-500 hover:bg-amber-600 text-slate-900 px-3 py-1.5 rounded-lg font-bold text-xs shadow transition flex items-center justify-center gap-1 mx-auto">
+              <i class="fa-solid fa-eye"></i> View Data
+            </button>
           </td>
         </tr>
       `;
     });
   } catch (err) {
     console.error("Error loading users:", err);
-    tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-rose-400">Error loading users: ${err.message}</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-rose-400">Error loading users: ${err.message}</td></tr>`;
   }
+}
+
+// View Specific User's Data & Uploaded Proof Documents in Modal
+async function viewUserData(uid) {
+  try {
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (!userDoc.exists) {
+      alert("User record not found!");
+      return;
+    }
+
+    const u = userDoc.data();
+    const docs = u.docs || {};
+
+    const modalDetails = document.getElementById('modalUserDetails');
+    const modalDocs = document.getElementById('modalUserDocs');
+    const modalActions = document.getElementById('modalActions');
+
+    // Populate Details
+    if (modalDetails) {
+      modalDetails.innerHTML = `
+        <div><strong class="text-slate-400">Full Name:</strong> <span class="text-white font-bold">${u.name || 'N/A'}</span></div>
+        <div><strong class="text-slate-400">Account Type:</strong> <span class="text-amber-400 font-bold uppercase">${u.accountType || 'business'}</span></div>
+        <div><strong class="text-slate-400">Business Name:</strong> <span class="text-white">${u.businessName || 'N/A'}</span></div>
+        <div><strong class="text-slate-400">Email:</strong> <span class="text-white">${u.email || 'N/A'}</span></div>
+        <div><strong class="text-slate-400">Mobile / WhatsApp:</strong> <span class="text-white">${u.phone || 'N/A'}</span></div>
+        <div><strong class="text-slate-400">CNIC No:</strong> <span class="text-white">${u.cnic || 'N/A'}</span></div>
+        <div><strong class="text-slate-400">NTN No:</strong> <span class="text-white">${u.ntn || 'N/A'}</span></div>
+        <div><strong class="text-slate-400">Bank Details:</strong> <span class="text-white">${u.bankDetails || 'N/A'}</span></div>
+      `;
+    }
+
+    // Helper to render image or link
+    const renderDocPreview = (title, src) => {
+      if (!src) return `<div class="bg-slate-900 p-3 rounded border border-slate-700 text-slate-500 text-center">No ${title} Provided</div>`;
+      const isPdf = src.startsWith('data:application/pdf');
+      
+      if (isPdf) {
+        return `
+          <div class="bg-slate-900 p-3 rounded border border-slate-700">
+            <p class="font-bold text-slate-300 text-xs mb-2">${title}</p>
+            <a href="${src}" download="${title}.pdf" class="bg-blue-600 text-white text-xs px-3 py-1.5 rounded inline-block">Download PDF</a>
+          </div>
+        `;
+      }
+      
+      return `
+        <div class="bg-slate-900 p-2 rounded border border-slate-700">
+          <p class="font-bold text-slate-300 text-xs mb-2">${title}</p>
+          <a href="${src}" target="_blank" title="Click to view full image">
+            <img src="${src}" class="w-full h-36 object-cover rounded hover:opacity-80 transition cursor-pointer border border-slate-800" />
+          </a>
+        </div>
+      `;
+    };
+
+    // Populate Documents
+    if (modalDocs) {
+      modalDocs.innerHTML = `
+        ${renderDocPreview('CNIC Front', docs.cnicFront)}
+        ${renderDocPreview('CNIC Back', docs.cnicBack)}
+        ${renderDocPreview('NTN Document', docs.ntnDoc)}
+        ${renderDocPreview('Bank Cheque / Proof', docs.bankDoc)}
+      `;
+    }
+
+    // Populate Action Buttons
+    if (modalActions) {
+      modalActions.innerHTML = `
+        <button onclick="updateUserStatus('${uid}', 'rejected'); closeModal();" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg font-bold text-xs transition">
+          <i class="fa-solid fa-times mr-1"></i> Reject Account
+        </button>
+        <button onclick="updateUserStatus('${uid}', 'approved'); closeModal();" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold text-xs transition">
+          <i class="fa-solid fa-check mr-1"></i> Approve Account
+        </button>
+      `;
+    }
+
+    // Open Modal
+    const modal = document.getElementById('userModal');
+    if (modal) modal.classList.remove('hidden');
+
+  } catch (err) {
+    alert("Error fetching user data: " + err.message);
+  }
+}
+
+// Close Modal
+function closeUserModal() {
+  const modal = document.getElementById('userModal');
+  if (modal) modal.classList.add('hidden');
+}
+function closeModal() {
+  closeUserModal();
 }
 
 // Update User Account Status (Approve / Reject)
