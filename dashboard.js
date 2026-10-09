@@ -518,3 +518,25 @@ async function saveProfileUpdate(e) {
     closeProfileModal();
     location.reload();
   } catch (err) { alert("Error updating profile: " + err.message); }
+}
+
+// Logout
+function handleLogout() {
+  auth.signOut().then(() => { window.location.href = 'login.html'; });
+}
+
+// Auth Listener
+auth.onAuthStateChanged(async (user) => {
+  const path = window.location.pathname;
+  if (user) {
+    const userDoc = await db.collection('users').doc(user.uid).get();
+    const userData = userDoc.data() || {};
+    if (document.getElementById('userNameDisplay')) {
+      document.getElementById('userNameDisplay').innerText = userData.name || user.email;
+    }
+    if (path.includes('dashboard.html')) loadUserDashboard(user.uid);
+    else if (path.includes('admin.html')) { loadAdminDashboard(); loadUsersTable(); }
+  } else {
+    if (path.includes('dashboard.html') || path.includes('admin.html')) window.location.href = 'login.html';
+  }
+});
