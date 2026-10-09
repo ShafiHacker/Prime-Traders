@@ -9,13 +9,14 @@ const firebaseConfig = {
   measurementId: "G-6CGVKBZFJK"
 };
 
+// Initialize Firebase
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Tab Switcher
+// Tab Switcher for Login / Register
 function switchTab(type) {
   const lForm = document.getElementById('loginForm');
   const rForm = document.getElementById('registerForm');
@@ -37,7 +38,7 @@ function switchTab(type) {
   }
 }
 
-// Account Type Switcher
+// Account Type Switcher (Business vs Self)
 function setAccountType(type) {
   const accountTypeInput = document.getElementById('regAccountType');
   if (accountTypeInput) accountTypeInput.value = type;
@@ -213,7 +214,268 @@ document.addEventListener("DOMContentLoaded", () => {
   if (loginEmail) loginEmail.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); handleLogin(e); } });
 });
 
-// Profile Editing Functions (User & Admin)
+// Load Active Users and Deleted Users Table in Admin Dashboard
+async function loadUsersTable() {
+  const activeTableBody = document.getElementById('userTableBody');
+  const deletedTableBody = document.getElementById('deletedUserTableBody');
+  const cardActiveCount = document.getElementById('cardUsers');
+  const cardDeletedCount = document.getElementById('cardDeletedUsers');
+
+  try {
+    const snapshot = await db.collection('users').get();
+    let activeUsersHtml = '';
+    let deletedUsersHtml = '';
+    let activeCount = 0;
+    let deletedCount = 0;
+
+    snapshot.forEach((doc) => {
+      const u = doc.data();
+      const uid = doc.id;
+      const status = u.status || 'approved';
+      const role = u.role || 'customer';
+      const type = u.accountType || 'business';
+
+      if (status === 'deleted') {
+        deletedCount++;
+        deletedUsersHtml += `
+          <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition text-xs">
+            <td class="p-3">
+              <div class="font-bold text-slate-100">${u.name || 'N/A'}</div>
+              <div class="text-[11px] text-amber-400">${u.businessName || 'N/A'}</div>
+              <div class="text-[10px] text-slate-400">${u.phone || 'No Phone'}</div>
+            </td>
+            <td class="p-3 text-slate-300">${u.email || 'N/A'}</td>
+            <td class="p-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                type === 'business' ? 'bg-amber-900/50 text-amber-300 border border-amber-500/30' : 'bg-blue-900/50 text-blue-300 border border-blue-500/30'
+              }">${type}</span>
+            </td>
+            <td class="p-3">
+              <span class="px-2 py-1 rounded-full text-[10px] font-bold bg-rose-900/50 text-rose-300 border border-rose-500/30">DELETED / REJECTED</span>
+            </td>
+            <td class="p-3 text-center flex items-center justify-center gap-1">
+              <button onclick="viewUserData('${uid}')" class="bg-amber-500 hover:bg-amber-600 text-slate-900 px-2.5 py-1.5 rounded font-bold text-xs shadow transition flex items-center gap-1">
+                <i class="fa-solid fa-eye"></i> View
+              </button>
+              <button onclick="restoreUser('${uid}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded font-bold text-xs shadow transition flex items-center gap-1">
+                <i class="fa-solid fa-rotate-left"></i> Restore
+              </button>
+            </td>
+          </tr>
+        `;
+      } else {
+        activeCount++;
+        activeUsersHtml += `
+          <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition text-xs">
+            <td class="p-3">
+              <div class="font-bold text-slate-100">${u.name || 'N/A'}</div>
+              <div class="text-[11px] text-amber-400">${u.businessName || 'N/A'}</div>
+              <div class="text-[10px] text-slate-400">${u.phone || 'No Phone'}</div>
+            </td>
+            <td class="p-3 text-slate-300">${u.email || 'N/A'}</td>
+            <td class="p-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                type === 'business' ? 'bg-amber-900/50 text-amber-300 border border-amber-500/30' : 'bg-blue-900/50 text-blue-300 border border-blue-500/30'
+              }">${type}</span>
+            </td>
+            <td class="p-3">
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                role === 'admin' ? 'bg-purple-900/50 text-purple-300 border border-purple-500/30' : 'bg-slate-700 text-slate-300'
+              }">${role}</span>
+            </td>
+            <td class="p-3">
+              <span class="px-2 py-1 rounded-full text-[10px] font-bold ${
+                status === 'approved' ? 'bg-emerald-900/40 text-emerald-400 border border-emerald-500/30' :
+                status === 'pending' ? 'bg-amber-900/40 text-amber-400 border border-amber-500/30' :
+                'bg-rose-900/40 text-rose-400 border border-rose-500/30'
+              }">${status.toUpperCase()}</span>
+            </td>
+            <td class="p-3 text-center flex items-center justify-center gap-1.5">
+              <button onclick="viewUserData('${uid}')" class="bg-amber-500 hover:bg-amber-600 text-slate-900 px-2 py-1 rounded font-bold text-[11px] shadow transition flex items-center gap-1">
+                <i class="fa-solid fa-eye"></i> View
+              </button>
+              <button onclick="updateUserStatus('${uid}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded font-bold text-[11px] shadow transition flex items-center gap-1">
+                <i class="fa-solid fa-check"></i> Approve
+              </button>
+              <button onclick="updateUserStatus('${uid}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded font-bold text-[11px] shadow transition flex items-center gap-1">
+                <i class="fa-solid fa-xmark"></i> Reject
+              </button>
+              <button onclick="softDeleteUser('${uid}')" title="Delete & Move to Archive" class="bg-slate-700 hover:bg-rose-600 text-slate-300 hover:text-white px-2 py-1 rounded font-bold text-[11px] shadow transition flex items-center gap-1">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }
+    });
+
+    if (cardActiveCount) cardActiveCount.innerText = activeCount;
+    if (cardDeletedCount) cardDeletedCount.innerText = deletedCount;
+
+    if (activeTableBody) {
+      activeTableBody.innerHTML = activeUsersHtml !== '' ? activeUsersHtml : `<tr><td colspan="6" class="p-4 text-center text-slate-400">No active users found.</td></tr>`;
+    }
+
+    if (deletedTableBody) {
+      deletedTableBody.innerHTML = deletedUsersHtml !== '' ? deletedUsersHtml : `<tr><td colspan="5" class="p-4 text-center text-slate-400">No deleted users in archive.</td></tr>`;
+    }
+
+  } catch (err) {
+    console.error("Error loading users:", err);
+  }
+}
+
+// View Specific User Details Modal
+async function viewUserData(uid) {
+  try {
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (!userDoc.exists) { alert("User record not found!"); return; }
+    const u = userDoc.data();
+    const docs = u.docs || {};
+
+    const modalDetails = document.getElementById('modalUserDetails');
+    const modalDocs = document.getElementById('modalUserDocs');
+    const modalActions = document.getElementById('modalActions');
+
+    if (modalDetails) {
+      modalDetails.innerHTML = `
+        <div><strong class="text-slate-400">Full Name:</strong> <span class="text-white font-bold">${u.name || 'N/A'}</span></div>
+        <div><strong class="text-slate-400">Account Type:</strong> <span class="text-amber-400 font-bold uppercase">${u.accountType || 'business'}</span></div>
+        <div><strong class="text-slate-400">Business Name:</strong> <span class="text-white">${u.businessName || 'N/A'}</span></div>
+        <div><strong class="text-slate-400">Email:</strong> <span class="text-white">${u.email || 'N/A'}</span></div>
+        <div><strong class="text-slate-400">Mobile / WhatsApp:</strong> <span class="text-white">${u.phone || 'N/A'}</span></div>
+        <div><strong class="text-slate-400">CNIC No:</strong> <span class="text-white">${u.cnic || 'N/A'}</span></div>
+        <div><strong class="text-slate-400">NTN No:</strong> <span class="text-white">${u.ntn || 'N/A'}</span></div>
+        <div><strong class="text-slate-400">Bank Details:</strong> <span class="text-white">${u.bankDetails || 'N/A'}</span></div>
+      `;
+    }
+
+    const renderDocPreview = (title, src) => {
+      if (!src) return `<div class="bg-slate-900 p-3 rounded border border-slate-700 text-slate-500 text-center">No ${title} Provided</div>`;
+      if (src.startsWith('data:application/pdf')) {
+        return `<div class="bg-slate-900 p-3 rounded border border-slate-700"><p class="font-bold text-slate-300 text-xs mb-2">${title}</p><a href="${src}" download="${title}.pdf" class="bg-blue-600 text-white text-xs px-3 py-1.5 rounded inline-block">Download PDF</a></div>`;
+      }
+      return `<div class="bg-slate-900 p-2 rounded border border-slate-700"><p class="font-bold text-slate-300 text-xs mb-2">${title}</p><a href="${src}" target="_blank"><img src="${src}" class="w-full h-36 object-cover rounded hover:opacity-80 transition cursor-pointer border border-slate-800" /></a></div>`;
+    };
+
+    if (modalDocs) {
+      modalDocs.innerHTML = `
+        ${renderDocPreview('CNIC Front', docs.cnicFront)}
+        ${renderDocPreview('CNIC Back', docs.cnicBack)}
+        ${renderDocPreview('NTN Document', docs.ntnDoc)}
+        ${renderDocPreview('Bank Cheque / Proof', docs.bankDoc)}
+      `;
+    }
+
+    if (modalActions) {
+      if (u.status === 'deleted') {
+        modalActions.innerHTML = `<button onclick="restoreUser('${uid}'); closeModal();" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-rotate-left"></i> Restore Account</button>`;
+      } else {
+        modalActions.innerHTML = `
+          <button onclick="updateUserStatus('${uid}', 'approved'); closeModal();" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-check"></i> Approve</button>
+          <button onclick="updateUserStatus('${uid}', 'rejected'); closeModal();" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-xmark"></i> Reject</button>
+          <button onclick="softDeleteUser('${uid}'); closeModal();" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-trash-can"></i> Archive</button>
+        `;
+      }
+    }
+
+    const modal = document.getElementById('userModal');
+    if (modal) modal.classList.remove('hidden');
+
+  } catch (err) {
+    alert("Error fetching user data: " + err.message);
+  }
+}
+
+// Soft Delete User
+async function softDeleteUser(uid) {
+  if (confirm("Move user to Deleted Users Archive?")) {
+    try {
+      await db.collection('users').doc(uid).update({ status: 'deleted' });
+      loadUsersTable();
+    } catch (err) { alert("Error: " + err.message); }
+  }
+}
+
+// Restore User
+async function restoreUser(uid) {
+  if (confirm("Restore user to Active List?")) {
+    try {
+      await db.collection('users').doc(uid).update({ status: 'pending' });
+      loadUsersTable();
+    } catch (err) { alert("Error: " + err.message); }
+  }
+}
+
+// Update User Status (Approve / Reject)
+async function updateUserStatus(uid, newStatus) {
+  try {
+    await db.collection('users').doc(uid).update({ status: newStatus });
+    alert(`Status updated to ${newStatus.toUpperCase()}!`);
+    loadUsersTable();
+  } catch (err) { alert("Error updating status: " + err.message); }
+}
+
+function closeModal() {
+  const modal = document.getElementById('userModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+// Load Customer Parcels (Dashboard)
+async function loadUserDashboard(uid) {
+  const snapshot = await db.collection('parcels').where('userId', '==', uid).get();
+  let total = 0, pending = 0, inTransit = 0, delivered = 0;
+  const tableBody = document.getElementById('userParcelTable');
+  if (!tableBody) return;
+  tableBody.innerHTML = '';
+
+  if (snapshot.empty) {
+    tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No parcels booked yet.</td></tr>`;
+  }
+
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    total++;
+    if (data.status === 'Pending') pending++;
+    else if (data.status === 'In Transit') inTransit++;
+    else if (data.status === 'Delivered') delivered++;
+
+    tableBody.innerHTML += `
+      <tr class="border-b hover:bg-slate-800/50 text-xs">
+        <td class="p-3 font-bold font-mono text-amber-400">${data.trackId || 'N/A'}</td>
+        <td class="p-3">${data.custName || 'N/A'}</td>
+        <td class="p-3">${data.custCity || 'N/A'}</td>
+        <td class="p-3 font-bold">PKR ${data.totalCod || 0}</td>
+        <td class="p-3">
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+            data.status === 'Delivered' ? 'bg-green-900/50 text-green-300' :
+            data.status === 'In Transit' ? 'bg-blue-900/50 text-blue-300' : 'bg-amber-900/50 text-amber-300'
+          }">${data.status || 'Pending'}</span>
+        </td>
+      </tr>
+    `;
+  });
+
+  if (document.getElementById('cardTotal')) document.getElementById('cardTotal').innerText = total;
+  if (document.getElementById('cardPending')) document.getElementById('cardPending').innerText = pending;
+  if (document.getElementById('cardInTransit')) document.getElementById('cardInTransit').innerText = inTransit;
+  if (document.getElementById('cardDelivered')) document.getElementById('cardDelivered').innerText = delivered;
+}
+
+// Load Admin Parcels
+async function loadAdminDashboard() {
+  const snapshot = await db.collection('parcels').get();
+  let totalParcels = 0, pendingParcels = 0;
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    totalParcels++;
+    if (data.status === 'Pending') pendingParcels++;
+  });
+  if (document.getElementById('cardTotalShipments')) document.getElementById('cardTotalShipments').innerText = totalParcels;
+  if (document.getElementById('cardPendingParcels')) document.getElementById('cardPendingParcels').innerText = pendingParcels;
+}
+
+// Profile Editing
 async function openProfileModal() {
   const user = auth.currentUser;
   if (!user) return;
@@ -255,28 +517,4 @@ async function saveProfileUpdate(e) {
     alert("Profile Updated Successfully! ✨");
     closeProfileModal();
     location.reload();
-  } catch (err) {
-    alert("Error updating profile: " + err.message);
-  }
-}
-
-// User Logout
-function handleLogout() {
-  auth.signOut().then(() => { window.location.href = 'login.html'; });
-}
-
-// Auth State Listener
-auth.onAuthStateChanged(async (user) => {
-  const path = window.location.pathname;
-  if (user) {
-    const userDoc = await db.collection('users').doc(user.uid).get();
-    const userData = userDoc.data() || {};
-    if (document.getElementById('userNameDisplay')) {
-      document.getElementById('userNameDisplay').innerText = userData.name || user.email;
-    }
-    if (path.includes('dashboard.html')) loadUserDashboard(user.uid);
-    else if (path.includes('admin.html')) { loadAdminDashboard(); loadUsersTable('active'); }
-  } else {
-    if (path.includes('dashboard.html') || path.includes('admin.html')) window.location.href = 'login.html';
-  }
-});
+  } catch (err) { alert("Error updating profile: " + err.message); }
