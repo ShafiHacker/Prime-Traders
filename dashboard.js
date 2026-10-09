@@ -174,7 +174,7 @@ async function handleRegister(e) {
   }
 }
 
-// Login Handler
+// Login Handler with Role Routing
 async function handleLogin(e) {
   if (e && e.preventDefault) e.preventDefault();
   const emailInput = document.getElementById('loginEmail');
@@ -187,12 +187,12 @@ async function handleLogin(e) {
   try {
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
-    if (email === "admin@primetraders.com") { window.location.href = "admin.html"; return; }
-
+    
     const userDoc = await db.collection("users").doc(user.uid).get();
     if (userDoc.exists) {
       const userData = userDoc.data();
-      if (userData.role === "admin") { window.location.href = "admin.html"; return; }
+      if (userData.role === "admin" || email === "admin@primetraders.com") { window.location.href = "admin.html"; return; }
+      if (userData.role === "rider") { window.location.href = "rider.html"; return; }
       if (userData.status === "pending") { await auth.signOut(); alert("Account Under Verification ⏳"); return; }
       if (userData.status === "rejected" || userData.status === "deleted") { await auth.signOut(); alert("Account Disabled ❌"); return; }
       window.location.href = "dashboard.html";
@@ -208,54 +208,31 @@ async function handleLogin(e) {
 
 // Admin Section Switcher (Active Users vs Deleted Users vs Tracking)
 function showAdminSection(sectionType) {
-  const activeSection = document.getElementById('activeUsersSection') || document.getElementById('userTableBody')?.closest('div.overflow-x-auto')?.parentElement;
-  const deletedSection = document.getElementById('deletedUsersSection') || document.getElementById('deletedUserTableBody')?.closest('div.overflow-x-auto')?.parentElement;
+  const activeSection = document.getElementById('activeUsersSection');
+  const deletedSection = document.getElementById('deletedUsersSection');
   const trackingSection = document.getElementById('trackingSection');
 
   if (sectionType === 'active') {
-    if (activeSection) activeSection.style.display = 'block';
-    if (deletedSection) deletedSection.style.display = 'none';
-    if (trackingSection) trackingSection.style.display = 'none';
+    if (activeSection) activeSection.classList.remove('hidden');
+    if (deletedSection) deletedSection.classList.add('hidden');
+    if (trackingSection) trackingSection.classList.add('hidden');
   } else if (sectionType === 'deleted') {
-    if (activeSection) activeSection.style.display = 'none';
-    if (deletedSection) deletedSection.style.display = 'block';
-    if (trackingSection) trackingSection.style.display = 'none';
+    if (activeSection) activeSection.classList.add('hidden');
+    if (deletedSection) deletedSection.classList.remove('hidden');
+    if (trackingSection) trackingSection.classList.add('hidden');
   } else if (sectionType === 'tracking') {
-    if (activeSection) activeSection.style.display = 'none';
-    if (deletedSection) deletedSection.style.display = 'none';
-    if (trackingSection) trackingSection.style.display = 'block';
+    if (activeSection) activeSection.classList.add('hidden');
+    if (deletedSection) deletedSection.classList.add('hidden');
+    if (trackingSection) trackingSection.classList.remove('hidden');
   }
 }
 
-// Enter Key Login Listener & Card Click Listeners
+// Enter Key Login Listener
 document.addEventListener("DOMContentLoaded", () => {
   const loginPass = document.getElementById("loginPassword");
   const loginEmail = document.getElementById("loginEmail");
   if (loginPass) loginPass.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); handleLogin(e); } });
   if (loginEmail) loginEmail.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); handleLogin(e); } });
-
-  // Top Navigation Cards Click Handlers
-  const cardActive = document.getElementById('cardUsers')?.parentElement;
-  const cardDeleted = document.getElementById('cardDeletedUsers')?.parentElement;
-  const cardTotal = document.getElementById('cardTotalShipments')?.parentElement;
-  const cardPending = document.getElementById('cardPendingParcels')?.parentElement;
-
-  if (cardActive) {
-    cardActive.style.cursor = 'pointer';
-    cardActive.addEventListener('click', () => showAdminSection('active'));
-  }
-  if (cardDeleted) {
-    cardDeleted.style.cursor = 'pointer';
-    cardDeleted.addEventListener('click', () => showAdminSection('deleted'));
-  }
-  if (cardTotal) {
-    cardTotal.style.cursor = 'pointer';
-    cardTotal.addEventListener('click', () => showAdminSection('tracking'));
-  }
-  if (cardPending) {
-    cardPending.style.cursor = 'pointer';
-    cardPending.addEventListener('click', () => showAdminSection('tracking'));
-  }
 });
 
 // Load Active Users and Deleted Users Table in Admin Dashboard
@@ -324,7 +301,9 @@ async function loadUsersTable() {
             </td>
             <td class="p-3">
               <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
-                role === 'admin' ? 'bg-purple-900/50 text-purple-300 border border-purple-500/30' : 'bg-slate-700 text-slate-300'
+                role === 'admin' ? 'bg-purple-900/50 text-purple-300 border border-purple-500/30' :
+                role === 'rider' ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-500/30' :
+                'bg-slate-700 text-slate-300'
               }">${role}</span>
             </td>
             <td class="p-3">
@@ -510,13 +489,179 @@ async function loadUserDashboard(uid) {
 async function loadAdminDashboard() {
   const snapshot = await db.collection('parcels').get();
   let totalParcels = 0, pendingParcels = 0;
+  const adminParcelTable = document.getElementById('adminParcelTable');
+  let parcelRowsHtml = '';
+
   snapshot.forEach((doc) => {
     const data = doc.data();
     totalParcels++;
     if (data.status === 'Pending') pendingParcels++;
+
+    if (adminParcelTable) {
+      parcelRowsHtml += `
+        <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 text-xs">
+          <td class="p-3 font-bold font-mono text-amber-400">${data.trackId || doc.id}</td>
+          <td class="p-3">${data.custName || 'N/A'}</td>
+          <td class="p-3">${data.custCity || 'N/A'}</td>
+          <td class="p-3 font-bold">PKR ${data.totalCod || 0}</td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
+              data.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-300' :
+              (data.status === 'Rejected' || data.status === 'Returned') ? 'bg-rose-900/50 text-rose-300' :
+              'bg-amber-900/50 text-amber-300'
+            }">${data.status || 'Pending'}</span>
+          </td>
+        </tr>
+      `;
+    }
   });
+
   if (document.getElementById('cardTotalShipments')) document.getElementById('cardTotalShipments').innerText = totalParcels;
   if (document.getElementById('cardPendingParcels')) document.getElementById('cardPendingParcels').innerText = pendingParcels;
+  if (adminParcelTable) adminParcelTable.innerHTML = parcelRowsHtml !== '' ? parcelRowsHtml : `<tr><td colspan="5" class="p-4 text-center text-slate-400">No parcels found.</td></tr>`;
+}
+
+// Load Rider Dashboard Data
+async function loadRiderDashboard() {
+  const tableBody = document.getElementById('riderParcelTable');
+  if (!tableBody) return;
+
+  try {
+    const snapshot = await db.collection('parcels').get();
+    let pendingCount = 0, deliveredCount = 0, failedCount = 0, totalCodCollected = 0;
+    let tableHtml = '';
+
+    snapshot.forEach((doc) => {
+      const p = doc.data();
+      const docId = doc.id;
+
+      if (p.status === 'Delivered') {
+        deliveredCount++;
+        totalCodCollected += parseFloat(p.totalCod || 0);
+      } else if (p.status === 'Rejected' || p.status === 'Returned') {
+        failedCount++;
+      } else {
+        pendingCount++;
+      }
+
+      tableHtml += `
+        <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition text-xs">
+          <td class="p-3">
+            <div class="font-bold text-amber-400 font-mono">${p.trackId || docId}</div>
+            <div class="text-[10px] text-slate-400">${p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleString() : 'N/A'}</div>
+          </td>
+          <td class="p-3">
+            <div class="font-bold text-slate-100">${p.custName || 'N/A'}</div>
+            <div class="text-emerald-400 font-semibold"><i class="fa-solid fa-phone"></i> ${p.custPhone || 'N/A'}</div>
+          </td>
+          <td class="p-3">
+            <div class="text-slate-200">${p.custAddress || 'N/A'}</div>
+            <div class="text-[10px] text-amber-400 font-bold">${p.custCity || 'N/A'}</div>
+          </td>
+          <td class="p-3 font-bold text-white">PKR ${p.totalCod || 0}</td>
+          <td class="p-3">
+            <span class="px-2 py-1 rounded-full text-[10px] font-bold ${
+              p.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30' :
+              (p.status === 'Rejected' || p.status === 'Returned') ? 'bg-rose-900/50 text-rose-400 border border-rose-500/30' :
+              'bg-amber-900/50 text-amber-400 border border-amber-500/30'
+            }">${p.status || 'Pending'}</span>
+            ${p.returnReason ? `<div class="text-[10px] text-rose-300 mt-1">Reason: ${p.returnReason}</div>` : ''}
+          </td>
+          <td class="p-3 text-center flex items-center justify-center gap-1.5">
+            ${p.status === 'Delivered' ? 
+              `<span class="text-emerald-400 font-bold text-base"><i class="fa-solid fa-circle-check"></i> Delivered</span>` : 
+              `<button onclick="openRiderActionModal('${docId}', 'delivered')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded font-bold text-xs shadow flex items-center gap-1">
+                <i class="fa-solid fa-check"></i> Mark Delivered
+               </button>
+               <button onclick="openRiderActionModal('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded font-bold text-xs shadow flex items-center gap-1">
+                <i class="fa-solid fa-xmark"></i> Reject / Return
+               </button>`
+            }
+          </td>
+        </tr>
+      `;
+    });
+
+    tableBody.innerHTML = tableHtml !== '' ? tableHtml : `<tr><td colspan="6" class="p-4 text-center text-slate-400">No parcels assigned yet.</td></tr>`;
+
+    if (document.getElementById('riderPendingCount')) document.getElementById('riderPendingCount').innerText = pendingCount;
+    if (document.getElementById('riderDeliveredCount')) document.getElementById('riderDeliveredCount').innerText = deliveredCount;
+    if (document.getElementById('riderFailedCount')) document.getElementById('riderFailedCount').innerText = failedCount;
+    if (document.getElementById('riderTotalCod')) document.getElementById('riderTotalCod').innerText = `PKR ${totalCodCollected}`;
+
+  } catch (err) {
+    console.error("Error loading rider parcels:", err);
+  }
+}
+
+// Modal Toggle Functions for Rider
+function openRiderActionModal(docId, actionType) {
+  document.getElementById('selectedParcelDocId').value = docId;
+  document.getElementById('selectedActionType').value = actionType;
+
+  const title = document.getElementById('modalRiderTitle');
+  const delSec = document.getElementById('deliveredSection');
+  const rejSec = document.getElementById('rejectedSection');
+  const submitBtn = document.getElementById('btnSubmitRiderStatus');
+
+  if (actionType === 'delivered') {
+    title.innerText = "Confirm Delivery & Proof Attachment";
+    title.className = "text-base font-bold text-emerald-400";
+    delSec.classList.remove('hidden');
+    rejSec.classList.add('hidden');
+    submitBtn.className = "px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs shadow";
+  } else {
+    title.innerText = "Reject Parcel / Select Reason";
+    title.className = "text-base font-bold text-rose-400";
+    delSec.classList.add('hidden');
+    rejSec.classList.remove('hidden');
+    submitBtn.className = "px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs shadow";
+  }
+
+  document.getElementById('riderActionModal').classList.remove('hidden');
+}
+
+function closeRiderModal() {
+  document.getElementById('riderActionModal').classList.add('hidden');
+}
+
+// Submit Rider Action (Delivered with proof OR Rejected with reason)
+async function submitRiderStatusUpdate() {
+  const docId = document.getElementById('selectedParcelDocId').value;
+  const actionType = document.getElementById('selectedActionType').value;
+  const proofFile = document.getElementById('riderProofFile').files[0];
+  const reason = document.getElementById('riderReturnReason').value;
+  const comment = document.getElementById('riderReturnComment').value.trim();
+
+  try {
+    let updatePayload = {};
+
+    if (actionType === 'delivered') {
+      let proofBase64 = "";
+      if (proofFile) proofBase64 = await fileToBase64(proofFile, 600, 0.6);
+      
+      updatePayload = {
+        status: 'Delivered',
+        proofImage: proofBase64,
+        deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+    } else {
+      updatePayload = {
+        status: 'Rejected',
+        returnReason: reason,
+        riderComments: comment,
+        rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+    }
+
+    await db.collection('parcels').doc(docId).update(updatePayload);
+    alert(`Parcel status updated to ${updatePayload.status.toUpperCase()}! ✅`);
+    closeRiderModal();
+    loadRiderDashboard();
+
+  } catch (err) {
+    alert("Error updating status: " + err.message);
+  }
 }
 
 // Profile Editing
@@ -569,7 +714,7 @@ function handleLogout() {
   auth.signOut().then(() => { window.location.href = 'login.html'; });
 }
 
-// Auth Listener
+// Auth Listener & Page Routing
 auth.onAuthStateChanged(async (user) => {
   const path = window.location.pathname;
   if (user) {
@@ -580,7 +725,8 @@ auth.onAuthStateChanged(async (user) => {
     }
     if (path.includes('dashboard.html')) loadUserDashboard(user.uid);
     else if (path.includes('admin.html')) { loadAdminDashboard(); loadUsersTable(); }
+    else if (path.includes('rider.html')) { loadRiderDashboard(); }
   } else {
-    if (path.includes('dashboard.html') || path.includes('admin.html')) window.location.href = 'login.html';
+    if (path.includes('dashboard.html') || path.includes('admin.html') || path.includes('rider.html')) window.location.href = 'login.html';
   }
 });
