@@ -206,12 +206,56 @@ async function handleLogin(e) {
   }
 }
 
-// Enter Key Login Listener
+// Admin Section Switcher (Active Users vs Deleted Users vs Tracking)
+function showAdminSection(sectionType) {
+  const activeSection = document.getElementById('activeUsersSection') || document.getElementById('userTableBody')?.closest('div.overflow-x-auto')?.parentElement;
+  const deletedSection = document.getElementById('deletedUsersSection') || document.getElementById('deletedUserTableBody')?.closest('div.overflow-x-auto')?.parentElement;
+  const trackingSection = document.getElementById('trackingSection');
+
+  if (sectionType === 'active') {
+    if (activeSection) activeSection.style.display = 'block';
+    if (deletedSection) deletedSection.style.display = 'none';
+    if (trackingSection) trackingSection.style.display = 'none';
+  } else if (sectionType === 'deleted') {
+    if (activeSection) activeSection.style.display = 'none';
+    if (deletedSection) deletedSection.style.display = 'block';
+    if (trackingSection) trackingSection.style.display = 'none';
+  } else if (sectionType === 'tracking') {
+    if (activeSection) activeSection.style.display = 'none';
+    if (deletedSection) deletedSection.style.display = 'none';
+    if (trackingSection) trackingSection.style.display = 'block';
+  }
+}
+
+// Enter Key Login Listener & Card Click Listeners
 document.addEventListener("DOMContentLoaded", () => {
   const loginPass = document.getElementById("loginPassword");
   const loginEmail = document.getElementById("loginEmail");
   if (loginPass) loginPass.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); handleLogin(e); } });
   if (loginEmail) loginEmail.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); handleLogin(e); } });
+
+  // Top Navigation Cards Click Handlers
+  const cardActive = document.getElementById('cardUsers')?.parentElement;
+  const cardDeleted = document.getElementById('cardDeletedUsers')?.parentElement;
+  const cardTotal = document.getElementById('cardTotalShipments')?.parentElement;
+  const cardPending = document.getElementById('cardPendingParcels')?.parentElement;
+
+  if (cardActive) {
+    cardActive.style.cursor = 'pointer';
+    cardActive.addEventListener('click', () => showAdminSection('active'));
+  }
+  if (cardDeleted) {
+    cardDeleted.style.cursor = 'pointer';
+    cardDeleted.addEventListener('click', () => showAdminSection('deleted'));
+  }
+  if (cardTotal) {
+    cardTotal.style.cursor = 'pointer';
+    cardTotal.addEventListener('click', () => showAdminSection('tracking'));
+  }
+  if (cardPending) {
+    cardPending.style.cursor = 'pointer';
+    cardPending.addEventListener('click', () => showAdminSection('tracking'));
+  }
 });
 
 // Load Active Users and Deleted Users Table in Admin Dashboard
