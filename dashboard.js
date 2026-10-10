@@ -236,7 +236,7 @@ async function handleRegister(e) {
   }
 }
 
-// Login Handler with Role Routing
+// Login Handler with Role & Email Fallback Routing
 async function handleLogin(e) {
   if (e && e.preventDefault) e.preventDefault();
   const emailInput = document.getElementById('loginEmail');
@@ -244,16 +244,20 @@ async function handleLogin(e) {
   const authMsg = document.getElementById('authMsg');
 
   if (!emailInput || !passwordInput) return;
-  const email = emailInput.value.trim(), password = passwordInput.value;
+  const email = emailInput.value.trim().toLowerCase(), password = passwordInput.value;
 
   try {
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
-    
+
+    // Direct Check by Email
+    if (email === "admin@primetraders.com") { window.location.href = "admin.html"; return; }
+    if (email.includes("rider")) { window.location.href = "rider.html"; return; }
+
     const userDoc = await db.collection("users").doc(user.uid).get();
     if (userDoc.exists) {
       const userData = userDoc.data();
-      if (userData.role === "admin" || email === "admin@primetraders.com") { window.location.href = "admin.html"; return; }
+      if (userData.role === "admin") { window.location.href = "admin.html"; return; }
       if (userData.role === "rider") { window.location.href = "rider.html"; return; }
       if (userData.status === "pending") { await auth.signOut(); alert("Account Under Verification ⏳"); return; }
       if (userData.status === "rejected" || userData.status === "deleted") { await auth.signOut(); alert("Account Disabled ❌"); return; }
