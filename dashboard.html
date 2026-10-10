@@ -20,12 +20,15 @@
                 </div>
             </div>
 
-            <!-- Profile & Logout Buttons -->
-            <div class="flex items-center gap-3">
+            <!-- Action Buttons, Profile & Logout -->
+            <div class="flex items-center gap-2 md:gap-3">
+                <button onclick="openUserCodModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-3 py-1.5 rounded-lg text-xs font-black transition flex items-center gap-1 shadow-lg">
+                    <i class="fa-solid fa-plus-circle"></i> Book COD Parcels
+                </button>
+
                 <span id="userNameDisplay" class="text-xs font-bold text-slate-300 hidden md:inline-block">Loading...</span>
                 
-                <!-- Edit Profile Button -->
-                <button onclick="openProfileModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                <button onclick="openProfileModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
                     <i class="fa-solid fa-user-pen"></i> Edit Profile
                 </button>
 
@@ -45,7 +48,7 @@
                 <h3 id="cardTotal" class="text-2xl font-bold text-white mt-1">0</h3>
             </div>
             <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow">
-                <p class="text-xs text-amber-400">Pending</p>
+                <p class="text-xs text-amber-400">Pending Approval</p>
                 <h3 id="cardPending" class="text-2xl font-bold text-amber-400 mt-1">0</h3>
             </div>
             <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow">
@@ -61,26 +64,91 @@
         <!-- Parcel Booking Table -->
         <div class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
             <div class="p-4 border-b border-slate-700 font-bold text-sm text-white flex justify-between items-center">
-                <span>Recent Shipments</span>
+                <span>Recent Booked Shipments</span>
+                <button onclick="openUserCodModal()" class="text-amber-400 hover:underline text-xs flex items-center gap-1 font-bold">
+                    <i class="fa-solid fa-boxes-packing"></i> + Create Bulk Booking
+                </button>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">
                     <thead class="bg-slate-900 text-slate-400 border-b border-slate-700">
                         <tr>
                             <th class="p-3">Track ID</th>
-                            <th class="p-3">Customer</th>
-                            <th class="p-3">City</th>
+                            <th class="p-3">Consignee / Customer</th>
+                            <th class="p-3">Destination City</th>
                             <th class="p-3">COD Amount</th>
                             <th class="p-3">Status</th>
+                            <th class="p-3 text-center">Print Label</th>
                         </tr>
                     </thead>
                     <tbody id="userParcelTable">
-                        <tr><td colspan="5" class="p-4 text-center text-slate-400">Loading parcels...</td></tr>
+                        <tr><td colspan="6" class="p-4 text-center text-slate-400">Loading parcels...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </main>
+
+    <!-- Multi-Parcel COD Booking Modal (Leopards Style Bulk Mode) -->
+    <div id="userCodModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-700 p-6 rounded-2xl max-w-3xl w-full space-y-4 max-h-[90vh] overflow-y-auto text-slate-100 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="text-base font-bold text-amber-400 flex items-center gap-2">
+                    <i class="fa-solid fa-boxes-packing"></i> Book COD Parcels (Bulk Mode - Up to 10)
+                </h3>
+                <button onclick="closeUserCodModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <!-- Freezed Shipper / Origin Info Section -->
+            <div class="bg-slate-800 p-3 rounded-xl border border-slate-700 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div>
+                    <label class="text-slate-400 block text-[10px] font-bold">Shipper Store / Title</label>
+                    <input type="text" id="freezeShipperName" readonly class="w-full bg-slate-950 text-amber-400 font-bold p-2 rounded border border-slate-800 outline-none">
+                </div>
+                <div>
+                    <label class="text-slate-400 block text-[10px] font-bold">Shipper Phone</label>
+                    <input type="text" id="freezeShipperPhone" readonly class="w-full bg-slate-950 text-slate-300 p-2 rounded border border-slate-800 outline-none">
+                </div>
+                <div>
+                    <label class="text-slate-400 block text-[10px] font-bold">Origin / Pickup Address</label>
+                    <input type="text" id="freezeShipperAddress" readonly class="w-full bg-slate-950 text-slate-300 p-2 rounded border border-slate-800 outline-none">
+                </div>
+            </div>
+
+            <!-- Parcels Entry Dynamic List -->
+            <form onsubmit="handleBulkParcelSubmit(event)" class="space-y-4">
+                <div id="parcelEntriesContainer" class="space-y-4">
+                    <!-- Parcel Item 1 (Default) -->
+                    <div class="parcel-item bg-slate-800/50 p-4 rounded-xl border border-slate-700 space-y-3 relative text-xs">
+                        <span class="font-bold text-amber-400 text-xs">Parcel #1 Details</span>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <input type="text" placeholder="Consignee Full Name *" required class="cust-name p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white outline-none">
+                            <input type="text" placeholder="Consignee Phone *" required class="cust-phone p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white outline-none">
+                            <input type="text" placeholder="Destination City *" required class="cust-city p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white outline-none">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <input type="number" placeholder="COD Amount (PKR) *" required class="cust-cod p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white outline-none">
+                            <input type="text" placeholder="Complete Delivery Address *" required class="cust-address md:col-span-2 p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-2">
+                    <button type="button" onclick="addMoreParcelRow()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-1 shadow">
+                        <i class="fa-solid fa-plus"></i> + Add Another Parcel
+                    </button>
+                    <span id="parcelCounterBadge" class="text-xs text-amber-400 font-bold">1 / 10 Parcels Added</span>
+                </div>
+
+                <div class="flex gap-2 justify-end pt-3 border-t border-slate-700">
+                    <button type="button" onclick="closeUserCodModal()" class="px-4 py-2 bg-slate-700 text-white rounded-lg font-bold text-xs">Cancel</button>
+                    <button type="submit" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-lg text-xs shadow-lg uppercase">
+                        Submit & Book All Parcels
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Profile Edit Modal -->
     <div id="profileModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
@@ -126,6 +194,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="dashboard.js?v=5.0"></script>
+    <script src="dashboard.js?v=9.0"></script>
 </body>
 </html>
