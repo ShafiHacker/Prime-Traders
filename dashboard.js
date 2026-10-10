@@ -227,6 +227,51 @@ function showAdminSection(sectionType) {
   }
 }
 
+// Admin Add COD Modal Controls
+function openAddCodModal() {
+  const modal = document.getElementById('addCodModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeAddCodModal() {
+  const modal = document.getElementById('addCodModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+// Handle Admin Parcel Creation
+async function handleAdminCreateParcel(e) {
+  if (e && e.preventDefault) e.preventDefault();
+
+  const cName = document.getElementById('adminCustName').value.trim();
+  const cPhone = document.getElementById('adminCustPhone').value.trim();
+  const cCity = document.getElementById('adminCustCity').value.trim();
+  const cCod = document.getElementById('adminTotalCod').value.trim();
+  const cAddress = document.getElementById('adminCustAddress').value.trim();
+  const itemDetail = document.getElementById('adminItemDetail').value.trim();
+
+  const trackId = "PT-" + Math.floor(100000 + Math.random() * 900000);
+
+  try {
+    await db.collection('parcels').add({
+      trackId: trackId,
+      custName: cName,
+      custPhone: cPhone,
+      custCity: cCity,
+      custAddress: cAddress,
+      totalCod: parseFloat(cCod),
+      itemDetail: itemDetail,
+      status: 'Pending',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    alert(`COD Parcel Booked Successfully! 🎉\nTracking ID: ${trackId}`);
+    closeAddCodModal();
+    loadAdminDashboard();
+  } catch (err) {
+    alert("Error booking parcel: " + err.message);
+  }
+}
+
 // Enter Key Login Listener
 document.addEventListener("DOMContentLoaded", () => {
   const loginPass = document.getElementById("loginPassword");
@@ -494,22 +539,35 @@ async function loadAdminDashboard() {
 
   snapshot.forEach((doc) => {
     const data = doc.data();
+    const docId = doc.id;
     totalParcels++;
     if (data.status === 'Pending') pendingParcels++;
 
     if (adminParcelTable) {
       parcelRowsHtml += `
         <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 text-xs">
-          <td class="p-3 font-bold font-mono text-amber-400">${data.trackId || doc.id}</td>
-          <td class="p-3">${data.custName || 'N/A'}</td>
-          <td class="p-3">${data.custCity || 'N/A'}</td>
-          <td class="p-3 font-bold">PKR ${data.totalCod || 0}</td>
+          <td class="p-3 font-bold font-mono text-amber-400">${data.trackId || docId}</td>
+          <td class="p-3">
+            <div class="font-bold text-slate-100">${data.custName || 'N/A'}</div>
+            <div class="text-[10px] text-emerald-400">${data.custPhone || 'N/A'}</div>
+          </td>
+          <td class="p-3">
+            <div>${data.custAddress || 'N/A'}</div>
+            <div class="text-[10px] text-amber-400 font-bold">${data.custCity || 'N/A'}</div>
+          </td>
+          <td class="p-3 font-bold text-white">PKR ${data.totalCod || 0}</td>
           <td class="p-3">
             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
-              data.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-300' :
-              (data.status === 'Rejected' || data.status === 'Returned') ? 'bg-rose-900/50 text-rose-300' :
-              'bg-amber-900/50 text-amber-300'
+              data.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-500/30' :
+              (data.status === 'Rejected' || data.status === 'Returned') ? 'bg-rose-900/50 text-rose-300 border border-rose-500/30' :
+              'bg-amber-900/50 text-amber-300 border border-amber-500/30'
             }">${data.status || 'Pending'}</span>
+            ${data.returnReason ? `<div class="text-[10px] text-rose-300 mt-0.5">Reason: ${data.returnReason}</div>` : ''}
+          </td>
+          <td class="p-3 text-center">
+            <button onclick="deleteParcel('${docId}')" class="bg-rose-600/30 hover:bg-rose-600 text-rose-300 hover:text-white px-2 py-1 rounded font-bold text-[10px] transition">
+              <i class="fa-solid fa-trash"></i> Delete
+            </button>
           </td>
         </tr>
       `;
@@ -518,7 +576,19 @@ async function loadAdminDashboard() {
 
   if (document.getElementById('cardTotalShipments')) document.getElementById('cardTotalShipments').innerText = totalParcels;
   if (document.getElementById('cardPendingParcels')) document.getElementById('cardPendingParcels').innerText = pendingParcels;
-  if (adminParcelTable) adminParcelTable.innerHTML = parcelRowsHtml !== '' ? parcelRowsHtml : `<tr><td colspan="5" class="p-4 text-center text-slate-400">No parcels found.</td></tr>`;
+  if (adminParcelTable) adminParcelTable.innerHTML = parcelRowsHtml !== '' ? parcelRowsHtml : `<tr><td colspan="6" class="p-4 text-center text-slate-400">No parcels found.</td></tr>`;
+}
+
+// Delete Parcel Function for Admin
+async function deleteParcel(docId) {
+  if (confirm("Are you sure you want to delete this parcel record?")) {
+    try {
+      await db.collection('parcels').doc(docId).delete();
+      loadAdminDashboard();
+    } catch (err) {
+      alert("Error deleting parcel: " + err.message);
+    }
+  }
 }
 
 // Load Rider Dashboard Data
