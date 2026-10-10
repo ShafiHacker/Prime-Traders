@@ -18,6 +18,74 @@ const db = firebase.firestore();
 
 let currentParcelCount = 1;
 
+// Custom Tracking IDs Pool Controls (Admin)
+function openCustomTrackModal() {
+  document.getElementById('customTrackModal').classList.remove('hidden');
+  checkAvailablePoolCount();
+}
+
+function closeCustomTrackModal() {
+  document.getElementById('customTrackModal').classList.add('hidden');
+}
+
+async function checkAvailablePoolCount() {
+  try {
+    const snap = await db.collection('available_track_ids').where('status', '==', 'unused').get();
+    if (document.getElementById('poolAvailableCount')) {
+      document.getElementById('poolAvailableCount').innerText = `Unused Available: ${snap.size} IDs`;
+    }
+  } catch (e) { console.error(e); }
+}
+
+async function uploadCustomTrackingIDs() {
+  const inputArea = document.getElementById('trackingIdListInput');
+  if (!inputArea || !inputArea.value.trim()) {
+    alert("Please enter Tracking IDs!");
+    return;
+  }
+
+  const idsArray = inputArea.value.split(/[\n,]+/).map(id => id.trim()).filter(id => id.length > 0);
+  const batch = db.batch();
+
+  idsArray.forEach((trackId) => {
+    const ref = db.collection('available_track_ids').doc(trackId);
+    batch.set(ref, {
+      trackId: trackId,
+      status: "unused",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  });
+
+  try {
+    await batch.commit();
+    alert(`Total ${idsArray.length} Tracking IDs added to pool! 🎉`);
+    inputArea.value = '';
+    checkAvailablePoolCount();
+  } catch (err) {
+    alert("Error uploading tracking IDs: " + err.message);
+  }
+}
+
+// Fetch Next Custom Tracking ID from Pool
+async function getNextCustomTrackId() {
+  try {
+    const snapshot = await db.collection('available_track_ids')
+      .where('status', '==', 'unused')
+      .limit(1)
+      .get();
+
+    if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      await db.collection('available_track_ids').doc(doc.id).update({ status: 'used' });
+      return doc.data().trackId;
+    } else {
+      return "PT" + Math.floor(10000000 + Math.random() * 90000000);
+    }
+  } catch (e) {
+    return "PT" + Math.floor(10000000 + Math.random() * 90000000);
+  }
+}
+
 // Tab Switcher for Login / Register
 function switchTab(type) {
   const lForm = document.getElementById('loginForm');
@@ -105,15 +173,6 @@ const fileToBase64 = (file, maxWidth = 800, quality = 0.6) => new Promise((resol
   reader.onerror = error => reject(error);
 });
 
-// EmailJS Notification
-function sendEmailNotification(messageText) {
-  const serviceID = "primetraders.express";
-  const templateID = "7te01mn";
-  if (typeof emailjs !== "undefined") {
-    emailjs.send(serviceID, templateID, { message_text: messageText });
-  }
-}
-
 // User Registration Handler
 async function handleRegister(e) {
   if (e && e.preventDefault) e.preventDefault();
@@ -163,7 +222,6 @@ async function handleRegister(e) {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    sendEmailNotification(`🔔 Prime Traders - New ${accountType.toUpperCase()} Account Registration\nName: ${name}\nEmail: ${email}\nPhone: ${phone}`);
     await auth.signOut();
     alert("Account Under Verification ⏳\n\nYour account has been submitted successfully for admin review.");
     window.location.href = "login.html";
@@ -275,30 +333,27 @@ function removeParcelRow(btn) {
   }
 }
 
-// Submit Bulk Parcels
+// Submit Bulk Parcels (Auto Sequential Custom Tracking ID)
 async function handleBulkParcelSubmit(e) {
   if (e && e.preventDefault) e.preventDefault();
   const user = auth.currentUser;
   if (!user) return;
 
   const items = document.querySelectorAll('.parcel-item');
-  const batch = db.batch();
-
   const sName = document.getElementById('freezeShipperName') ? document.getElementById('freezeShipperName').value : 'Prime Traders Merchant';
   const sPhone = document.getElementById('freezeShipperPhone') ? document.getElementById('freezeShipperPhone').value : 'N/A';
   const sAddress = document.getElementById('freezeShipperAddress') ? document.getElementById('freezeShipperAddress').value : 'Pakistan';
 
-  items.forEach((item) => {
+  for (let item of items) {
     const cName = item.querySelector('.cust-name').value.trim();
     const cPhone = item.querySelector('.cust-phone').value.trim();
     const cCity = item.querySelector('.cust-city').value.trim();
     const cCod = item.querySelector('.cust-cod').value.trim();
     const cAddress = item.querySelector('.cust-address').value.trim();
 
-    const trackId = "KI" + Math.floor(1000000000 + Math.random() * 9000000000);
-    const ref = db.collection('parcels').doc();
+    const trackId = await getNextCustomTrackId();
 
-    batch.set(ref, {
+    await db.collection('parcels').add({
       trackId: trackId,
       userId: user.uid,
       shipperName: sName,
@@ -313,16 +368,11 @@ async function handleBulkParcelSubmit(e) {
       approvedByAdmin: false,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-  });
-
-  try {
-    await batch.commit();
-    alert(`Successfully booked ${items.length} parcel(s)! 🎉\nAll parcels submitted for Admin approval.`);
-    closeUserCodModal();
-    loadUserDashboard(user.uid);
-  } catch (err) {
-    alert("Error booking parcels: " + err.message);
   }
+
+  alert(`Successfully booked ${items.length} parcel(s) with sequential tracking IDs! 🎉`);
+  closeUserCodModal();
+  loadUserDashboard(user.uid);
 }
 
 // Print Airway Bill Slip (Leopards Barcode Layout)
@@ -374,7 +424,7 @@ async function handleAdminCreateParcel(e) {
   const cAddress = document.getElementById('adminCustAddress').value.trim();
   const itemDetail = document.getElementById('adminItemDetail') ? document.getElementById('adminItemDetail').value.trim() : '';
 
-  const trackId = "KI" + Math.floor(1000000000 + Math.random() * 9000000000);
+  const trackId = await getNextCustomTrackId();
 
   try {
     await db.collection('parcels').add({
@@ -398,27 +448,15 @@ async function handleAdminCreateParcel(e) {
   }
 }
 
-// Enter Key Login Listener
-document.addEventListener("DOMContentLoaded", () => {
-  const loginPass = document.getElementById("loginPassword");
-  const loginEmail = document.getElementById("loginEmail");
-  if (loginPass) loginPass.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); handleLogin(e); } });
-  if (loginEmail) loginEmail.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); handleLogin(e); } });
-});
-
-// Load Active Users and Deleted Users Table in Admin Dashboard
+// Load Active Users Table
 async function loadUsersTable() {
   const activeTableBody = document.getElementById('userTableBody');
   const deletedTableBody = document.getElementById('deletedUserTableBody');
-  const cardActiveCount = document.getElementById('cardUsers');
-  const cardDeletedCount = document.getElementById('cardDeletedUsers');
 
   try {
     const snapshot = await db.collection('users').get();
     let activeUsersHtml = '';
     let deletedUsersHtml = '';
-    let activeCount = 0;
-    let deletedCount = 0;
 
     snapshot.forEach((doc) => {
       const u = doc.data();
@@ -428,467 +466,118 @@ async function loadUsersTable() {
       const type = u.accountType || 'business';
 
       if (status === 'deleted') {
-        deletedCount++;
         deletedUsersHtml += `
-          <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition text-xs">
-            <td class="p-3">
-              <div class="font-bold text-slate-100">${u.name || 'N/A'}</div>
-              <div class="text-[11px] text-amber-400">${u.businessName || 'N/A'}</div>
-              <div class="text-[10px] text-slate-400">${u.phone || 'No Phone'}</div>
-            </td>
-            <td class="p-3 text-slate-300">${u.email || 'N/A'}</td>
-            <td class="p-3">
-              <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
-                type === 'business' ? 'bg-amber-900/50 text-amber-300 border border-amber-500/30' : 'bg-blue-900/50 text-blue-300 border border-blue-500/30'
-              }">${type}</span>
-            </td>
-            <td class="p-3">
-              <span class="px-2 py-1 rounded-full text-[10px] font-bold bg-rose-900/50 text-rose-300 border border-rose-500/30">DELETED / REJECTED</span>
-            </td>
-            <td class="p-3 text-center flex items-center justify-center gap-1">
-              <button onclick="viewUserData('${uid}')" class="bg-amber-500 hover:bg-amber-600 text-slate-900 px-2.5 py-1.5 rounded font-bold text-xs shadow transition flex items-center gap-1">
-                <i class="fa-solid fa-eye"></i> View
-              </button>
-              <button onclick="restoreUser('${uid}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded font-bold text-xs shadow transition flex items-center gap-1">
-                <i class="fa-solid fa-rotate-left"></i> Restore
-              </button>
+          <tr class="border-b border-slate-700/50 text-xs">
+            <td class="p-3"><div class="font-bold text-slate-100">${u.name || 'N/A'}</div></td>
+            <td class="p-3">${u.email || 'N/A'}</td>
+            <td class="p-3">${type}</td>
+            <td class="p-3"><span class="text-rose-400 font-bold">DELETED</span></td>
+            <td class="p-3 text-center">
+              <button onclick="restoreUser('${uid}')" class="bg-emerald-600 text-white px-2 py-1 rounded text-xs font-bold">Restore</button>
             </td>
           </tr>
         `;
       } else {
-        activeCount++;
         activeUsersHtml += `
-          <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition text-xs">
-            <td class="p-3">
-              <div class="font-bold text-slate-100">${u.name || 'N/A'}</div>
-              <div class="text-[11px] text-amber-400">${u.businessName || 'N/A'}</div>
-              <div class="text-[10px] text-slate-400">${u.phone || 'No Phone'}</div>
-            </td>
-            <td class="p-3 text-slate-300">${u.email || 'N/A'}</td>
-            <td class="p-3">
-              <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
-                type === 'business' ? 'bg-amber-900/50 text-amber-300 border border-amber-500/30' : 'bg-blue-900/50 text-blue-300 border border-blue-500/30'
-              }">${type}</span>
-            </td>
-            <td class="p-3">
-              <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
-                role === 'admin' ? 'bg-purple-900/50 text-purple-300 border border-purple-500/30' :
-                role === 'rider' ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-500/30' :
-                'bg-slate-700 text-slate-300'
-              }">${role}</span>
-            </td>
-            <td class="p-3">
-              <span class="px-2 py-1 rounded-full text-[10px] font-bold ${
-                status === 'approved' ? 'bg-emerald-900/40 text-emerald-400 border border-emerald-500/30' :
-                status === 'pending' ? 'bg-amber-900/40 text-amber-400 border border-amber-500/30' :
-                'bg-rose-900/40 text-rose-400 border border-rose-500/30'
-              }">${status.toUpperCase()}</span>
-            </td>
-            <td class="p-3 text-center flex items-center justify-center gap-1.5">
-              <button onclick="viewUserData('${uid}')" class="bg-amber-500 hover:bg-amber-600 text-slate-900 px-2 py-1 rounded font-bold text-[11px] shadow transition flex items-center gap-1">
-                <i class="fa-solid fa-eye"></i> View
-              </button>
-              <button onclick="updateUserStatus('${uid}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded font-bold text-[11px] shadow transition flex items-center gap-1">
-                <i class="fa-solid fa-check"></i> Approve
-              </button>
-              <button onclick="updateUserStatus('${uid}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded font-bold text-[11px] shadow transition flex items-center gap-1">
-                <i class="fa-solid fa-xmark"></i> Reject
-              </button>
-              <button onclick="softDeleteUser('${uid}')" title="Delete & Move to Archive" class="bg-slate-700 hover:bg-rose-600 text-slate-300 hover:text-white px-2 py-1 rounded font-bold text-[11px] shadow transition flex items-center gap-1">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
+          <tr class="border-b border-slate-700/50 text-xs">
+            <td class="p-3"><div class="font-bold text-slate-100">${u.name || 'N/A'}</div></td>
+            <td class="p-3">${u.email || 'N/A'}</td>
+            <td class="p-3">${type}</td>
+            <td class="p-3">${role}</td>
+            <td class="p-3"><span class="text-emerald-400 font-bold">${status.toUpperCase()}</span></td>
+            <td class="p-3 text-center flex justify-center gap-1">
+              <button onclick="updateUserStatus('${uid}', 'approved')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">Approve</button>
+              <button onclick="updateUserStatus('${uid}', 'rejected')" class="bg-rose-600 text-white px-2 py-1 rounded text-[10px] font-bold">Reject</button>
             </td>
           </tr>
         `;
       }
     });
 
-    if (cardActiveCount) cardActiveCount.innerText = activeCount;
-    if (cardDeletedCount) cardDeletedCount.innerText = deletedCount;
-
-    if (activeTableBody) {
-      activeTableBody.innerHTML = activeUsersHtml !== '' ? activeUsersHtml : `<tr><td colspan="6" class="p-4 text-center text-slate-400">No active users found.</td></tr>`;
-    }
-
-    if (deletedTableBody) {
-      deletedTableBody.innerHTML = deletedUsersHtml !== '' ? deletedUsersHtml : `<tr><td colspan="5" class="p-4 text-center text-slate-400">No deleted users in archive.</td></tr>`;
-    }
-
-  } catch (err) {
-    console.error("Error loading users:", err);
-  }
+    if (activeTableBody) activeTableBody.innerHTML = activeUsersHtml !== '' ? activeUsersHtml : `<tr><td colspan="6" class="p-4 text-center">No active users.</td></tr>`;
+    if (deletedTableBody) deletedTableBody.innerHTML = deletedUsersHtml !== '' ? deletedUsersHtml : `<tr><td colspan="5" class="p-4 text-center">No archived users.</td></tr>`;
+  } catch (err) { console.error(err); }
 }
 
-// View Specific User Details Modal
-async function viewUserData(uid) {
-  try {
-    const userDoc = await db.collection('users').doc(uid).get();
-    if (!userDoc.exists) { alert("User record not found!"); return; }
-    const u = userDoc.data();
-    const docs = u.docs || {};
-
-    const modalDetails = document.getElementById('modalUserDetails');
-    const modalDocs = document.getElementById('modalUserDocs');
-    const modalActions = document.getElementById('modalActions');
-
-    if (modalDetails) {
-      modalDetails.innerHTML = `
-        <div><strong class="text-slate-400">Full Name:</strong> <span class="text-white font-bold">${u.name || 'N/A'}</span></div>
-        <div><strong class="text-slate-400">Account Type:</strong> <span class="text-amber-400 font-bold uppercase">${u.accountType || 'business'}</span></div>
-        <div><strong class="text-slate-400">Business Name:</strong> <span class="text-white">${u.businessName || 'N/A'}</span></div>
-        <div><strong class="text-slate-400">Email:</strong> <span class="text-white">${u.email || 'N/A'}</span></div>
-        <div><strong class="text-slate-400">Mobile / WhatsApp:</strong> <span class="text-white">${u.phone || 'N/A'}</span></div>
-        <div><strong class="text-slate-400">CNIC No:</strong> <span class="text-white">${u.cnic || 'N/A'}</span></div>
-        <div><strong class="text-slate-400">NTN No:</strong> <span class="text-white">${u.ntn || 'N/A'}</span></div>
-        <div><strong class="text-slate-400">Bank Details:</strong> <span class="text-white">${u.bankDetails || 'N/A'}</span></div>
-      `;
-    }
-
-    const renderDocPreview = (title, src) => {
-      if (!src) return `<div class="bg-slate-900 p-3 rounded border border-slate-700 text-slate-500 text-center">No ${title} Provided</div>`;
-      if (src.startsWith('data:application/pdf')) {
-        return `<div class="bg-slate-900 p-3 rounded border border-slate-700"><p class="font-bold text-slate-300 text-xs mb-2">${title}</p><a href="${src}" download="${title}.pdf" class="bg-blue-600 text-white text-xs px-3 py-1.5 rounded inline-block">Download PDF</a></div>`;
-      }
-      return `<div class="bg-slate-900 p-2 rounded border border-slate-700"><p class="font-bold text-slate-300 text-xs mb-2">${title}</p><a href="${src}" target="_blank"><img src="${src}" class="w-full h-36 object-cover rounded hover:opacity-80 transition cursor-pointer border border-slate-800" /></a></div>`;
-    };
-
-    if (modalDocs) {
-      modalDocs.innerHTML = `
-        ${renderDocPreview('CNIC Front', docs.cnicFront)}
-        ${renderDocPreview('CNIC Back', docs.cnicBack)}
-        ${renderDocPreview('NTN Document', docs.ntnDoc)}
-        ${renderDocPreview('Bank Cheque / Proof', docs.bankDoc)}
-      `;
-    }
-
-    if (modalActions) {
-      if (u.status === 'deleted') {
-        modalActions.innerHTML = `<button onclick="restoreUser('${uid}'); closeModal();" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-rotate-left"></i> Restore Account</button>`;
-      } else {
-        modalActions.innerHTML = `
-          <button onclick="updateUserStatus('${uid}', 'approved'); closeModal();" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-check"></i> Approve</button>
-          <button onclick="updateUserStatus('${uid}', 'rejected'); closeModal();" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-xmark"></i> Reject</button>
-          <button onclick="softDeleteUser('${uid}'); closeModal();" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg font-bold text-xs flex items-center gap-1"><i class="fa-solid fa-trash-can"></i> Archive</button>
-        `;
-      }
-    }
-
-    const modal = document.getElementById('userModal');
-    if (modal) modal.classList.remove('hidden');
-
-  } catch (err) {
-    alert("Error fetching user data: " + err.message);
-  }
-}
-
-// Soft Delete User
-async function softDeleteUser(uid) {
-  if (confirm("Move user to Deleted Users Archive?")) {
-    try {
-      await db.collection('users').doc(uid).update({ status: 'deleted' });
-      loadUsersTable();
-    } catch (err) { alert("Error: " + err.message); }
-  }
-}
-
-// Restore User
-async function restoreUser(uid) {
-  if (confirm("Restore user to Active List?")) {
-    try {
-      await db.collection('users').doc(uid).update({ status: 'pending' });
-      loadUsersTable();
-    } catch (err) { alert("Error: " + err.message); }
-  }
-}
-
-// Update User Status (Approve / Reject)
 async function updateUserStatus(uid, newStatus) {
-  try {
-    await db.collection('users').doc(uid).update({ status: newStatus });
-    alert(`Status updated to ${newStatus.toUpperCase()}!`);
-    loadUsersTable();
-  } catch (err) { alert("Error updating status: " + err.message); }
+  await db.collection('users').doc(uid).update({ status: newStatus });
+  loadUsersTable();
 }
 
-function closeModal() {
-  const modal = document.getElementById('userModal');
-  if (modal) modal.classList.add('hidden');
+async function restoreUser(uid) {
+  await db.collection('users').doc(uid).update({ status: 'pending' });
+  loadUsersTable();
 }
 
-// Load Customer Parcels (Dashboard)
+// Load Customer Parcels
 async function loadUserDashboard(uid) {
   const snapshot = await db.collection('parcels').where('userId', '==', uid).get();
-  let total = 0, pending = 0, inTransit = 0, delivered = 0;
   const tableBody = document.getElementById('userParcelTable');
   if (!tableBody) return;
   tableBody.innerHTML = '';
 
-  if (snapshot.empty) {
-    tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">No parcels booked yet.</td></tr>`;
-  }
-
   snapshot.forEach((doc) => {
     const data = doc.data();
-    total++;
-    if (data.status.includes('Pending')) pending++;
-    else if (data.status.includes('Transit') || data.status.includes('Approved')) inTransit++;
-    else if (data.status === 'Delivered') delivered++;
-
     tableBody.innerHTML += `
-      <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 text-xs">
-        <td class="p-3 font-bold font-mono text-amber-400">${data.trackId || 'N/A'}</td>
+      <tr class="border-b border-slate-700/50 text-xs">
+        <td class="p-3 font-bold text-amber-400 font-mono">${data.trackId || 'N/A'}</td>
         <td class="p-3">${data.custName || 'N/A'}</td>
         <td class="p-3">${data.custCity || 'N/A'}</td>
         <td class="p-3 font-bold">PKR ${data.totalCod || 0}</td>
-        <td class="p-3">
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
-            data.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-500/30' :
-            (data.status.includes('Transit') || data.status.includes('Approved')) ? 'bg-blue-900/50 text-blue-300 border border-blue-500/30' : 
-            'bg-amber-900/50 text-amber-300 border border-amber-500/30'
-          }">${data.status || 'Pending Admin Approval'}</span>
-        </td>
+        <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-900/50 text-amber-300 border border-amber-500/30">${data.status || 'Pending'}</span></td>
         <td class="p-3 text-center">
-          <button onclick="printThermalSlip('${data.trackId}', '${data.custName}', '${data.custPhone}', '${data.custCity}', '${data.custAddress}', '${data.totalCod}', '${data.shipperName}', '${data.shipperAddress}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded font-bold text-[10px] shadow flex items-center justify-center gap-1 mx-auto">
-            <i class="fa-solid fa-print"></i> Print Slip
+          <button onclick="printThermalSlip('${data.trackId}', '${data.custName}', '${data.custPhone}', '${data.custCity}', '${data.custAddress}', '${data.totalCod}', '${data.shipperName}', '${data.shipperAddress}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded font-bold text-[10px] shadow">
+            Print Slip
           </button>
         </td>
       </tr>
     `;
   });
-
-  if (document.getElementById('cardTotal')) document.getElementById('cardTotal').innerText = total;
-  if (document.getElementById('cardPending')) document.getElementById('cardPending').innerText = pending;
-  if (document.getElementById('cardInTransit')) document.getElementById('cardInTransit').innerText = inTransit;
-  if (document.getElementById('cardDelivered')) document.getElementById('cardDelivered').innerText = delivered;
 }
 
-// Load Admin Parcels & Approval Action
+// Load Admin Parcels
 async function loadAdminDashboard() {
   const snapshot = await db.collection('parcels').get();
-  let totalParcels = 0, pendingParcels = 0;
   const adminParcelTable = document.getElementById('adminParcelTable');
   let parcelRowsHtml = '';
 
   snapshot.forEach((doc) => {
     const data = doc.data();
     const docId = doc.id;
-    totalParcels++;
-    if (data.status.includes('Pending')) pendingParcels++;
 
     if (adminParcelTable) {
       parcelRowsHtml += `
-        <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 text-xs">
-          <td class="p-3 font-bold font-mono text-amber-400">${data.trackId || docId}</td>
-          <td class="p-3">
-            <div class="font-bold text-slate-100">${data.custName || 'N/A'}</div>
-            <div class="text-[10px] text-emerald-400">${data.custPhone || 'N/A'}</div>
-          </td>
-          <td class="p-3">
-            <div>${data.custAddress || 'N/A'}</div>
-            <div class="text-[10px] text-amber-400 font-bold">${data.custCity || 'N/A'}</div>
-          </td>
-          <td class="p-3 font-bold text-white">PKR ${data.totalCod || 0}</td>
-          <td class="p-3">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
-              data.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-500/30' :
-              (data.status === 'Rejected' || data.status === 'Returned') ? 'bg-rose-900/50 text-rose-300 border border-rose-500/30' :
-              'bg-amber-900/50 text-amber-300 border border-amber-500/30'
-            }">${data.status || 'Pending Admin Approval'}</span>
-          </td>
-          <td class="p-3 text-center flex items-center justify-center gap-1.5">
-            ${!data.approvedByAdmin ? 
-              `<button onclick="approveParcelByAdmin('${docId}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded font-bold text-[10px] shadow flex items-center gap-1">
-                <i class="fa-solid fa-check"></i> Approve & Unfreeze
-               </button>` : 
-              `<span class="text-emerald-400 text-[10px] font-bold"><i class="fa-solid fa-circle-check"></i> Rider Assigned</span>`
-            }
-            <button onclick="deleteParcel('${docId}')" class="bg-rose-600/30 hover:bg-rose-600 text-rose-300 hover:text-white px-2 py-1 rounded font-bold text-[10px] transition">
-              <i class="fa-solid fa-trash"></i> Delete
-            </button>
+        <tr class="border-b border-slate-700/50 text-xs">
+          <td class="p-3 font-bold text-amber-400 font-mono">${data.trackId || docId}</td>
+          <td class="p-3">${data.custName || 'N/A'}</td>
+          <td class="p-3">${data.custCity || 'N/A'}</td>
+          <td class="p-3 font-bold">PKR ${data.totalCod || 0}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-900/50 text-amber-300">${data.status || 'Pending'}</span></td>
+          <td class="p-3 text-center flex justify-center gap-1">
+            ${!data.approvedByAdmin ? `<button onclick="approveParcelByAdmin('${docId}')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">Approve & Unfreeze</button>` : `<span class="text-emerald-400 font-bold">Assigned</span>`}
+            <button onclick="deleteParcel('${docId}')" class="bg-rose-600 text-white px-2 py-1 rounded text-[10px]">Delete</button>
           </td>
         </tr>
       `;
     }
   });
 
-  if (document.getElementById('cardTotalShipments')) document.getElementById('cardTotalShipments').innerText = totalParcels;
-  if (document.getElementById('cardPendingParcels')) document.getElementById('cardPendingParcels').innerText = pendingParcels;
-  if (adminParcelTable) adminParcelTable.innerHTML = parcelRowsHtml !== '' ? parcelRowsHtml : `<tr><td colspan="6" class="p-4 text-center text-slate-400">No parcels found.</td></tr>`;
+  if (adminParcelTable) adminParcelTable.innerHTML = parcelRowsHtml !== '' ? parcelRowsHtml : `<tr><td colspan="6" class="p-4 text-center">No parcels found.</td></tr>`;
 }
 
-// Admin Approve & Unfreeze Parcel for Rider
 async function approveParcelByAdmin(docId) {
-  try {
-    await db.collection('parcels').doc(docId).update({
-      status: 'Approved / In Transit',
-      approvedByAdmin: true
-    });
-    alert("Parcel Approved & Unfrozen for Rider Portal! ✅");
-    loadAdminDashboard();
-  } catch (err) {
-    alert("Error approving parcel: " + err.message);
-  }
+  await db.collection('parcels').doc(docId).update({ status: 'Approved / In Transit', approvedByAdmin: true });
+  loadAdminDashboard();
 }
 
-// Delete Parcel Function for Admin
 async function deleteParcel(docId) {
-  if (confirm("Are you sure you want to delete this parcel record?")) {
-    try {
-      await db.collection('parcels').doc(docId).delete();
-      loadAdminDashboard();
-    } catch (err) {
-      alert("Error deleting parcel: " + err.message);
-    }
+  if (confirm("Delete parcel?")) {
+    await db.collection('parcels').doc(docId).delete();
+    loadAdminDashboard();
   }
 }
 
-// Load Rider Dashboard Data (Shows Only Approved Unfrozen Parcels)
-async function loadRiderDashboard() {
-  const tableBody = document.getElementById('riderParcelTable');
-  if (!tableBody) return;
-
-  try {
-    const snapshot = await db.collection('parcels').get();
-    let pendingCount = 0, deliveredCount = 0, failedCount = 0, totalCodCollected = 0;
-    let tableHtml = '';
-
-    snapshot.forEach((doc) => {
-      const p = doc.data();
-      const docId = doc.id;
-
-      // Only show unfrozen/approved parcels to rider
-      if (p.approvedByAdmin) {
-        if (p.status === 'Delivered') {
-          deliveredCount++;
-          totalCodCollected += parseFloat(p.totalCod || 0);
-        } else if (p.status === 'Rejected' || p.status === 'Returned') {
-          failedCount++;
-        } else {
-          pendingCount++;
-        }
-
-        tableHtml += `
-          <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition text-xs">
-            <td class="p-3">
-              <div class="font-bold text-amber-400 font-mono">${p.trackId || docId}</div>
-              <div class="text-[10px] text-slate-400">${p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleString() : 'N/A'}</div>
-            </td>
-            <td class="p-3">
-              <div class="font-bold text-slate-100">${p.custName || 'N/A'}</div>
-              <div class="text-emerald-400 font-semibold"><i class="fa-solid fa-phone"></i> ${p.custPhone || 'N/A'}</div>
-            </td>
-            <td class="p-3">
-              <div class="text-slate-200">${p.custAddress || 'N/A'}</div>
-              <div class="text-[10px] text-amber-400 font-bold">${p.custCity || 'N/A'}</div>
-            </td>
-            <td class="p-3 font-bold text-white">PKR ${p.totalCod || 0}</td>
-            <td class="p-3">
-              <span class="px-2 py-1 rounded-full text-[10px] font-bold ${
-                p.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30' :
-                (p.status === 'Rejected' || p.status === 'Returned') ? 'bg-rose-900/50 text-rose-400 border border-rose-500/30' :
-                'bg-amber-900/50 text-amber-400 border border-amber-500/30'
-              }">${p.status || 'Assigned'}</span>
-              ${p.returnReason ? `<div class="text-[10px] text-rose-300 mt-1">Reason: ${p.returnReason}</div>` : ''}
-            </td>
-            <td class="p-3 text-center flex items-center justify-center gap-1.5">
-              ${p.status === 'Delivered' ? 
-                `<span class="text-emerald-400 font-bold text-base"><i class="fa-solid fa-circle-check"></i> Delivered</span>` : 
-                `<button onclick="openRiderActionModal('${docId}', 'delivered')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded font-bold text-xs shadow flex items-center gap-1">
-                  <i class="fa-solid fa-check"></i> Mark Delivered
-                 </button>
-                 <button onclick="openRiderActionModal('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded font-bold text-xs shadow flex items-center gap-1">
-                  <i class="fa-solid fa-xmark"></i> Reject / Return
-                 </button>`
-              }
-            </td>
-          </tr>
-        `;
-      }
-    });
-
-    tableBody.innerHTML = tableHtml !== '' ? tableHtml : `<tr><td colspan="6" class="p-4 text-center text-slate-400">No approved/unfrozen deliveries assigned yet.</td></tr>`;
-
-    if (document.getElementById('riderPendingCount')) document.getElementById('riderPendingCount').innerText = pendingCount;
-    if (document.getElementById('riderDeliveredCount')) document.getElementById('riderDeliveredCount').innerText = deliveredCount;
-    if (document.getElementById('riderFailedCount')) document.getElementById('riderFailedCount').innerText = failedCount;
-    if (document.getElementById('riderTotalCod')) document.getElementById('riderTotalCod').innerText = `PKR ${totalCodCollected}`;
-
-  } catch (err) {
-    console.error("Error loading rider parcels:", err);
-  }
-}
-
-// Modal Toggle Functions for Rider
-function openRiderActionModal(docId, actionType) {
-  document.getElementById('selectedParcelDocId').value = docId;
-  document.getElementById('selectedActionType').value = actionType;
-
-  const title = document.getElementById('modalRiderTitle');
-  const delSec = document.getElementById('deliveredSection');
-  const rejSec = document.getElementById('rejectedSection');
-  const submitBtn = document.getElementById('btnSubmitRiderStatus');
-
-  if (actionType === 'delivered') {
-    title.innerText = "Confirm Delivery & Proof Attachment";
-    title.className = "text-base font-bold text-emerald-400";
-    delSec.classList.remove('hidden');
-    rejSec.classList.add('hidden');
-    submitBtn.className = "px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs shadow";
-  } else {
-    title.innerText = "Reject Parcel / Select Reason";
-    title.className = "text-base font-bold text-rose-400";
-    delSec.classList.add('hidden');
-    rejSec.classList.remove('hidden');
-    submitBtn.className = "px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs shadow";
-  }
-
-  document.getElementById('riderActionModal').classList.remove('hidden');
-}
-
-function closeRiderModal() {
-  document.getElementById('riderActionModal').classList.add('hidden');
-}
-
-// Submit Rider Action (Delivered with proof OR Rejected with reason)
-async function submitRiderStatusUpdate() {
-  const docId = document.getElementById('selectedParcelDocId').value;
-  const actionType = document.getElementById('selectedActionType').value;
-  const proofFile = document.getElementById('riderProofFile').files[0];
-  const reason = document.getElementById('riderReturnReason').value;
-  const comment = document.getElementById('riderReturnComment').value.trim();
-
-  try {
-    let updatePayload = {};
-
-    if (actionType === 'delivered') {
-      let proofBase64 = "";
-      if (proofFile) proofBase64 = await fileToBase64(proofFile, 600, 0.6);
-      
-      updatePayload = {
-        status: 'Delivered',
-        proofImage: proofBase64,
-        deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-    } else {
-      updatePayload = {
-        status: 'Rejected',
-        returnReason: reason,
-        riderComments: comment,
-        rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-    }
-
-    await db.collection('parcels').doc(docId).update(updatePayload);
-    alert(`Parcel status updated to ${updatePayload.status.toUpperCase()}! ✅`);
-    closeRiderModal();
-    loadRiderDashboard();
-
-  } catch (err) {
-    alert("Error updating status: " + err.message);
-  }
-}
-
-// Profile Editing
+// Profile Editing Controls
 async function openProfileModal() {
   const user = auth.currentUser;
   if (!user) return;
@@ -918,38 +607,28 @@ async function saveProfileUpdate(e) {
   const newBusiness = document.getElementById('editBusinessName').value.trim();
   const newPhone = document.getElementById('editPhone').value.trim();
   const newAddress = document.getElementById('editAddress').value.trim();
-  const logoFile = document.getElementById('editLogoFile') ? document.getElementById('editLogoFile').files[0] : null;
 
   try {
-    let updateData = { name: newName, businessName: newBusiness, phone: newPhone, address: newAddress };
-    if (logoFile) {
-      const logoBase64 = await fileToBase64(logoFile, 400, 0.7);
-      updateData.logoUrl = logoBase64;
-    }
-    await db.collection('users').doc(user.uid).update(updateData);
+    await db.collection('users').doc(user.uid).update({ name: newName, businessName: newBusiness, phone: newPhone, address: newAddress });
     alert("Profile Updated Successfully! ✨");
     closeProfileModal();
     location.reload();
   } catch (err) { alert("Error updating profile: " + err.message); }
 }
 
-// Logout
 function handleLogout() {
   auth.signOut().then(() => { window.location.href = 'login.html'; });
 }
 
-// Auth Listener & Page Routing
+// Auth State Listener
 auth.onAuthStateChanged(async (user) => {
   const path = window.location.pathname;
   if (user) {
     const userDoc = await db.collection('users').doc(user.uid).get();
     const userData = userDoc.data() || {};
-    if (document.getElementById('userNameDisplay')) {
-      document.getElementById('userNameDisplay').innerText = userData.name || user.email;
-    }
+    if (document.getElementById('userNameDisplay')) document.getElementById('userNameDisplay').innerText = userData.name || user.email;
     if (path.includes('dashboard.html')) loadUserDashboard(user.uid);
     else if (path.includes('admin.html')) { loadAdminDashboard(); loadUsersTable(); }
-    else if (path.includes('rider.html')) { loadRiderDashboard(); }
   } else {
     if (path.includes('dashboard.html') || path.includes('admin.html') || path.includes('rider.html')) window.location.href = 'login.html';
   }
