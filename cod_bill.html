@@ -1,138 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>COD Bill Generator | Prime Traders</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airway Bill / Shipping Label | Prime Traders</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <style>
+        @page { size: A6 portrait; margin: 0; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 10px; background: #fff; color: #000; font-size: 11px; }
+        .label-card { border: 2px solid #000; width: 100%; max-width: 420px; margin: auto; box-sizing: border-box; }
+        .row { display: flex; border-bottom: 1px solid #000; }
+        .col { flex: 1; padding: 4px 6px; box-sizing: border-box; }
+        .border-r { border-right: 1px solid #000; }
+        .text-center { text-align: center; }
+        .font-bold { font-weight: bold; }
+        .header-title { font-size: 18px; font-weight: 900; letter-spacing: 1px; }
+        .barcode-container svg { width: 100%; height: 50px; }
+        .qr-placeholder { width: 80px; height: 80px; border: 1px solid #000; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: bold; text-align: center; }
+        @media print { .no-print { display: none; } }
+    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col">
+<body>
 
-  <!-- Navigation Bar -->
-  <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 flex justify-between items-center">
-    <div class="flex items-center gap-3">
-      <div class="bg-amber-500 text-slate-950 font-black text-xl w-8 h-8 flex items-center justify-center rounded-lg">P</div>
-      <h1 class="font-bold text-lg text-white">COD Bill Generator</h1>
+    <div class="no-print" style="text-align: center; margin-bottom: 15px;">
+        <button onclick="window.print()" style="background: #000; color: #fff; padding: 8px 20px; border: none; font-weight: bold; cursor: pointer; border-radius: 4px;">Print Label / Airway Bill</button>
     </div>
-    <div class="flex items-center gap-3">
-      <a href="index.html" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-2 rounded-lg transition">
-        <i class="fa-solid fa-house"></i> Home
-      </a>
+
+    <div class="label-card">
+        <!-- Header -->
+        <div class="row" style="align-items: center;">
+            <div class="col border-r" style="flex: 0.8;">
+                <div style="font-size: 16px; font-weight: 900;">PRIME TRADERS</div>
+                <div style="font-size: 8px;">EXPRESS & LOGISTICS</div>
+            </div>
+            <div class="col text-center">
+                <div class="header-title">OVERNIGHT</div>
+                <div style="font-size: 9px; font-weight: bold;">COD PARCEL</div>
+            </div>
+        </div>
+
+        <!-- COD Amount & Consignee Row -->
+        <div class="row">
+            <div class="col border-r" style="flex: 0.9;">
+                <div class="font-bold">COD AMOUNT</div>
+                <div id="lblCodAmount" style="font-size: 16px; font-weight: 900; margin-top: 4px;">PKR 0.00</div>
+            </div>
+            <div class="col" style="flex: 1.1;">
+                <div><span class="font-bold">Consignee:</span> <span id="lblCustName">N/A</span></div>
+                <div><span class="font-bold">Contact:</span> <span id="lblCustPhone">N/A</span></div>
+                <div><span class="font-bold">Destination:</span> <span id="lblCustCity" style="font-size: 13px; font-weight: 900;">KARACHI</span></div>
+            </div>
+        </div>
+
+        <!-- Address & Barcode Section -->
+        <div class="row">
+            <div class="col border-r" style="flex: 1.2;">
+                <div class="font-bold" style="font-size: 9px;">DELIVERY ADDRESS:</div>
+                <div id="lblCustAddress" style="font-size: 10px; height: 55px; overflow: hidden; margin-top: 2px;">Address details...</div>
+            </div>
+            <div class="col text-center" style="flex: 0.8;">
+                <div class="barcode-container"><svg id="barcode"></svg></div>
+                <div id="lblTrackId" style="font-size: 10px; font-weight: bold; font-family: monospace;">PT12345678</div>
+            </div>
+        </div>
+
+        <!-- Shipper Details -->
+        <div class="row" style="background: #f0f0f0;">
+            <div class="col">
+                <div><span class="font-bold">Shipper Name / Store:</span> <span id="lblShipperName">Prime Traders Store</span></div>
+                <div><span class="font-bold">Shipper Address:</span> <span id="lblShipperAddress">Origin Business Address</span></div>
+            </div>
+        </div>
     </div>
-  </header>
 
-  <!-- Main Generator Form -->
-  <main class="container mx-auto px-4 py-8 flex-grow max-w-2xl">
-    <div class="bg-slate-900 p-6 md:p-8 rounded-2xl border border-slate-800 shadow-xl">
-      <h2 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
-        <i class="fa-solid fa-file-invoice-dollar text-amber-500"></i> Create New Parcel Shipment
-      </h2>
-      <p class="text-xs text-slate-400 mb-6">Enter customer and COD details to generate tracking & bill entry.</p>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        document.getElementById('lblTrackId').innerText = urlParams.get('trackId') || 'PT-100001';
+        document.getElementById('lblCodAmount').innerText = 'PKR ' + (urlParams.get('cod') || '0');
+        document.getElementById('lblCustName').innerText = urlParams.get('name') || 'N/A';
+        document.getElementById('lblCustPhone').innerText = urlParams.get('phone') || 'N/A';
+        document.getElementById('lblCustCity').innerText = (urlParams.get('city') || 'N/A').toUpperCase();
+        document.getElementById('lblCustAddress').innerText = urlParams.get('address') || 'N/A';
+        document.getElementById('lblShipperName').innerText = urlParams.get('shipper') || 'Prime Traders Merchant';
+        document.getElementById('lblShipperAddress').innerText = urlParams.get('origin') || 'Pakistan';
 
-      <form id="codForm" onsubmit="generateCodBill(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Sender / Merchant Name</label>
-          <input type="text" id="senderName" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500" placeholder="e.g. Prime Traders Store" required>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Customer Name</label>
-            <input type="text" id="customerName" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500" placeholder="Receiver full name" required>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Customer Phone</label>
-            <input type="tel" id="customerPhone" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500" placeholder="03xx-xxxxxxx" required>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Destination City</label>
-            <input type="text" id="city" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500" placeholder="Karachi, Lahore, etc." required>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-300 uppercase mb-1">COD Amount (PKR)</label>
-            <input type="number" id="codAmount" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500" placeholder="1500" required>
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase mb-1">Full Delivery Address</label>
-          <textarea id="address" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500" placeholder="House no, Street, Area details..." required></textarea>
-        </div>
-
-        <button type="submit" id="submitBtn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl transition shadow flex items-center justify-center gap-2">
-          <i class="fa-solid fa-check-circle"></i> Save Parcel & Generate Bill
-        </button>
-      </form>
-
-      <!-- Result Card -->
-      <div id="billOutput" class="mt-6 hidden bg-slate-950 p-5 rounded-xl border border-amber-500/40">
-        <h3 class="text-amber-400 font-bold text-base mb-2 flex items-center gap-2">
-          <i class="fa-solid fa-circle-check"></i> Parcel Created Successfully!
-        </h3>
-        <p class="text-sm text-slate-300">Tracking ID: <span id="outTrackId" class="font-mono font-bold text-white bg-slate-800 px-2 py-1 rounded"></span></p>
-        <p class="text-xs text-slate-400 mt-2">This booking has been updated live in the system database.</p>
-      </div>
-    </div>
-  </main>
-
-  <script src="dashboard.js"></script>
-  <script>
-    // Authentication Check
-    firebase.auth().onAuthStateChanged((user) => {
-      if (!user) {
-        alert("Please login first to access the COD Bill Generator.");
-        window.location.href = "login.html";
-      }
-    });
-
-    // Save COD Parcel to Firestore
-    function generateCodBill(e) {
-      e.preventDefault();
-      const submitBtn = document.getElementById("submitBtn");
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Saving...`;
-
-      const trackId = "PT-" + Math.floor(100000 + Math.random() * 900000);
-      const senderName = document.getElementById("senderName").value;
-      const customerName = document.getElementById("customerName").value;
-      const customerPhone = document.getElementById("customerPhone").value;
-      const city = document.getElementById("city").value;
-      const codAmount = Number(document.getElementById("codAmount").value);
-      const address = document.getElementById("address").value;
-
-      db.collection("parcels").add({
-        trackingId: trackId,
-        senderName: senderName,
-        customerName: customerName,
-        customerPhone: customerPhone,
-        city: city,
-        codAmount: codAmount,
-        address: address,
-        status: "Pending",
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      })
-      .then(() => {
-        document.getElementById("outTrackId").innerText = trackId;
-        document.getElementById("billOutput").classList.remove("hidden");
-        document.getElementById("codForm").reset();
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = `<i class="fa-solid fa-check-circle"></i> Save Parcel & Generate Bill`;
-      })
-      .catch((err) => {
-        alert("Error creating parcel: " + err.message);
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = `<i class="fa-solid fa-check-circle"></i> Save Parcel & Generate Bill`;
-      });
-    }
-  </script>
+        JsBarcode("#barcode", urlParams.get('trackId') || 'PT-100001', {
+            format: "CODE128", width: 1.5, height: 40, displayValue: false
+        });
+    </script>
 </body>
 </html>
