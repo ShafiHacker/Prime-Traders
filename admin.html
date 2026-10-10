@@ -50,7 +50,7 @@
                 <h3 id="cardDeletedUsers" class="text-2xl font-bold text-rose-400 mt-1">0</h3>
             </div>
             <div onclick="showAdminSection('tracking')" class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow cursor-pointer hover:border-blue-500/50 transition">
-                <p class="text-xs text-blue-400">Pending Shipments</p>
+                <p class="text-xs text-blue-400">Pending Approval</p>
                 <h3 id="cardPendingParcels" class="text-2xl font-bold text-blue-400 mt-1">0</h3>
             </div>
         </div>
@@ -69,10 +69,16 @@
                 </button>
             </div>
 
-            <!-- Add New COD Parcel Button for Admin -->
-            <button onclick="openAddCodModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow">
-                <i class="fa-solid fa-plus-circle"></i> + Add New COD Parcel
-            </button>
+            <div class="flex gap-2">
+                <!-- Custom Tracking ID Pool Button -->
+                <button onclick="openCustomTrackModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-barcode"></i> + Upload Tracking IDs Pool
+                </button>
+                <!-- Add New COD Parcel Button -->
+                <button onclick="openAddCodModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-plus-circle"></i> + Manual Parcel Entry
+                </button>
+            </div>
         </div>
 
         <!-- Section 1: Registered Active Users Table -->
@@ -122,7 +128,7 @@
             </div>
         </div>
 
-        <!-- Section 3: Shipment Tracking Details Table (With Action Buttons) -->
+        <!-- Section 3: Shipment Tracking Details Table -->
         <div id="trackingSection" class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
             <div class="p-4 border-b border-slate-700 font-bold text-sm text-blue-400 flex justify-between items-center">
                 <span>Shipment & Parcel Tracking Details</span>
@@ -148,11 +154,31 @@
 
     </main>
 
+    <!-- Admin Custom Tracking IDs Manager Modal -->
+    <div id="customTrackModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-lg w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="text-base font-bold text-purple-400"><i class="fa-solid fa-barcode mr-2"></i> Custom Tracking IDs Pool Storage</h3>
+                <button onclick="closeCustomTrackModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <p class="text-slate-300">Apni external platform ki Tracking IDs ki list yahan paste karein (Har line par 1 ID):</p>
+                <textarea id="trackingIdListInput" rows="6" placeholder="e.g.&#10;PT-90001&#10;PT-90002&#10;PT-90003" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-amber-400 font-mono outline-none"></textarea>
+                <div class="flex justify-between items-center pt-2">
+                    <span id="poolAvailableCount" class="text-slate-400 text-[11px]">Unused Available: Loading...</span>
+                    <button onclick="uploadCustomTrackingIDs()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-lg shadow">
+                        + Save to Available Pool
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Admin Add COD Parcel Modal -->
     <div id="addCodModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-lg w-full space-y-4 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                <h3 class="text-base font-bold text-emerald-400"><i class="fa-solid fa-box font-normal mr-2"></i> Create COD Parcel Booking</h3>
+                <h3 class="text-base font-bold text-emerald-400"><i class="fa-solid fa-box mr-2"></i> Create COD Parcel Booking</h3>
                 <button onclick="closeAddCodModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <form onsubmit="handleAdminCreateParcel(event)" class="space-y-3 text-xs">
@@ -192,63 +218,10 @@
         </div>
     </div>
 
-    <!-- User View Details Modal (Admin) -->
-    <div id="userModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-2xl w-full space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                <h3 class="text-base font-bold text-amber-400">User Record & Proof Documents</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div id="modalUserDetails" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs bg-slate-900 p-3 rounded-lg border border-slate-700"></div>
-            <div id="modalUserDocs" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs"></div>
-            <div id="modalActions" class="flex gap-2 justify-end pt-3 border-t border-slate-700"></div>
-        </div>
-    </div>
-
-    <!-- Profile Edit Modal -->
-    <div id="profileModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-md w-full space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                <h3 class="text-base font-bold text-amber-400 flex items-center gap-2">
-                    <i class="fa-solid fa-user-gear"></i> Edit Profile & Business Info
-                </h3>
-                <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            
-            <form onsubmit="saveProfileUpdate(event)" class="space-y-3 text-xs">
-                <div>
-                    <label class="block text-slate-300 mb-1 font-semibold">Full Name</label>
-                    <input type="text" id="editName" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
-                </div>
-                <div>
-                    <label class="block text-slate-300 mb-1 font-semibold">Business Name</label>
-                    <input type="text" id="editBusinessName" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
-                </div>
-                <div>
-                    <label class="block text-slate-300 mb-1 font-semibold">Mobile / WhatsApp No</label>
-                    <input type="text" id="editPhone" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
-                </div>
-                <div>
-                    <label class="block text-slate-300 mb-1 font-semibold">Business Address</label>
-                    <input type="text" id="editAddress" placeholder="Enter complete office/store address" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
-                </div>
-                <div>
-                    <label class="block text-slate-300 mb-1 font-semibold">Business Logo / Profile Picture</label>
-                    <input type="file" id="editLogoFile" accept="image/*" class="w-full text-slate-400 text-xs bg-slate-900 p-2 border border-slate-700 rounded-lg">
-                </div>
-
-                <div class="flex gap-2 justify-end pt-3 border-t border-slate-700">
-                    <button type="button" onclick="closeProfileModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-bold">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-900 font-extrabold rounded-lg shadow">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="dashboard.js?v=8.0"></script>
+    <script src="dashboard.js?v=10.0"></script>
 </body>
 </html>
