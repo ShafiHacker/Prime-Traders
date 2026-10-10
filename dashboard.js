@@ -18,14 +18,16 @@ const db = firebase.firestore();
 
 let currentParcelCount = 1;
 
-// Custom Tracking IDs Pool Controls (Admin)
+// Admin Custom Tracking IDs Pool Controls
 function openCustomTrackModal() {
-  document.getElementById('customTrackModal').classList.remove('hidden');
+  const modal = document.getElementById('customTrackModal');
+  if (modal) modal.classList.remove('hidden');
   checkAvailablePoolCount();
 }
 
 function closeCustomTrackModal() {
-  document.getElementById('customTrackModal').classList.add('hidden');
+  const modal = document.getElementById('customTrackModal');
+  if (modal) modal.classList.add('hidden');
 }
 
 async function checkAvailablePoolCount() {
@@ -509,7 +511,7 @@ async function restoreUser(uid) {
   loadUsersTable();
 }
 
-// Load Customer Parcels
+// Load Customer Parcels (Dashboard)
 async function loadUserDashboard(uid) {
   const snapshot = await db.collection('parcels').where('userId', '==', uid).get();
   const tableBody = document.getElementById('userParcelTable');
@@ -524,7 +526,15 @@ async function loadUserDashboard(uid) {
         <td class="p-3">${data.custName || 'N/A'}</td>
         <td class="p-3">${data.custCity || 'N/A'}</td>
         <td class="p-3 font-bold">PKR ${data.totalCod || 0}</td>
-        <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-900/50 text-amber-300 border border-amber-500/30">${data.status || 'Pending'}</span></td>
+        <td class="p-3">
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+            data.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30' :
+            data.status === 'Out for Delivery / On The Way' ? 'bg-blue-900/50 text-blue-300 border border-blue-500/30' :
+            data.status.includes('Hold') ? 'bg-amber-900/50 text-amber-300 border border-amber-500/30' :
+            'bg-amber-900/50 text-amber-300 border border-amber-500/30'
+          }">${data.status || 'Pending'}</span>
+          ${data.returnReason ? `<div class="text-[10px] text-rose-300 mt-0.5">Remark: ${data.returnReason}</div>` : ''}
+        </td>
         <td class="p-3 text-center">
           <button onclick="printThermalSlip('${data.trackId}', '${data.custName}', '${data.custPhone}', '${data.custCity}', '${data.custAddress}', '${data.totalCod}', '${data.shipperName}', '${data.shipperAddress}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded font-bold text-[10px] shadow">
             Print Slip
@@ -552,9 +562,16 @@ async function loadAdminDashboard() {
           <td class="p-3">${data.custName || 'N/A'}</td>
           <td class="p-3">${data.custCity || 'N/A'}</td>
           <td class="p-3 font-bold">PKR ${data.totalCod || 0}</td>
-          <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-900/50 text-amber-300">${data.status || 'Pending'}</span></td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+              data.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30' :
+              data.status === 'Out for Delivery / On The Way' ? 'bg-blue-900/50 text-blue-300 border border-blue-500/30' :
+              'bg-amber-900/50 text-amber-300 border border-amber-500/30'
+            }">${data.status || 'Pending'}</span>
+            ${data.returnReason ? `<div class="text-[10px] text-rose-300 mt-0.5">Remark: ${data.returnReason}</div>` : ''}
+          </td>
           <td class="p-3 text-center flex justify-center gap-1">
-            ${!data.approvedByAdmin ? `<button onclick="approveParcelByAdmin('${docId}')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">Approve & Unfreeze</button>` : `<span class="text-emerald-400 font-bold">Assigned</span>`}
+            ${!data.approvedByAdmin ? `<button onclick="approveParcelByAdmin('${docId}')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">Approve & Unfreeze</button>` : `<span class="text-emerald-400 font-bold text-[10px]">Unfrozen / Assigned</span>`}
             <button onclick="deleteParcel('${docId}')" class="bg-rose-600 text-white px-2 py-1 rounded text-[10px]">Delete</button>
           </td>
         </tr>
@@ -574,6 +591,183 @@ async function deleteParcel(docId) {
   if (confirm("Delete parcel?")) {
     await db.collection('parcels').doc(docId).delete();
     loadAdminDashboard();
+  }
+}
+
+// ---------------- RIDER PORTAL FUNCTIONS ---------------- //
+
+// Quick Rider Actions (Collect Parcel / On The Way)
+async function updateRiderQuickStatus(docId, newStatus) {
+  try {
+    await db.collection('parcels').doc(docId).update({
+      status: newStatus,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert(`Status updated to: ${newStatus} ✅`);
+    loadRiderDashboard();
+  } catch (err) {
+    alert("Error updating status: " + err.message);
+  }
+}
+
+// Load Rider Dashboard Data (Shows Only Approved Unfrozen Parcels)
+async function loadRiderDashboard() {
+  const tableBody = document.getElementById('riderParcelTable');
+  if (!tableBody) return;
+
+  try {
+    const snapshot = await db.collection('parcels').get();
+    let pendingCount = 0, onWayCount = 0, deliveredCount = 0, totalCodCollected = 0;
+    let tableHtml = '';
+
+    snapshot.forEach((doc) => {
+      const p = doc.data();
+      const docId = doc.id;
+
+      // Only show unfrozen/approved parcels to rider
+      if (p.approvedByAdmin) {
+        if (p.status === 'Delivered') {
+          deliveredCount++;
+          totalCodCollected += parseFloat(p.totalCod || 0);
+        } else if (p.status === 'Out for Delivery / On The Way') {
+          onWayCount++;
+        } else {
+          pendingCount++;
+        }
+
+        let actionButtons = '';
+
+        if (p.status === 'Delivered') {
+          actionButtons = `<span class="text-emerald-400 font-bold text-xs"><i class="fa-solid fa-circle-check"></i> Delivered</span>`;
+        } else {
+          actionButtons = `
+            <div class="flex flex-wrap items-center justify-center gap-1">
+              ${p.status !== 'Picked Up from Office' && p.status !== 'Out for Delivery / On The Way' ? 
+                `<button onclick="updateRiderQuickStatus('${docId}', 'Picked Up from Office')" class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded font-bold text-[10px] shadow">
+                  <i class="fa-solid fa-box-archive"></i> Collect Parcel
+                 </button>` : ''
+              }
+              ${p.status !== 'Out for Delivery / On The Way' ? 
+                `<button onclick="updateRiderQuickStatus('${docId}', 'Out for Delivery / On The Way')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded font-bold text-[10px] shadow">
+                  <i class="fa-solid fa-motorcycle"></i> On The Way
+                 </button>` : ''
+              }
+              <button onclick="openRiderActionModal('${docId}', 'delivered')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded font-bold text-[10px] shadow">
+                <i class="fa-solid fa-camera"></i> Delivered
+              </button>
+              <button onclick="openRiderActionModal('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded font-bold text-[10px] shadow">
+                <i class="fa-solid fa-triangle-exclamation"></i> Hold / Reject
+              </button>
+            </div>
+          `;
+        }
+
+        tableHtml += `
+          <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition text-xs">
+            <td class="p-3">
+              <div class="font-bold text-amber-400 font-mono">${p.trackId || docId}</div>
+            </td>
+            <td class="p-3">
+              <div class="font-bold text-slate-100">${p.custName || 'N/A'}</div>
+              <div class="text-emerald-400 font-semibold"><i class="fa-solid fa-phone"></i> ${p.custPhone || 'N/A'}</div>
+            </td>
+            <td class="p-3">
+              <div class="text-slate-200">${p.custAddress || 'N/A'}</div>
+              <div class="text-[10px] text-amber-400 font-bold">${p.custCity || 'N/A'}</div>
+            </td>
+            <td class="p-3 font-bold text-white">PKR ${p.totalCod || 0}</td>
+            <td class="p-3">
+              <span class="px-2 py-1 rounded-full text-[10px] font-bold ${
+                p.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30' :
+                p.status === 'Out for Delivery / On The Way' ? 'bg-blue-900/50 text-blue-300 border border-blue-500/30' :
+                p.status.includes('Hold') ? 'bg-amber-900/50 text-amber-300 border border-amber-500/30' :
+                'bg-slate-800 text-slate-300 border border-slate-700'
+              }">${p.status || 'Assigned'}</span>
+              ${p.returnReason ? `<div class="text-[10px] text-rose-300 mt-1">Remark: ${p.returnReason}</div>` : ''}
+            </td>
+            <td class="p-3 text-center">
+              ${actionButtons}
+            </td>
+          </tr>
+        `;
+      }
+    });
+
+    tableBody.innerHTML = tableHtml !== '' ? tableHtml : `<tr><td colspan="6" class="p-4 text-center text-slate-400">No approved/unfrozen deliveries assigned yet.</td></tr>`;
+
+    if (document.getElementById('riderPendingCount')) document.getElementById('riderPendingCount').innerText = pendingCount;
+    if (document.getElementById('riderOnWayCount')) document.getElementById('riderOnWayCount').innerText = onWayCount;
+    if (document.getElementById('riderDeliveredCount')) document.getElementById('riderDeliveredCount').innerText = deliveredCount;
+    if (document.getElementById('riderTotalCod')) document.getElementById('riderTotalCod').innerText = `PKR ${totalCodCollected}`;
+
+  } catch (err) {
+    console.error("Error loading rider parcels:", err);
+  }
+}
+
+// Modal Action Toggles for Rider
+function openRiderActionModal(docId, actionType) {
+  document.getElementById('selectedParcelDocId').value = docId;
+  document.getElementById('selectedActionType').value = actionType;
+
+  const title = document.getElementById('modalRiderTitle');
+  const delSec = document.getElementById('deliveredSection');
+  const rejSec = document.getElementById('rejectedSection');
+
+  if (actionType === 'delivered') {
+    title.innerText = "Confirm Delivery & Snap Camera Photo";
+    title.className = "text-base font-bold text-emerald-400";
+    delSec.classList.remove('hidden');
+    rejSec.classList.add('hidden');
+  } else {
+    title.innerText = "Select Remark / Hold Reason";
+    title.className = "text-base font-bold text-amber-400";
+    delSec.classList.add('hidden');
+    rejSec.classList.remove('hidden');
+  }
+
+  document.getElementById('riderActionModal').classList.remove('hidden');
+}
+
+function closeRiderModal() {
+  document.getElementById('riderActionModal').classList.add('hidden');
+}
+
+// Submit Live Rider Status Update (Evidence / Remarks Sync)
+async function submitRiderStatusUpdate() {
+  const docId = document.getElementById('selectedParcelDocId').value;
+  const actionType = document.getElementById('selectedActionType').value;
+  const proofFile = document.getElementById('riderProofFile').files[0];
+  const reason = document.getElementById('riderReturnReason').value;
+  const comment = document.getElementById('riderReturnComment').value.trim();
+
+  try {
+    let updatePayload = {};
+
+    if (actionType === 'delivered') {
+      let proofBase64 = "";
+      if (proofFile) proofBase64 = await fileToBase64(proofFile, 600, 0.6);
+      
+      updatePayload = {
+        status: 'Delivered',
+        proofImage: proofBase64,
+        deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+    } else {
+      updatePayload = {
+        status: reason.includes('Hold') ? 'On Hold (Re-attempt Request)' : 'Delivery Failed / Rejected',
+        returnReason: reason + (comment ? ` - ${comment}` : ''),
+        rejectedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+    }
+
+    await db.collection('parcels').doc(docId).update(updatePayload);
+    alert(`Status updated successfully! ✅`);
+    closeRiderModal();
+    loadRiderDashboard();
+
+  } catch (err) {
+    alert("Error updating status: " + err.message);
   }
 }
 
@@ -629,6 +823,7 @@ auth.onAuthStateChanged(async (user) => {
     if (document.getElementById('userNameDisplay')) document.getElementById('userNameDisplay').innerText = userData.name || user.email;
     if (path.includes('dashboard.html')) loadUserDashboard(user.uid);
     else if (path.includes('admin.html')) { loadAdminDashboard(); loadUsersTable(); }
+    else if (path.includes('rider.html')) { loadRiderDashboard(); }
   } else {
     if (path.includes('dashboard.html') || path.includes('admin.html') || path.includes('rider.html')) window.location.href = 'login.html';
   }
