@@ -16,7 +16,6 @@
         .font-bold { font-weight: bold; }
         .header-title { font-size: 18px; font-weight: 900; letter-spacing: 1px; }
         .barcode-container svg { width: 100%; height: 50px; }
-        .qr-placeholder { width: 80px; height: 80px; border: 1px solid #000; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: bold; text-align: center; }
         @media print { .no-print { display: none; } }
     </style>
 </head>
@@ -75,7 +74,8 @@
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
-        document.getElementById('lblTrackId').innerText = urlParams.get('trackId') || 'PT-100001';
+        const trackVal = urlParams.get('trackId') || 'PT-100001';
+        document.getElementById('lblTrackId').innerText = trackVal;
         document.getElementById('lblCodAmount').innerText = 'PKR ' + (urlParams.get('cod') || '0');
         document.getElementById('lblCustName').innerText = urlParams.get('name') || 'N/A';
         document.getElementById('lblCustPhone').innerText = urlParams.get('phone') || 'N/A';
@@ -84,7 +84,7 @@
         document.getElementById('lblShipperName').innerText = urlParams.get('shipper') || 'Prime Traders Merchant';
         document.getElementById('lblShipperAddress').innerText = urlParams.get('origin') || 'Pakistan';
 
-        JsBarcode("#barcode", urlParams.get('trackId') || 'PT-100001', {
+        JsBarcode("#barcode", trackVal, {
             format: "CODE128", width: 1.5, height: 40, displayValue: false
         });
     </script>
