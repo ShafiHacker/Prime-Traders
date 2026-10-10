@@ -16,6 +16,8 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+let currentParcelCount = 1;
+
 // Tab Switcher for Login / Register
 function switchTab(type) {
   const lForm = document.getElementById('loginForm');
@@ -206,7 +208,130 @@ async function handleLogin(e) {
   }
 }
 
-// Admin Section Switcher (Active Users vs Deleted Users vs Tracking)
+// Open Customer Bulk COD Modal (Freezed Shipper Details)
+async function openUserCodModal() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  try {
+    const doc = await db.collection('users').doc(user.uid).get();
+    if (doc.exists) {
+      const u = doc.data();
+      if (document.getElementById('freezeShipperName')) document.getElementById('freezeShipperName').value = u.businessName || u.name || 'Prime Traders Merchant';
+      if (document.getElementById('freezeShipperPhone')) document.getElementById('freezeShipperPhone').value = u.phone || 'N/A';
+      if (document.getElementById('freezeShipperAddress')) document.getElementById('freezeShipperAddress').value = u.address || 'Karachi, Pakistan';
+    }
+    const modal = document.getElementById('userCodModal');
+    if (modal) modal.classList.remove('hidden');
+  } catch (err) {
+    console.error("Error fetching shipper profile:", err);
+  }
+}
+
+function closeUserCodModal() {
+  const modal = document.getElementById('userCodModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+// Add Dynamic Row for Multi-Parcel Booking (Up to 10)
+function addMoreParcelRow() {
+  if (currentParcelCount >= 10) {
+    alert("Maximum limit reached! You can book up to 10 parcels at a time.");
+    return;
+  }
+  currentParcelCount++;
+
+  const container = document.getElementById('parcelEntriesContainer');
+  if (!container) return;
+
+  const newRow = document.createElement('div');
+  newRow.className = "parcel-item bg-slate-800/50 p-4 rounded-xl border border-slate-700 space-y-3 relative text-xs";
+  newRow.innerHTML = `
+    <div class="flex justify-between items-center">
+      <span class="font-bold text-amber-400 text-xs">Parcel #${currentParcelCount} Details</span>
+      <button type="button" onclick="removeParcelRow(this)" class="text-rose-400 hover:text-rose-200 font-bold text-xs"><i class="fa-solid fa-trash"></i> Remove</button>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <input type="text" placeholder="Consignee Full Name *" required class="cust-name p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white outline-none">
+      <input type="text" placeholder="Consignee Phone *" required class="cust-phone p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white outline-none">
+      <input type="text" placeholder="Destination City *" required class="cust-city p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white outline-none">
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <input type="number" placeholder="COD Amount (PKR) *" required class="cust-cod p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white outline-none">
+      <input type="text" placeholder="Complete Delivery Address *" required class="cust-address md:col-span-2 p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white outline-none">
+    </div>
+  `;
+  container.appendChild(newRow);
+  if (document.getElementById('parcelCounterBadge')) {
+    document.getElementById('parcelCounterBadge').innerText = `${currentParcelCount} / 10 Parcels Added`;
+  }
+}
+
+function removeParcelRow(btn) {
+  btn.closest('.parcel-item').remove();
+  currentParcelCount--;
+  if (document.getElementById('parcelCounterBadge')) {
+    document.getElementById('parcelCounterBadge').innerText = `${currentParcelCount} / 10 Parcels Added`;
+  }
+}
+
+// Submit Bulk Parcels
+async function handleBulkParcelSubmit(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const items = document.querySelectorAll('.parcel-item');
+  const batch = db.batch();
+
+  const sName = document.getElementById('freezeShipperName') ? document.getElementById('freezeShipperName').value : 'Prime Traders Merchant';
+  const sPhone = document.getElementById('freezeShipperPhone') ? document.getElementById('freezeShipperPhone').value : 'N/A';
+  const sAddress = document.getElementById('freezeShipperAddress') ? document.getElementById('freezeShipperAddress').value : 'Pakistan';
+
+  items.forEach((item) => {
+    const cName = item.querySelector('.cust-name').value.trim();
+    const cPhone = item.querySelector('.cust-phone').value.trim();
+    const cCity = item.querySelector('.cust-city').value.trim();
+    const cCod = item.querySelector('.cust-cod').value.trim();
+    const cAddress = item.querySelector('.cust-address').value.trim();
+
+    const trackId = "KI" + Math.floor(1000000000 + Math.random() * 9000000000);
+    const ref = db.collection('parcels').doc();
+
+    batch.set(ref, {
+      trackId: trackId,
+      userId: user.uid,
+      shipperName: sName,
+      shipperPhone: sPhone,
+      shipperAddress: sAddress,
+      custName: cName,
+      custPhone: cPhone,
+      custCity: cCity,
+      custAddress: cAddress,
+      totalCod: parseFloat(cCod),
+      status: 'Pending Admin Approval',
+      approvedByAdmin: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  });
+
+  try {
+    await batch.commit();
+    alert(`Successfully booked ${items.length} parcel(s)! 🎉\nAll parcels submitted for Admin approval.`);
+    closeUserCodModal();
+    loadUserDashboard(user.uid);
+  } catch (err) {
+    alert("Error booking parcels: " + err.message);
+  }
+}
+
+// Print Airway Bill Slip (Leopards Barcode Layout)
+function printThermalSlip(trackId, name, phone, city, address, cod, shipper, origin) {
+  const url = `cod_bill.html?trackId=${trackId}&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}&city=${encodeURIComponent(city)}&address=${encodeURIComponent(address)}&cod=${cod}&shipper=${encodeURIComponent(shipper)}&origin=${encodeURIComponent(origin)}`;
+  window.open(url, '_blank', 'width=500,height=700');
+}
+
+// Admin Section Switcher
 function showAdminSection(sectionType) {
   const activeSection = document.getElementById('activeUsersSection');
   const deletedSection = document.getElementById('deletedUsersSection');
@@ -238,7 +363,7 @@ function closeAddCodModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-// Handle Admin Parcel Creation
+// Handle Admin Manual Parcel Creation
 async function handleAdminCreateParcel(e) {
   if (e && e.preventDefault) e.preventDefault();
 
@@ -247,9 +372,9 @@ async function handleAdminCreateParcel(e) {
   const cCity = document.getElementById('adminCustCity').value.trim();
   const cCod = document.getElementById('adminTotalCod').value.trim();
   const cAddress = document.getElementById('adminCustAddress').value.trim();
-  const itemDetail = document.getElementById('adminItemDetail').value.trim();
+  const itemDetail = document.getElementById('adminItemDetail') ? document.getElementById('adminItemDetail').value.trim() : '';
 
-  const trackId = "PT-" + Math.floor(100000 + Math.random() * 900000);
+  const trackId = "KI" + Math.floor(1000000000 + Math.random() * 9000000000);
 
   try {
     await db.collection('parcels').add({
@@ -260,11 +385,12 @@ async function handleAdminCreateParcel(e) {
       custAddress: cAddress,
       totalCod: parseFloat(cCod),
       itemDetail: itemDetail,
-      status: 'Pending',
+      status: 'Approved / In Transit',
+      approvedByAdmin: true,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    alert(`COD Parcel Booked Successfully! 🎉\nTracking ID: ${trackId}`);
+    alert(`COD Parcel Booked & Approved Successfully! 🎉\nTracking ID: ${trackId}`);
     closeAddCodModal();
     loadAdminDashboard();
   } catch (err) {
@@ -498,27 +624,33 @@ async function loadUserDashboard(uid) {
   tableBody.innerHTML = '';
 
   if (snapshot.empty) {
-    tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No parcels booked yet.</td></tr>`;
+    tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">No parcels booked yet.</td></tr>`;
   }
 
   snapshot.forEach((doc) => {
     const data = doc.data();
     total++;
-    if (data.status === 'Pending') pending++;
-    else if (data.status === 'In Transit') inTransit++;
+    if (data.status.includes('Pending')) pending++;
+    else if (data.status.includes('Transit') || data.status.includes('Approved')) inTransit++;
     else if (data.status === 'Delivered') delivered++;
 
     tableBody.innerHTML += `
-      <tr class="border-b hover:bg-slate-800/50 text-xs">
+      <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 text-xs">
         <td class="p-3 font-bold font-mono text-amber-400">${data.trackId || 'N/A'}</td>
         <td class="p-3">${data.custName || 'N/A'}</td>
         <td class="p-3">${data.custCity || 'N/A'}</td>
         <td class="p-3 font-bold">PKR ${data.totalCod || 0}</td>
         <td class="p-3">
           <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${
-            data.status === 'Delivered' ? 'bg-green-900/50 text-green-300' :
-            data.status === 'In Transit' ? 'bg-blue-900/50 text-blue-300' : 'bg-amber-900/50 text-amber-300'
-          }">${data.status || 'Pending'}</span>
+            data.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-500/30' :
+            (data.status.includes('Transit') || data.status.includes('Approved')) ? 'bg-blue-900/50 text-blue-300 border border-blue-500/30' : 
+            'bg-amber-900/50 text-amber-300 border border-amber-500/30'
+          }">${data.status || 'Pending Admin Approval'}</span>
+        </td>
+        <td class="p-3 text-center">
+          <button onclick="printThermalSlip('${data.trackId}', '${data.custName}', '${data.custPhone}', '${data.custCity}', '${data.custAddress}', '${data.totalCod}', '${data.shipperName}', '${data.shipperAddress}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded font-bold text-[10px] shadow flex items-center justify-center gap-1 mx-auto">
+            <i class="fa-solid fa-print"></i> Print Slip
+          </button>
         </td>
       </tr>
     `;
@@ -530,7 +662,7 @@ async function loadUserDashboard(uid) {
   if (document.getElementById('cardDelivered')) document.getElementById('cardDelivered').innerText = delivered;
 }
 
-// Load Admin Parcels
+// Load Admin Parcels & Approval Action
 async function loadAdminDashboard() {
   const snapshot = await db.collection('parcels').get();
   let totalParcels = 0, pendingParcels = 0;
@@ -541,7 +673,7 @@ async function loadAdminDashboard() {
     const data = doc.data();
     const docId = doc.id;
     totalParcels++;
-    if (data.status === 'Pending') pendingParcels++;
+    if (data.status.includes('Pending')) pendingParcels++;
 
     if (adminParcelTable) {
       parcelRowsHtml += `
@@ -561,10 +693,15 @@ async function loadAdminDashboard() {
               data.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-500/30' :
               (data.status === 'Rejected' || data.status === 'Returned') ? 'bg-rose-900/50 text-rose-300 border border-rose-500/30' :
               'bg-amber-900/50 text-amber-300 border border-amber-500/30'
-            }">${data.status || 'Pending'}</span>
-            ${data.returnReason ? `<div class="text-[10px] text-rose-300 mt-0.5">Reason: ${data.returnReason}</div>` : ''}
+            }">${data.status || 'Pending Admin Approval'}</span>
           </td>
-          <td class="p-3 text-center">
+          <td class="p-3 text-center flex items-center justify-center gap-1.5">
+            ${!data.approvedByAdmin ? 
+              `<button onclick="approveParcelByAdmin('${docId}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded font-bold text-[10px] shadow flex items-center gap-1">
+                <i class="fa-solid fa-check"></i> Approve & Unfreeze
+               </button>` : 
+              `<span class="text-emerald-400 text-[10px] font-bold"><i class="fa-solid fa-circle-check"></i> Rider Assigned</span>`
+            }
             <button onclick="deleteParcel('${docId}')" class="bg-rose-600/30 hover:bg-rose-600 text-rose-300 hover:text-white px-2 py-1 rounded font-bold text-[10px] transition">
               <i class="fa-solid fa-trash"></i> Delete
             </button>
@@ -579,6 +716,20 @@ async function loadAdminDashboard() {
   if (adminParcelTable) adminParcelTable.innerHTML = parcelRowsHtml !== '' ? parcelRowsHtml : `<tr><td colspan="6" class="p-4 text-center text-slate-400">No parcels found.</td></tr>`;
 }
 
+// Admin Approve & Unfreeze Parcel for Rider
+async function approveParcelByAdmin(docId) {
+  try {
+    await db.collection('parcels').doc(docId).update({
+      status: 'Approved / In Transit',
+      approvedByAdmin: true
+    });
+    alert("Parcel Approved & Unfrozen for Rider Portal! ✅");
+    loadAdminDashboard();
+  } catch (err) {
+    alert("Error approving parcel: " + err.message);
+  }
+}
+
 // Delete Parcel Function for Admin
 async function deleteParcel(docId) {
   if (confirm("Are you sure you want to delete this parcel record?")) {
@@ -591,7 +742,7 @@ async function deleteParcel(docId) {
   }
 }
 
-// Load Rider Dashboard Data
+// Load Rider Dashboard Data (Shows Only Approved Unfrozen Parcels)
 async function loadRiderDashboard() {
   const tableBody = document.getElementById('riderParcelTable');
   if (!tableBody) return;
@@ -605,54 +756,57 @@ async function loadRiderDashboard() {
       const p = doc.data();
       const docId = doc.id;
 
-      if (p.status === 'Delivered') {
-        deliveredCount++;
-        totalCodCollected += parseFloat(p.totalCod || 0);
-      } else if (p.status === 'Rejected' || p.status === 'Returned') {
-        failedCount++;
-      } else {
-        pendingCount++;
-      }
+      // Only show unfrozen/approved parcels to rider
+      if (p.approvedByAdmin) {
+        if (p.status === 'Delivered') {
+          deliveredCount++;
+          totalCodCollected += parseFloat(p.totalCod || 0);
+        } else if (p.status === 'Rejected' || p.status === 'Returned') {
+          failedCount++;
+        } else {
+          pendingCount++;
+        }
 
-      tableHtml += `
-        <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition text-xs">
-          <td class="p-3">
-            <div class="font-bold text-amber-400 font-mono">${p.trackId || docId}</div>
-            <div class="text-[10px] text-slate-400">${p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleString() : 'N/A'}</div>
-          </td>
-          <td class="p-3">
-            <div class="font-bold text-slate-100">${p.custName || 'N/A'}</div>
-            <div class="text-emerald-400 font-semibold"><i class="fa-solid fa-phone"></i> ${p.custPhone || 'N/A'}</div>
-          </td>
-          <td class="p-3">
-            <div class="text-slate-200">${p.custAddress || 'N/A'}</div>
-            <div class="text-[10px] text-amber-400 font-bold">${p.custCity || 'N/A'}</div>
-          </td>
-          <td class="p-3 font-bold text-white">PKR ${p.totalCod || 0}</td>
-          <td class="p-3">
-            <span class="px-2 py-1 rounded-full text-[10px] font-bold ${
-              p.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30' :
-              (p.status === 'Rejected' || p.status === 'Returned') ? 'bg-rose-900/50 text-rose-400 border border-rose-500/30' :
-              'bg-amber-900/50 text-amber-400 border border-amber-500/30'
-            }">${p.status || 'Pending'}</span>
-            ${p.returnReason ? `<div class="text-[10px] text-rose-300 mt-1">Reason: ${p.returnReason}</div>` : ''}
-          </td>
-          <td class="p-3 text-center flex items-center justify-center gap-1.5">
-            ${p.status === 'Delivered' ? 
-              `<span class="text-emerald-400 font-bold text-base"><i class="fa-solid fa-circle-check"></i> Delivered</span>` : 
-              `<button onclick="openRiderActionModal('${docId}', 'delivered')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded font-bold text-xs shadow flex items-center gap-1">
-                <i class="fa-solid fa-check"></i> Mark Delivered
-               </button>
-               <button onclick="openRiderActionModal('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded font-bold text-xs shadow flex items-center gap-1">
-                <i class="fa-solid fa-xmark"></i> Reject / Return
-               </button>`
-            }
-          </td>
-        </tr>
-      `;
+        tableHtml += `
+          <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition text-xs">
+            <td class="p-3">
+              <div class="font-bold text-amber-400 font-mono">${p.trackId || docId}</div>
+              <div class="text-[10px] text-slate-400">${p.createdAt ? new Date(p.createdAt.seconds * 1000).toLocaleString() : 'N/A'}</div>
+            </td>
+            <td class="p-3">
+              <div class="font-bold text-slate-100">${p.custName || 'N/A'}</div>
+              <div class="text-emerald-400 font-semibold"><i class="fa-solid fa-phone"></i> ${p.custPhone || 'N/A'}</div>
+            </td>
+            <td class="p-3">
+              <div class="text-slate-200">${p.custAddress || 'N/A'}</div>
+              <div class="text-[10px] text-amber-400 font-bold">${p.custCity || 'N/A'}</div>
+            </td>
+            <td class="p-3 font-bold text-white">PKR ${p.totalCod || 0}</td>
+            <td class="p-3">
+              <span class="px-2 py-1 rounded-full text-[10px] font-bold ${
+                p.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30' :
+                (p.status === 'Rejected' || p.status === 'Returned') ? 'bg-rose-900/50 text-rose-400 border border-rose-500/30' :
+                'bg-amber-900/50 text-amber-400 border border-amber-500/30'
+              }">${p.status || 'Assigned'}</span>
+              ${p.returnReason ? `<div class="text-[10px] text-rose-300 mt-1">Reason: ${p.returnReason}</div>` : ''}
+            </td>
+            <td class="p-3 text-center flex items-center justify-center gap-1.5">
+              ${p.status === 'Delivered' ? 
+                `<span class="text-emerald-400 font-bold text-base"><i class="fa-solid fa-circle-check"></i> Delivered</span>` : 
+                `<button onclick="openRiderActionModal('${docId}', 'delivered')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded font-bold text-xs shadow flex items-center gap-1">
+                  <i class="fa-solid fa-check"></i> Mark Delivered
+                 </button>
+                 <button onclick="openRiderActionModal('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded font-bold text-xs shadow flex items-center gap-1">
+                  <i class="fa-solid fa-xmark"></i> Reject / Return
+                 </button>`
+              }
+            </td>
+          </tr>
+        `;
+      }
     });
 
-    tableBody.innerHTML = tableHtml !== '' ? tableHtml : `<tr><td colspan="6" class="p-4 text-center text-slate-400">No parcels assigned yet.</td></tr>`;
+    tableBody.innerHTML = tableHtml !== '' ? tableHtml : `<tr><td colspan="6" class="p-4 text-center text-slate-400">No approved/unfrozen deliveries assigned yet.</td></tr>`;
 
     if (document.getElementById('riderPendingCount')) document.getElementById('riderPendingCount').innerText = pendingCount;
     if (document.getElementById('riderDeliveredCount')) document.getElementById('riderDeliveredCount').innerText = deliveredCount;
