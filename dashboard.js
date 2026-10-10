@@ -18,6 +18,105 @@ const db = firebase.firestore();
 
 let currentParcelCount = 1;
 
+// ---------------- PUBLIC TRACKING TIMELINE LOGIC ---------------- //
+
+async function searchPublicParcel() {
+  const input = document.getElementById('publicTrackInput');
+  const resultCard = document.getElementById('trackingResult');
+  const timelineBox = document.getElementById('trackingTimeline');
+
+  if (!input || !input.value.trim()) {
+    alert("Karam karke Tracking ID enter karein!");
+    return;
+  }
+
+  const trackIdSearch = input.value.trim();
+
+  try {
+    const snap = await db.collection('parcels').where('trackId', '==', trackIdSearch).get();
+
+    if (snap.empty) {
+      alert("Koi parcel record nahi mila! Kripya Tracking ID check karein.");
+      if (resultCard) resultCard.classList.add('hidden');
+      return;
+    }
+
+    const data = snap.docs[0].data();
+
+    document.getElementById('resTrackId').innerText = data.trackId || trackIdSearch;
+    document.getElementById('resReceiver').innerText = `${data.custName || 'N/A'} (${data.custCity || 'N/A'})`;
+    document.getElementById('resCod').innerText = `PKR ${data.totalCod || 0}`;
+    document.getElementById('resAddress').innerText = data.custAddress || 'N/A';
+    document.getElementById('resStatusBadge').innerText = (data.status || 'Pending').toUpperCase();
+
+    // Format Timestamp Helper
+    const formatTime = (ts) => ts ? new Date(ts.seconds * 1000).toLocaleString('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) : 'Processing...';
+
+    // Build Step-by-Step History Timeline
+    let timelineHtml = `
+      <div class="relative pl-4 border-l-2 border-amber-400 space-y-0.5 pb-2">
+        <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-amber-400"></div>
+        <p class="font-bold text-white text-xs">Parcel Booked & Submitted</p>
+        <p class="text-[10px] text-slate-400">${formatTime(data.createdAt)}</p>
+      </div>
+    `;
+
+    if (data.approvedByAdmin) {
+      timelineHtml += `
+        <div class="relative pl-4 border-l-2 border-blue-400 space-y-0.5 pb-2">
+          <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-blue-400"></div>
+          <p class="font-bold text-white text-xs">Approved & Unfrozen by Admin</p>
+          <p class="text-[10px] text-slate-400">In Transit Hub</p>
+        </div>
+      `;
+    }
+
+    if (data.status === 'Picked Up from Office' || data.status === 'Out for Delivery / On The Way' || data.status === 'Delivered') {
+      timelineHtml += `
+        <div class="relative pl-4 border-l-2 border-purple-400 space-y-0.5 pb-2">
+          <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-purple-400"></div>
+          <p class="font-bold text-white text-xs">Picked Up by Courier Rider</p>
+          <p class="text-[10px] text-slate-400">Rider Collected Shipment</p>
+        </div>
+      `;
+    }
+
+    if (data.status === 'Out for Delivery / On The Way' || data.status === 'Delivered') {
+      timelineHtml += `
+        <div class="relative pl-4 border-l-2 border-blue-500 space-y-0.5 pb-2">
+          <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-blue-500"></div>
+          <p class="font-bold text-white text-xs">Out for Delivery (On The Way)</p>
+          <p class="text-[10px] text-slate-400">Rider Dispatched to Customer Address</p>
+        </div>
+      `;
+    }
+
+    if (data.status === 'Delivered') {
+      timelineHtml += `
+        <div class="relative pl-4 border-l-2 border-emerald-400 space-y-0.5">
+          <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-emerald-400"></div>
+          <p class="font-bold text-emerald-400 text-xs">Parcel Delivered Successfully 🎉</p>
+          <p class="text-[10px] text-slate-400">${formatTime(data.deliveredAt)}</p>
+        </div>
+      `;
+    } else if (data.status && (data.status.includes('Hold') || data.status.includes('Failed') || data.status.includes('Rejected'))) {
+      timelineHtml += `
+        <div class="relative pl-4 border-l-2 border-rose-400 space-y-0.5">
+          <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-rose-400"></div>
+          <p class="font-bold text-rose-400 text-xs">${data.status}</p>
+          <p class="text-[10px] text-rose-300">Remark: ${data.returnReason || 'No remark added'}</p>
+        </div>
+      `;
+    }
+
+    if (timelineBox) timelineBox.innerHTML = timelineHtml;
+    if (resultCard) resultCard.classList.remove('hidden');
+
+  } catch (err) {
+    alert("Tracking error: " + err.message);
+  }
+}
+
 // Admin Custom Tracking IDs Pool Controls
 function openCustomTrackModal() {
   const modal = document.getElementById('customTrackModal');
