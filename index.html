@@ -28,63 +28,65 @@
         </div>
     </header>
 
-    <!-- Main Hero Tracking Section -->
-    <main class="max-w-4xl mx-auto px-4 py-12 w-full text-center space-y-8">
+    <!-- Main Hero Tracking Section with Background Image -->
+    <main class="relative bg-cover bg-center bg-no-style min-h-[85vh] flex items-center justify-center px-4 py-12 w-full" style="background-image: linear-gradient(to bottom, rgba(2, 6, 23, 0.75), rgba(2, 6, 23, 0.9)), url('bg-track.png');">
         
-        <div class="space-y-3">
-            <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-400/10 text-amber-400 border border-amber-400/20 uppercase tracking-widest">Real-time Express Tracking</span>
-            <h2 class="text-3xl md:text-5xl font-black text-white tracking-tight">Track Your Parcel Anytime, Anywhere</h2>
-            <p class="text-xs md:text-sm text-slate-400 max-w-xl mx-auto">Stay updated with your shipment status and get real-time tracking information, from pickup to delivery.</p>
-        </div>
+        <div class="max-w-4xl mx-auto text-center space-y-8 z-10 w-full">
+            <div class="space-y-3">
+                <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-400/10 text-amber-400 border border-amber-400/20 uppercase tracking-widest">Real-time Express Tracking</span>
+                <h2 class="text-3xl md:text-5xl font-black text-white tracking-tight">Track Your Parcel Anytime, Anywhere</h2>
+                <p class="text-xs md:text-sm text-slate-300 max-w-xl mx-auto drop-shadow">Stay updated with your shipment status and get real-time tracking information, from pickup to delivery.</p>
+            </div>
 
-        <!-- Search Input Box -->
-        <div class="bg-slate-900 border border-slate-800 p-3 md:p-4 rounded-2xl shadow-2xl max-w-xl mx-auto space-y-3">
-            <form onsubmit="event.preventDefault(); searchPublicParcel();" class="flex gap-2">
-                <input type="text" id="publicTrackInput" placeholder="Enter Your Tracking Number (e.g. PT-123456)..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white font-mono outline-none focus:border-amber-400 transition">
-                <button type="submit" class="bg-amber-400 hover:bg-amber-500 text-slate-950 font-black px-6 py-3 rounded-xl text-xs shadow-lg transition flex items-center gap-2 shrink-0">
-                    <i class="fa-solid fa-magnifying-glass"></i> Track
-                </button>
-            </form>
+            <!-- Search Input Box -->
+            <div class="bg-slate-900/90 backdrop-blur-md border border-slate-800 p-3 md:p-4 rounded-2xl shadow-2xl max-w-xl mx-auto space-y-3">
+                <form onsubmit="event.preventDefault(); searchPublicParcel();" class="flex gap-2">
+                    <input type="text" id="publicTrackInput" placeholder="Enter Your Tracking Number (e.g. PT-123456)..." class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white font-mono outline-none focus:border-amber-400 transition">
+                    <button type="submit" class="bg-amber-400 hover:bg-amber-500 text-slate-950 font-black px-6 py-3 rounded-xl text-xs shadow-lg transition flex items-center gap-2 shrink-0">
+                        <i class="fa-solid fa-magnifying-glass"></i> Track
+                    </button>
+                </form>
 
-            <!-- Professional Tracking Result Card & History Timeline -->
-            <div id="trackingResult" class="hidden mt-4 bg-slate-950/90 border border-slate-800 p-5 rounded-xl text-left space-y-4 shadow-2xl">
-                
-                <!-- Top Header Info -->
-                <div class="border-b border-slate-800 pb-3 flex justify-between items-center">
-                    <div>
-                        <p class="text-[10px] text-amber-400 uppercase font-black tracking-widest">Tracking Number</p>
-                        <h3 id="resTrackId" class="text-base font-black text-white font-mono">PT-000000</h3>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[10px] text-slate-400 font-bold uppercase">Current Status</p>
-                        <span id="resStatusBadge" class="px-3 py-1 rounded-full text-[10px] font-black uppercase bg-amber-400 text-slate-950">PENDING</span>
-                    </div>
-                </div>
-
-                <!-- Consignee Details -->
-                <div class="grid grid-cols-2 gap-3 text-xs">
-                    <div>
-                        <span class="text-slate-400 block text-[10px] font-bold">Consignee Receiver:</span>
-                        <span id="resReceiver" class="text-white font-bold">N/A</span>
-                    </div>
-                    <div>
-                        <span class="text-slate-400 block text-[10px] font-bold">COD Amount:</span>
-                        <span id="resCod" class="text-amber-400 font-black">PKR 0</span>
-                    </div>
-                    <div class="col-span-2">
-                        <span class="text-slate-400 block text-[10px] font-bold">Delivery Address:</span>
-                        <span id="resAddress" class="text-slate-200">N/A</span>
-                    </div>
-                </div>
-
-                <!-- Shipment History Timeline Section -->
-                <div class="border-t border-slate-800 pt-3 space-y-2">
-                    <p class="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-clock-rotate-left"></i> Shipment History Timeline
-                    </p>
+                <!-- Professional Tracking Result Card & History Timeline -->
+                <div id="trackingResult" class="hidden mt-4 bg-slate-950/90 border border-slate-800 p-5 rounded-xl text-left space-y-4 shadow-2xl">
                     
-                    <div id="trackingTimeline" class="space-y-3 pl-2 my-2 text-xs">
-                        <!-- Dynamic History Steps Will Render Here -->
+                    <!-- Top Header Info -->
+                    <div class="border-b border-slate-800 pb-3 flex justify-between items-center">
+                        <div>
+                            <p class="text-[10px] text-amber-400 uppercase font-black tracking-widest">Tracking Number</p>
+                            <h3 id="resTrackId" class="text-base font-black text-white font-mono">PT-000000</h3>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase">Current Status</p>
+                            <span id="resStatusBadge" class="px-3 py-1 rounded-full text-[10px] font-black uppercase bg-amber-400 text-slate-950">PENDING</span>
+                        </div>
+                    </div>
+
+                    <!-- Consignee Details -->
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <span class="text-slate-400 block text-[10px] font-bold">Consignee Receiver:</span>
+                            <span id="resReceiver" class="text-white font-bold">N/A</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block text-[10px] font-bold">COD Amount:</span>
+                            <span id="resCod" class="text-amber-400 font-black">PKR 0</span>
+                        </div>
+                        <div class="col-span-2">
+                            <span class="text-slate-400 block text-[10px] font-bold">Delivery Address:</span>
+                            <span id="resAddress" class="text-slate-200">N/A</span>
+                        </div>
+                    </div>
+
+                    <!-- Shipment History Timeline Section -->
+                    <div class="border-t border-slate-800 pt-3 space-y-2">
+                        <p class="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-clock-rotate-left"></i> Shipment History Timeline
+                        </p>
+                        
+                        <div id="trackingTimeline" class="space-y-3 pl-2 my-2 text-xs">
+                            <!-- Dynamic History Steps Will Render Here -->
+                        </div>
                     </div>
                 </div>
             </div>
