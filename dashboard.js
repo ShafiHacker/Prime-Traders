@@ -18,37 +18,48 @@ const db = firebase.firestore();
 
 let currentParcelCount = 1;
 
-// Auth State Listener for Dashboard Pages
+// Auth State Listener for All Pages
 auth.onAuthStateChanged(async (user) => {
   if (user) {
-    // Fetch and Display User Profile & Image on Dashboard
-    try {
-      const userDoc = await db.collection('users').doc(user.uid).get();
-      if (userDoc.exists) {
-        const uData = userDoc.data();
-        
-        // Render Profile Picture in Header
-        const profilePicImg = document.getElementById('userProfilePic');
-        if (profilePicImg) {
-          profilePicImg.src = uData.logoUrl || "https://via.placeholder.com/40";
-        }
+    const path = window.location.pathname;
 
-        // Render Name/Business Name
-        const nameDisplay = document.getElementById('userNameDisplay');
-        if (nameDisplay) {
-          nameDisplay.innerText = uData.businessName || uData.name || 'Merchant';
+    // Fetch and Display User Profile & Image on Customer Dashboard
+    if (path.includes('dashboard.html')) {
+      try {
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+          const uData = userDoc.data();
+          const profilePicImg = document.getElementById('userProfilePic');
+          if (profilePicImg) {
+            profilePicImg.src = uData.logoUrl || "https://via.placeholder.com/40";
+          }
+          const nameDisplay = document.getElementById('userNameDisplay');
+          if (nameDisplay) {
+            nameDisplay.innerText = uData.businessName || uData.name || 'Merchant';
+          }
+          loadUserDashboard(user.uid);
+          loadUserStats(user.uid);
         }
-
-        // Load Dashboard Parcels & Stats
-        loadUserDashboard(user.uid);
-        loadUserStats(user.uid);
+      } catch (e) {
+        console.error("Error loading profile data:", e);
       }
-    } catch (e) {
-      console.error("Error loading profile data:", e);
     }
+
+    // Admin Dashboard Initialization
+    if (path.includes('admin.html')) {
+      loadUsersTable();
+      loadAdminDashboard();
+      loadAdminStats();
+    }
+
+    // Rider Dashboard Initialization
+    if (path.includes('rider.html')) {
+      loadRiderDashboard();
+    }
+
   } else {
-    // If on dashboard and not logged in, redirect to login
-    if (window.location.pathname.includes('dashboard.html')) {
+    const path = window.location.pathname;
+    if (path.includes('dashboard.html') || path.includes('admin.html') || path.includes('rider.html')) {
       window.location.href = 'login.html';
     }
   }
@@ -431,7 +442,6 @@ function closeProfileModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-// Save Profile Update (including Logo/Profile Picture)
 async function saveProfileUpdate(e) {
   if (e && e.preventDefault) e.preventDefault();
   const user = auth.currentUser;
@@ -571,65 +581,265 @@ function printThermalSlip(trackId, name, phone, city, address, cod, shipper, ori
   window.open(url, '_blank', 'width=500,height=700');
 }
 
-// Load Customer Stats Counter Cards
-async function loadUserStats(uid) {
-  try {
-    const snap = await db.collection('parcels').where('userId', '==', uid).get();
-    let total = snap.size;
-    let pending = 0;
-    let inTransit = 0;
-    let delivered = 0;
+// ---------------- ADMIN DASHBOARD FUNCTIONS ---------------- //
 
-    snap.forEach(doc => {
-      const d = doc.data();
-      const st = d.status || '';
-      if (st.includes('Pending')) pending++;
-      else if (st.includes('Delivered')) delivered++;
-      else inTransit++;
+function showAdminSection(sectionType) {
+  const activeSection = document.getElementById('activeUsersSection');
+  const deletedSection = document.getElementById('deletedUsersSection');
+  const trackingSection = document.getElementById('trackingSection');
+
+  if (sectionType === 'active') {
+    if (activeSection) activeSection.classList.remove('hidden');
+    if (deletedSection) deletedSection.classList.add('hidden');
+    if (trackingSection) trackingSection.classList.add('hidden');
+  } else if (sectionType === 'deleted') {
+    if (activeSection) activeSection.classList.add('hidden');
+    if (deletedSection) deletedSection.classList.remove('hidden');
+    if (trackingSection) trackingSection.classList.add('hidden');
+  } else if (sectionType === 'tracking') {
+    if (activeSection) activeSection.classList.add('hidden');
+    if (deletedSection) deletedSection.classList.add('hidden');
+    if (trackingSection) trackingSection.classList.remove('hidden');
+  }
+}
+
+function openAddCodModal() {
+  const modal = document.getElementById('addCodModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeAddCodModal() {
+  const modal = document.getElementById('addCodModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function handleAdminCreateParcel(e) {
+  if (e && e.preventDefault) e.preventDefault();
+
+  const cName = document.getElementById('adminCustName').value.trim();
+  const cPhone = document.getElementById('adminCustPhone').value.trim();
+  const cCity = document.getElementById('adminCustCity').value.trim();
+  const cCod = document.getElementById('adminTotalCod').value.trim();
+  const cAddress = document.getElementById('adminCustAddress').value.trim();
+  const itemDetail = document.getElementById('adminItemDetail') ? document.getElementById('adminItemDetail').value.trim() : '';
+
+  const trackId = await getNextCustomTrackId();
+
+  try {
+    await db.collection('parcels').add({
+      trackId: trackId,
+      custName: cName,
+      custPhone: cPhone,
+      custCity: cCity,
+      custAddress: cAddress,
+      totalCod: parseFloat(cCod),
+      itemDetail: itemDetail,
+      status: 'Approved / In Transit',
+      approvedByAdmin: true,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    if (document.getElementById('cardTotal')) document.getElementById('cardTotal').innerText = total;
-    if (document.getElementById('cardPending')) document.getElementById('cardPending').innerText = pending;
-    if (document.getElementById('cardInTransit')) document.getElementById('cardInTransit').innerText = inTransit;
-    if (document.getElementById('cardDelivered')) document.getElementById('cardDelivered').innerText = delivered;
+    alert(`COD Parcel Booked & Approved Successfully! 🎉\nTracking ID: ${trackId}`);
+    closeAddCodModal();
+    loadAdminDashboard();
+    loadAdminStats();
+  } catch (err) {
+    alert("Error booking parcel: " + err.message);
+  }
+}
+
+async function loadUsersTable() {
+  const activeTableBody = document.getElementById('userTableBody');
+  const deletedTableBody = document.getElementById('deletedUserTableBody');
+
+  try {
+    const snapshot = await db.collection('users').get();
+    let activeUsersHtml = '';
+    let deletedUsersHtml = '';
+
+    snapshot.forEach((doc) => {
+      const u = doc.data();
+      const uid = doc.id;
+      const status = u.status || 'approved';
+      const role = u.role || 'customer';
+      const type = u.accountType || 'business';
+
+      if (status === 'deleted') {
+        deletedUsersHtml += `
+          <tr class="border-b border-slate-700/50 text-xs">
+            <td class="p-3"><div class="font-bold text-slate-100">${u.name || 'N/A'}</div></td>
+            <td class="p-3">${u.email || 'N/A'}</td>
+            <td class="p-3">${type}</td>
+            <td class="p-3"><span class="text-rose-400 font-bold">DELETED</span></td>
+            <td class="p-3 text-center">
+              <button onclick="restoreUser('${uid}')" class="bg-emerald-600 text-white px-2 py-1 rounded text-xs font-bold">Restore</button>
+            </td>
+          </tr>
+        `;
+      } else {
+        activeUsersHtml += `
+          <tr class="border-b border-slate-700/50 text-xs">
+            <td class="p-3"><div class="font-bold text-slate-100">${u.name || 'N/A'}</div></td>
+            <td class="p-3">${u.email || 'N/A'}</td>
+            <td class="p-3">${type}</td>
+            <td class="p-3">${role}</td>
+            <td class="p-3"><span class="text-emerald-400 font-bold">${status.toUpperCase()}</span></td>
+            <td class="p-3 text-center flex justify-center gap-1">
+              <button onclick="updateUserStatus('${uid}', 'approved')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">Approve</button>
+              <button onclick="updateUserStatus('${uid}', 'rejected')" class="bg-rose-600 text-white px-2 py-1 rounded text-[10px] font-bold">Reject</button>
+            </td>
+          </tr>
+        `;
+      }
+    });
+
+    if (activeTableBody) activeTableBody.innerHTML = activeUsersHtml !== '' ? activeUsersHtml : `<tr><td colspan="6" class="p-4 text-center">No active users.</td></tr>`;
+    if (deletedTableBody) deletedTableBody.innerHTML = deletedUsersHtml !== '' ? deletedUsersHtml : `<tr><td colspan="5" class="p-4 text-center">No archived users.</td></tr>`;
+  } catch (err) { console.error(err); }
+}
+
+async function updateUserStatus(uid, newStatus) {
+  await db.collection('users').doc(uid).update({ status: newStatus });
+  loadUsersTable();
+  loadAdminStats();
+}
+
+async function restoreUser(uid) {
+  await db.collection('users').doc(uid).update({ status: 'pending' });
+  loadUsersTable();
+  loadAdminStats();
+}
+
+async function loadAdminDashboard() {
+  const snapshot = await db.collection('parcels').get();
+  const adminParcelTable = document.getElementById('adminParcelTable');
+  let parcelRowsHtml = '';
+
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    const docId = doc.id;
+
+    if (adminParcelTable) {
+      parcelRowsHtml += `
+        <tr class="border-b border-slate-700/50 text-xs">
+          <td class="p-3 font-bold text-amber-400 font-mono">${data.trackId || docId}</td>
+          <td class="p-3">${data.custName || 'N/A'}</td>
+          <td class="p-3">${data.custCity || 'N/A'}</td>
+          <td class="p-3 font-bold">PKR ${data.totalCod || 0}</td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+              data.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30' :
+              data.status === 'Out for Delivery / On The Way' ? 'bg-blue-900/50 text-blue-300 border border-blue-500/30' :
+              'bg-amber-900/50 text-amber-300 border border-amber-500/30'
+            }">${data.status || 'Pending'}</span>
+            ${data.returnReason ? `<div class="text-[10px] text-rose-300 mt-0.5">Remark: ${data.returnReason}</div>` : ''}
+          </td>
+          <td class="p-3 text-center flex justify-center gap-1">
+            ${!data.approvedByAdmin ? `<button onclick="approveParcelByAdmin('${docId}')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">Approve & Unfreeze</button>` : `<span class="text-emerald-400 font-bold text-[10px]">Unfrozen / Assigned</span>`}
+            <button onclick="deleteParcel('${docId}')" class="bg-rose-600 text-white px-2 py-1 rounded text-[10px]">Delete</button>
+          </td>
+        </tr>
+      `;
+    }
+  });
+
+  if (adminParcelTable) adminParcelTable.innerHTML = parcelRowsHtml !== '' ? parcelRowsHtml : `<tr><td colspan="6" class="p-4 text-center">No parcels found.</td></tr>`;
+}
+
+async function approveParcelByAdmin(docId) {
+  await db.collection('parcels').doc(docId).update({ status: 'Approved / In Transit', approvedByAdmin: true });
+  loadAdminDashboard();
+  loadAdminStats();
+}
+
+async function deleteParcel(docId) {
+  if (confirm("Delete parcel?")) {
+    await db.collection('parcels').doc(docId).delete();
+    loadAdminDashboard();
+    loadAdminStats();
+  }
+}
+
+async function loadAdminStats() {
+  try {
+    const parcelSnap = await db.collection('parcels').get();
+    const userSnap = await db.collection('users').get();
+
+    let totalShipments = parcelSnap.size;
+    let pendingApproval = 0;
+    let activeUsersCount = 0;
+    let deletedUsersCount = 0;
+
+    parcelSnap.forEach(doc => {
+      const d = doc.data();
+      if (d.status && d.status.includes('Pending')) {
+        pendingApproval++;
+      }
+    });
+
+    userSnap.forEach(doc => {
+      const u = doc.data();
+      if (u.status === 'deleted') {
+        deletedUsersCount++;
+      } else {
+        activeUsersCount++;
+      }
+    });
+
+    if (document.getElementById('cardTotalShipments')) document.getElementById('cardTotalShipments').innerText = totalShipments;
+    if (document.getElementById('cardActiveUsers')) document.getElementById('cardActiveUsers').innerText = activeUsersCount;
+    if (document.getElementById('cardDeletedUsers')) document.getElementById('cardDeletedUsers').innerText = deletedUsersCount;
+    if (document.getElementById('cardPendingApproval')) document.getElementById('cardPendingApproval').innerText = pendingApproval;
   } catch (e) {
     console.error(e);
   }
 }
 
-async function loadUserDashboard(uid) {
-  const snapshot = await db.collection('parcels').where('userId', '==', uid).get();
-  const tableBody = document.getElementById('userParcelTable');
-  if (!tableBody) return;
-  tableBody.innerHTML = '';
+// ---------------- RIDER PORTAL FUNCTIONS ---------------- //
 
-  if (snapshot.empty) {
-    tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">No parcels found.</td></tr>`;
-    return;
+async function updateRiderQuickStatus(docId, newStatus) {
+  try {
+    await db.collection('parcels').doc(docId).update({
+      status: newStatus,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert(`Status updated to: ${newStatus} ✅`);
+    loadRiderDashboard();
+  } catch (err) {
+    alert("Error updating status: " + err.message);
   }
+}
 
-  snapshot.forEach((doc) => {
-    const data = doc.data();
-    tableBody.innerHTML += `
-      <tr class="border-b border-slate-700/50 text-xs">
-        <td class="p-3 font-bold text-amber-400 font-mono">${data.trackId || 'N/A'}</td>
-        <td class="p-3">${data.custName || 'N/A'}</td>
-        <td class="p-3">${data.custCity || 'N/A'}</td>
-        <td class="p-3 font-bold">PKR ${data.totalCod || 0}</td>
-        <td class="p-3">
-          <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
-            data.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30' :
-            data.status === 'Out for Delivery / On The Way' ? 'bg-blue-900/50 text-blue-300 border border-blue-500/30' :
-            'bg-amber-900/50 text-amber-300 border border-amber-500/30'
-          }">${data.status || 'Pending'}</span>
-          ${data.returnReason ? `<div class="text-[10px] text-rose-300 mt-0.5">Remark: ${data.returnReason}</div>` : ''}
-        </td>
-        <td class="p-3 text-center">
-          <button onclick="printThermalSlip('${data.trackId}', '${data.custName}', '${data.custPhone}', '${data.custCity}', '${data.custAddress}', '${data.totalCod}', '${data.shipperName}', '${data.shipperAddress}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded font-bold text-[10px] shadow">
-            Print Slip
-          </button>
-        </td>
-      </tr>
-    `;
-  });
+async function loadRiderDashboard() {
+  const tableBody = document.getElementById('riderParcelTable');
+  if (!tableBody) return;
+
+  try {
+    const snapshot = await db.collection('parcels').get();
+    let rowsHtml = '';
+
+    snapshot.forEach(doc => {
+      const d = doc.data();
+      const docId = doc.id;
+      if (d.approvedByAdmin) {
+        rowsHtml += `
+          <tr class="border-b border-slate-700/50 text-xs">
+            <td class="p-3 font-bold text-amber-400 font-mono">${d.trackId || 'N/A'}</td>
+            <td class="p-3">${d.custName || 'N/A'}<br><span class="text-slate-400">${d.custPhone || ''}</span></td>
+            <td class="p-3">${d.custCity || 'N/A'}<br><span class="text-slate-400">${d.custAddress || ''}</span></td>
+            <td class="p-3 font-bold">PKR ${d.totalCod || 0}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-900/50 text-blue-300">${d.status}</span></td>
+            <td class="p-3 text-center space-x-1">
+              <button onclick="updateRiderQuickStatus('${docId}', 'Out for Delivery / On The Way')" class="bg-blue-600 text-white px-2 py-1 rounded text-[10px] font-bold">On The Way</button>
+              <button onclick="updateRiderQuickStatus('${docId}', 'Delivered')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">Deliver</button>
+            </td>
+          </tr>
+        `;
+      }
+    });
+
+    tableBody.innerHTML = rowsHtml !== '' ? rowsHtml : `<tr><td colspan="6" class="p-4 text-center">No shipments assigned.</td></tr>`;
+  } catch (e) {
+    console.error(e);
+  }
 }
