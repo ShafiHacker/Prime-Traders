@@ -307,7 +307,7 @@ async function handleRegister(e) {
   }
 }
 
-// Login Routing for Admin, Riders (rider.k & rider.s), and Customers
+// Login Routing for Admin, Riders, and Customers
 async function handleLogin(e) {
   if (e && e.preventDefault) e.preventDefault();
   const emailInput = document.getElementById('loginEmail');
@@ -667,6 +667,7 @@ async function restoreUser(uid) {
   loadAdminStats();
 }
 
+// Load Admin Parcels (Includes Customer Phone Number & Complete Delivery Address)
 async function loadAdminDashboard() {
   const snapshot = await db.collection('parcels').get();
   const adminParcelTable = document.getElementById('adminParcelTable');
@@ -680,9 +681,15 @@ async function loadAdminDashboard() {
       parcelRowsHtml += `
         <tr class="border-b border-slate-700/50 text-xs">
           <td class="p-3 font-bold text-amber-400 font-mono">${data.trackId || docId}</td>
-          <td class="p-3">${data.custName || 'N/A'}</td>
-          <td class="p-3">${data.custCity || 'N/A'}</td>
-          <td class="p-3 font-bold">PKR ${data.totalCod || 0}</td>
+          <td class="p-3 font-medium text-slate-200">
+            ${data.custName || 'N/A'}
+            ${data.custPhone ? `<div class="text-[10px] text-slate-400 mt-0.5">${data.custPhone}</div>` : ''}
+          </td>
+          <td class="p-3">
+            <div class="font-bold text-slate-200">${data.custCity || 'N/A'}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5 max-w-xs break-words">${data.custAddress || 'Address N/A'}</div>
+          </td>
+          <td class="p-3 font-bold text-amber-300">PKR ${data.totalCod || 0}</td>
           <td class="p-3">
             <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
               data.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30' :
