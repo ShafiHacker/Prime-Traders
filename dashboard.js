@@ -307,7 +307,7 @@ async function handleRegister(e) {
   }
 }
 
-// Login Routing for Admin, Riders, and Customers
+// Login Routing for Admin Accounts (admin, abubakr, mkashan), Rider Accounts, and Customers
 async function handleLogin(e) {
   if (e && e.preventDefault) e.preventDefault();
   const emailInput = document.getElementById('loginEmail');
@@ -321,7 +321,19 @@ async function handleLogin(e) {
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
 
-    if (email === "admin@primetraders.com") { window.location.href = "admin.html"; return; }
+    // Full Admin Access Accounts Check
+    const adminEmails = [
+      "admin@primetraders.com",
+      "abubakr@primetraders.com",
+      "mkashan@primetraders.com"
+    ];
+
+    if (adminEmails.includes(email) || email.includes("admin")) { 
+      window.location.href = "admin.html"; 
+      return; 
+    }
+
+    // Rider Accounts Check
     if (email === "rider.k@primetraders.com" || email === "rider.s@primetraders.com" || email.includes("rider")) { 
       window.location.href = "rider.html"; 
       return; 
@@ -667,7 +679,6 @@ async function restoreUser(uid) {
   loadAdminStats();
 }
 
-// Load Admin Parcels (Includes Customer Phone Number & Complete Delivery Address)
 async function loadAdminDashboard() {
   const snapshot = await db.collection('parcels').get();
   const adminParcelTable = document.getElementById('adminParcelTable');
@@ -713,7 +724,6 @@ async function loadAdminDashboard() {
   if (adminParcelTable) adminParcelTable.innerHTML = parcelRowsHtml !== '' ? parcelRowsHtml : `<tr><td colspan="6" class="p-4 text-center">No parcels found.</td></tr>`;
 }
 
-// Function to approve and assign parcel to specific rider
 async function approveParcelToRider(docId, riderEmail, riderName) {
   try {
     await db.collection('parcels').doc(docId).update({
