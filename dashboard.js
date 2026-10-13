@@ -23,7 +23,7 @@ auth.onAuthStateChanged(async (user) => {
   if (user) {
     const path = window.location.pathname;
 
-    // Fetch and Display User Profile & Image on Customer Dashboard
+    // Customer Dashboard
     if (path.includes('dashboard.html')) {
       try {
         const userDoc = await db.collection('users').doc(user.uid).get();
@@ -45,14 +45,14 @@ auth.onAuthStateChanged(async (user) => {
       }
     }
 
-    // Admin Dashboard Initialization
+    // Admin Dashboard
     if (path.includes('admin.html')) {
       loadUsersTable();
       loadAdminDashboard();
       loadAdminStats();
     }
 
-    // Rider Dashboard Initialization
+    // Rider Dashboard
     if (path.includes('rider.html')) {
       loadRiderDashboard();
     }
@@ -110,13 +110,13 @@ async function searchPublicParcel() {
       timelineHtml += `
         <div class="relative pl-4 border-l-2 border-blue-400 space-y-0.5 pb-2">
           <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-blue-400"></div>
-          <p class="font-bold text-white text-xs">Approved & Unfrozen by Admin</p>
+          <p class="font-bold text-white text-xs">Approved & Assigned to ${data.assignedRiderName || 'Rider'}</p>
           <p class="text-[10px] text-slate-400">In Transit Hub</p>
         </div>
       `;
     }
 
-    if (data.status === 'Picked Up from Office' || data.status === 'Out for Delivery / On The Way' || data.status === 'Delivered') {
+    if (data.status === 'Picked Up from Office' || data.status.includes('Out for Delivery') || data.status === 'Delivered') {
       timelineHtml += `
         <div class="relative pl-4 border-l-2 border-purple-400 space-y-0.5 pb-2">
           <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-purple-400"></div>
@@ -126,7 +126,7 @@ async function searchPublicParcel() {
       `;
     }
 
-    if (data.status === 'Out for Delivery / On The Way' || data.status === 'Delivered') {
+    if (data.status.includes('Out for Delivery') || data.status === 'Delivered') {
       timelineHtml += `
         <div class="relative pl-4 border-l-2 border-blue-500 space-y-0.5 pb-2">
           <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-blue-500"></div>
@@ -159,75 +159,6 @@ async function searchPublicParcel() {
 
   } catch (err) {
     alert("Tracking error: " + err.message);
-  }
-}
-
-// Admin Custom Tracking IDs Pool Controls
-function openCustomTrackModal() {
-  const modal = document.getElementById('customTrackModal');
-  if (modal) modal.classList.remove('hidden');
-  checkAvailablePoolCount();
-}
-
-function closeCustomTrackModal() {
-  const modal = document.getElementById('customTrackModal');
-  if (modal) modal.classList.add('hidden');
-}
-
-async function checkAvailablePoolCount() {
-  try {
-    const snap = await db.collection('available_track_ids').where('status', '==', 'unused').get();
-    if (document.getElementById('poolAvailableCount')) {
-      document.getElementById('poolAvailableCount').innerText = `Unused Available: ${snap.size} IDs`;
-    }
-  } catch (e) { console.error(e); }
-}
-
-async function uploadCustomTrackingIDs() {
-  const inputArea = document.getElementById('trackingIdListInput');
-  if (!inputArea || !inputArea.value.trim()) {
-    alert("Please enter Tracking IDs!");
-    return;
-  }
-
-  const idsArray = inputArea.value.split(/[\n,]+/).map(id => id.trim()).filter(id => id.length > 0);
-  const batch = db.batch();
-
-  idsArray.forEach((trackId) => {
-    const ref = db.collection('available_track_ids').doc(trackId);
-    batch.set(ref, {
-      trackId: trackId,
-      status: "unused",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  });
-
-  try {
-    await batch.commit();
-    alert(`Total ${idsArray.length} Tracking IDs added to pool! 🎉`);
-    inputArea.value = '';
-    checkAvailablePoolCount();
-  } catch (err) {
-    alert("Error uploading tracking IDs: " + err.message);
-  }
-}
-
-async function getNextCustomTrackId() {
-  try {
-    const snapshot = await db.collection('available_track_ids')
-      .where('status', '==', 'unused')
-      .limit(1)
-      .get();
-
-    if (!snapshot.empty) {
-      const doc = snapshot.docs[0];
-      await db.collection('available_track_ids').doc(doc.id).update({ status: 'used' });
-      return doc.data().trackId;
-    } else {
-      return "PT" + Math.floor(10000000 + Math.random() * 90000000);
-    }
-  } catch (e) {
-    return "PT" + Math.floor(10000000 + Math.random() * 90000000);
   }
 }
 
@@ -284,7 +215,6 @@ function setAccountType(type) {
   }
 }
 
-// Compress File to Base64
 const fileToBase64 = (file, maxWidth = 800, quality = 0.6) => new Promise((resolve, reject) => {
   if (!file) return resolve("");
   if (file.type === "application/pdf") {
@@ -377,6 +307,7 @@ async function handleRegister(e) {
   }
 }
 
+// Login Routing for Admin, Riders (rider.k & rider.s), and Customers
 async function handleLogin(e) {
   if (e && e.preventDefault) e.preventDefault();
   const emailInput = document.getElementById('loginEmail');
@@ -391,7 +322,10 @@ async function handleLogin(e) {
     const user = userCredential.user;
 
     if (email === "admin@primetraders.com") { window.location.href = "admin.html"; return; }
-    if (email.includes("rider")) { window.location.href = "rider.html"; return; }
+    if (email === "rider.k@primetraders.com" || email === "rider.s@primetraders.com" || email.includes("rider")) { 
+      window.location.href = "rider.html"; 
+      return; 
+    }
 
     const userDoc = await db.collection("users").doc(user.uid).get();
     if (userDoc.exists) {
@@ -534,6 +468,25 @@ function removeParcelRow(btn) {
   }
 }
 
+async function getNextCustomTrackId() {
+  try {
+    const snapshot = await db.collection('available_track_ids')
+      .where('status', '==', 'unused')
+      .limit(1)
+      .get();
+
+    if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      await db.collection('available_track_ids').doc(doc.id).update({ status: 'used' });
+      return doc.data().trackId;
+    } else {
+      return "PT" + Math.floor(10000000 + Math.random() * 90000000);
+    }
+  } catch (e) {
+    return "PT" + Math.floor(10000000 + Math.random() * 90000000);
+  }
+}
+
 async function handleBulkParcelSubmit(e) {
   if (e && e.preventDefault) e.preventDefault();
   const user = auth.currentUser;
@@ -566,6 +519,8 @@ async function handleBulkParcelSubmit(e) {
       totalCod: parseFloat(cCod),
       status: 'Pending Admin Approval',
       approvedByAdmin: false,
+      assignedRiderEmail: '',
+      assignedRiderName: '',
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   }
@@ -636,6 +591,8 @@ async function handleAdminCreateParcel(e) {
       itemDetail: itemDetail,
       status: 'Approved / In Transit',
       approvedByAdmin: true,
+      assignedRiderEmail: 'rider.k@primetraders.com',
+      assignedRiderName: 'Rider Korangi Section',
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
@@ -729,14 +686,17 @@ async function loadAdminDashboard() {
           <td class="p-3">
             <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
               data.status === 'Delivered' ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-500/30' :
-              data.status === 'Out for Delivery / On The Way' ? 'bg-blue-900/50 text-blue-300 border border-blue-500/30' :
+              data.status.includes('Out for Delivery') ? 'bg-blue-900/50 text-blue-300 border border-blue-500/30' :
               'bg-amber-900/50 text-amber-300 border border-amber-500/30'
             }">${data.status || 'Pending'}</span>
             ${data.returnReason ? `<div class="text-[10px] text-rose-300 mt-0.5">Remark: ${data.returnReason}</div>` : ''}
           </td>
-          <td class="p-3 text-center flex justify-center gap-1">
-            ${!data.approvedByAdmin ? `<button onclick="approveParcelByAdmin('${docId}')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">Approve & Unfreeze</button>` : `<span class="text-emerald-400 font-bold text-[10px]">Unfrozen / Assigned</span>`}
-            <button onclick="deleteParcel('${docId}')" class="bg-rose-600 text-white px-2 py-1 rounded text-[10px]">Delete</button>
+          <td class="p-3 text-center flex justify-center gap-1.5 flex-wrap">
+            ${!data.approvedByAdmin ? `
+              <button onclick="approveParcelToRider('${docId}', 'rider.k@primetraders.com', 'Rider Korangi Section')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-bold shadow">Approve -> Rider (Korangi)</button>
+              <button onclick="approveParcelToRider('${docId}', 'rider.s@primetraders.com', 'Rider Shah-e-Faisal Section')" class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-[10px] font-bold shadow">Approve -> Rider (Shah-e-Faisal)</button>
+            ` : `<span class="text-emerald-400 font-bold text-[10px]">Assigned: ${data.assignedRiderName || 'Rider'}</span>`}
+            <button onclick="deleteParcel('${docId}')" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded text-[10px] font-bold">Delete</button>
           </td>
         </tr>
       `;
@@ -746,10 +706,21 @@ async function loadAdminDashboard() {
   if (adminParcelTable) adminParcelTable.innerHTML = parcelRowsHtml !== '' ? parcelRowsHtml : `<tr><td colspan="6" class="p-4 text-center">No parcels found.</td></tr>`;
 }
 
-async function approveParcelByAdmin(docId) {
-  await db.collection('parcels').doc(docId).update({ status: 'Approved / In Transit', approvedByAdmin: true });
-  loadAdminDashboard();
-  loadAdminStats();
+// Function to approve and assign parcel to specific rider
+async function approveParcelToRider(docId, riderEmail, riderName) {
+  try {
+    await db.collection('parcels').doc(docId).update({
+      status: `Approved / In Transit (${riderName})`,
+      approvedByAdmin: true,
+      assignedRiderEmail: riderEmail,
+      assignedRiderName: riderName
+    });
+    alert(`Parcel successfully approved and assigned to ${riderName}! 🎉`);
+    loadAdminDashboard();
+    loadAdminStats();
+  } catch (err) {
+    alert("Error approving parcel: " + err.message);
+  }
 }
 
 async function deleteParcel(docId) {
@@ -799,10 +770,14 @@ async function loadAdminStats() {
 
 async function updateRiderQuickStatus(docId, newStatus) {
   try {
-    await db.collection('parcels').doc(docId).update({
+    let updateData = {
       status: newStatus,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    };
+    if (newStatus === 'Delivered') {
+      updateData.deliveredAt = firebase.firestore.FieldValue.serverTimestamp();
+    }
+    await db.collection('parcels').doc(docId).update(updateData);
     alert(`Status updated to: ${newStatus} ✅`);
     loadRiderDashboard();
   } catch (err) {
@@ -814,6 +789,9 @@ async function loadRiderDashboard() {
   const tableBody = document.getElementById('riderParcelTable');
   if (!tableBody) return;
 
+  const currentUser = auth.currentUser;
+  if (!currentUser) return;
+
   try {
     const snapshot = await db.collection('parcels').get();
     let rowsHtml = '';
@@ -821,7 +799,8 @@ async function loadRiderDashboard() {
     snapshot.forEach(doc => {
       const d = doc.data();
       const docId = doc.id;
-      if (d.approvedByAdmin) {
+
+      if (d.approvedByAdmin && d.assignedRiderEmail === currentUser.email) {
         rowsHtml += `
           <tr class="border-b border-slate-700/50 text-xs">
             <td class="p-3 font-bold text-amber-400 font-mono">${d.trackId || 'N/A'}</td>
@@ -830,15 +809,15 @@ async function loadRiderDashboard() {
             <td class="p-3 font-bold">PKR ${d.totalCod || 0}</td>
             <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-900/50 text-blue-300">${d.status}</span></td>
             <td class="p-3 text-center space-x-1">
-              <button onclick="updateRiderQuickStatus('${docId}', 'Out for Delivery / On The Way')" class="bg-blue-600 text-white px-2 py-1 rounded text-[10px] font-bold">On The Way</button>
-              <button onclick="updateRiderQuickStatus('${docId}', 'Delivered')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">Deliver</button>
+              <button onclick="updateRiderQuickStatus('${docId}', 'Out for Delivery / On The Way')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-bold">On The Way</button>
+              <button onclick="updateRiderQuickStatus('${docId}', 'Delivered')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded text-[10px] font-bold">Deliver</button>
             </td>
           </tr>
         `;
       }
     });
 
-    tableBody.innerHTML = rowsHtml !== '' ? rowsHtml : `<tr><td colspan="6" class="p-4 text-center">No shipments assigned.</td></tr>`;
+    tableBody.innerHTML = rowsHtml !== '' ? rowsHtml : `<tr><td colspan="6" class="p-4 text-center text-slate-400">No shipments assigned to your section (${currentUser.email}).</td></tr>`;
   } catch (e) {
     console.error(e);
   }
