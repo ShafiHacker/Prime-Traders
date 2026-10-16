@@ -839,3 +839,27 @@ async function loadRiderDashboard() {
     console.error(e);
   }
 }
+// Forgot Password Logic
+async function handleForgotPassword() {
+  const emailInput = document.getElementById('loginEmail');
+  const email = emailInput ? emailInput.value.trim() : '';
+
+  if (!email) {
+    alert("Karam karke pehla apna Email Address 'Email Address' box mein enter karein, phir 'Forgot Password?' par click karein!");
+    emailInput.focus();
+    return;
+  }
+
+  try {
+    await auth.sendPasswordResetEmail(email);
+    alert(`Password Reset Email Sent! ✉️\n\nHumne ${email} par password reset link bhej diya hai. Kripya apna Gmail check karein.`);
+  } catch (error) {
+    let errMsg = error.message;
+    if (error.code === 'auth/user-not-found') {
+      errMsg = "Is email address se koi account registered nahi hai.";
+    } else if (error.code === 'auth/invalid-email') {
+      errMsg = "Email address theek nahi hai.";
+    }
+    alert("Error: " + errMsg);
+  }
+}
