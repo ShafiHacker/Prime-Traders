@@ -40,7 +40,7 @@ auth.onAuthStateChanged(async (user) => {
     }
 
     if (path.includes('admin.html')) {
-      loadUsersTable();
+      listenToUsersLive();
       loadAdminDashboard();
       loadAdminStats();
     }
@@ -78,67 +78,95 @@ function showAdminSection(sectionType) {
   }
 }
 
-// Admin Users Table
-async function loadUsersTable() {
+// LIVE Realtime Users Listener (Active Users & Deleted Archive)
+function listenToUsersLive() {
   const activeTableBody = document.getElementById('userTableBody');
   const deletedTableBody = document.getElementById('deletedUserTableBody');
 
-  try {
-    const snapshot = await db.collection('users').get();
+  if (!activeTableBody && !deletedTableBody) return;
+
+  db.collection('users').onSnapshot((snapshot) => {
     let activeUsersHtml = '';
     let deletedUsersHtml = '';
+    let activeCount = 0;
+    let deletedCount = 0;
 
     snapshot.forEach((doc) => {
       const u = doc.data();
       const uid = doc.id;
-      const status = u.status || 'approved';
+      const status = (u.status || 'approved').toLowerCase();
       const role = u.role || 'customer';
       const type = u.accountType || 'business';
 
-      if (status === 'deleted') {
+      if (status === 'deleted' || status === 'archived') {
+        deletedCount++;
         deletedUsersHtml += `
           <tr class="border-b border-slate-700/50 text-xs">
-            <td class="p-3"><div class="font-bold text-slate-100">${u.name || 'N/A'}</div></td>
-            <td class="p-3">${u.email || 'N/A'}</td>
-            <td class="p-3">${type}</td>
-            <td class="p-3"><span class="text-rose-400 font-bold">DELETED</span></td>
+            <td class="p-3">
+              <div class="font-bold text-slate-100">${u.name || 'N/A'}</div>
+              <div class="text-[10px] text-slate-400">${u.businessName || ''}</div>
+            </td>
+            <td class="p-3 text-slate-300">${u.email || 'N/A'}</td>
+            <td class="p-3 text-slate-400">${type}</td>
+            <td class="p-3"><span class="text-rose-400 font-bold uppercase">DELETED</span></td>
             <td class="p-3 text-center">
-              <button onclick="restoreUser('${uid}')" class="bg-emerald-600 text-white px-2 py-1 rounded text-xs font-bold">Restore</button>
+              <button onclick="restoreUser('${uid}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded text-xs font-bold transition shadow">Restore</button>
             </td>
           </tr>
         `;
       } else {
+        activeCount++;
+        const statusColor = status === 'approved' ? 'text-emerald-400' : status === 'rejected' ? 'text-rose-400' : 'text-amber-400';
+        
         activeUsersHtml += `
           <tr class="border-b border-slate-700/50 text-xs">
-            <td class="p-3"><div class="font-bold text-slate-100">${u.name || 'N/A'}</div></td>
-            <td class="p-3">${u.email || 'N/A'}</td>
-            <td class="p-3">${type}</td>
-            <td class="p-3">${role}</td>
-            <td class="p-3"><span class="text-emerald-400 font-bold">${status.toUpperCase()}</span></td>
-            <td class="p-3 text-center flex justify-center gap-1">
-              <button onclick="updateUserStatus('${uid}', 'approved')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[10px] font-bold">Approve</button>
-              <button onclick="updateUserStatus('${uid}', 'rejected')" class="bg-rose-600 text-white px-2 py-1 rounded text-[10px] font-bold">Reject</button>
+            <td class="p-3">
+              <div class="font-bold text-slate-100">${u.name || 'N/A'}</div>
+              <div class="text-[10px] text-amber-400">${u.businessName || ''}</div>
+            </td>
+            <td class="p-3 text-slate-300">${u.email || 'N/A'}</td>
+            <td class="p-3 text-slate-400">${type}</td>
+            <td class="p-3 text-slate-300 font-medium">${role}</td>
+            <td class="p-3"><span class="${statusColor} font-bold uppercase">${status}</span></td>
+            <td class="p-3 text-center flex justify-center gap-1.5">
+              <button onclick="updateUserStatus('${uid}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded text-[10px] font-bold transition shadow">Approve</button>
+              <button onclick="updateUserStatus('${uid}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded text-[10px] font-bold transition shadow">Reject</button>
+              <button onclick="updateUserStatus('${uid}', 'deleted')" class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-1 rounded text-[10px] font-bold transition">Delete</button>
             </td>
           </tr>
         `;
       }
     });
 
-    if (activeTableBody) activeTableBody.innerHTML = activeUsersHtml !== '' ? activeUsersHtml : `<tr><td colspan="6" class="p-4 text-center">No active users.</td></tr>`;
-    if (deletedTableBody) deletedTableBody.innerHTML = deletedUsersHtml !== '' ? deletedUsersHtml : `<tr><td colspan="5" class="p-4 text-center">No archived users.</td></tr>`;
-  } catch (err) { console.error(err); }
+    if (activeTableBody) {
+      activeTableBody.innerHTML = activeUsersHtml !== '' ? activeUsersHtml : `<tr><td colspan="6" class="p-4 text-center text-slate-400">No active users registered.</td></tr>`;
+    }
+    if (deletedTableBody) {
+      deletedTableBody.innerHTML = deletedUsersHtml !== '' ? deletedUsersHtml : `<tr><td colspan="5" class="p-4 text-center text-slate-400">No deleted users in archive.</td></tr>`;
+    }
+
+    if (document.getElementById('cardUsers')) document.getElementById('cardUsers').innerText = activeCount;
+    if (document.getElementById('cardDeletedUsers')) document.getElementById('cardDeletedUsers').innerText = deletedCount;
+
+  }, err => {
+    console.error("Users live sync error:", err);
+  });
 }
 
 async function updateUserStatus(uid, newStatus) {
-  await db.collection('users').doc(uid).update({ status: newStatus });
-  loadUsersTable();
-  loadAdminStats();
+  try {
+    await db.collection('users').doc(uid).update({ status: newStatus });
+  } catch (e) {
+    alert("Error updating status: " + e.message);
+  }
 }
 
 async function restoreUser(uid) {
-  await db.collection('users').doc(uid).update({ status: 'pending' });
-  loadUsersTable();
-  loadAdminStats();
+  try {
+    await db.collection('users').doc(uid).update({ status: 'approved' });
+  } catch (e) {
+    alert("Error restoring user: " + e.message);
+  }
 }
 
 // Admin Parcels Dashboard
@@ -260,59 +288,7 @@ async function deleteWholesellerOrder(id) {
   }
 }
 
-// Stats Overview Loader
-async function loadAdminStats() {
-  try {
-    const pSnap = await db.collection('parcels').get();
-    const uSnap = await db.collection('users').get();
-
-    let totalParcels = pSnap.size;
-    let pendingParcels = 0;
-    pSnap.forEach(doc => {
-      if (!doc.data().approvedByAdmin) pendingParcels++;
-    });
-
-    let activeUsers = 0;
-    let deletedUsers = 0;
-    uSnap.forEach(doc => {
-      const u = doc.data();
-      if (u.status === 'deleted') deletedUsers++;
-      else activeUsers++;
-    });
-
-    if (document.getElementById('cardTotalShipments')) document.getElementById('cardTotalShipments').innerText = totalParcels;
-    if (document.getElementById('cardPendingParcels')) document.getElementById('cardPendingParcels').innerText = pendingParcels;
-    if (document.getElementById('cardUsers')) document.getElementById('cardUsers').innerText = activeUsers;
-    if (document.getElementById('cardDeletedUsers')) document.getElementById('cardDeletedUsers').innerText = deletedUsers;
-  } catch (e) {
-    console.error("Stats Error:", e);
-  }
-}
-
-function handleLogout() {
-  auth.signOut().then(() => window.location.href = "login.html");
-}
-
-function openAddCodModal() {
-  const modal = document.getElementById('addCodModal');
-  if (modal) modal.classList.remove('hidden');
-}
-
-function closeAddCodModal() {
-  const modal = document.getElementById('addCodModal');
-  if (modal) modal.classList.add('hidden');
-}
-
-function openCustomTrackModal() {
-  const modal = document.getElementById('customTrackModal');
-  if (modal) modal.classList.remove('hidden');
-}
-
-function closeCustomTrackModal() {
-  const modal = document.getElementById('customTrackModal');
-  if (modal) modal.classList.add('hidden');
-}
-// Upload Custom Tracking IDs Pool Function
+// Upload Custom Tracking IDs Pool
 async function uploadCustomTrackingIDs() {
   const textarea = document.getElementById('trackingIdListInput');
   if (!textarea || !textarea.value.trim()) {
@@ -342,4 +318,45 @@ async function uploadCustomTrackingIDs() {
   } catch (err) {
     alert("Error uploading tracking IDs: " + err.message);
   }
+}
+
+// Stats Overview Loader
+async function loadAdminStats() {
+  try {
+    const pSnap = await db.collection('parcels').get();
+    let totalParcels = pSnap.size;
+    let pendingParcels = 0;
+    pSnap.forEach(doc => {
+      if (!doc.data().approvedByAdmin) pendingParcels++;
+    });
+
+    if (document.getElementById('cardTotalShipments')) document.getElementById('cardTotalShipments').innerText = totalParcels;
+    if (document.getElementById('cardPendingParcels')) document.getElementById('cardPendingParcels').innerText = pendingParcels;
+  } catch (e) {
+    console.error("Stats Error:", e);
+  }
+}
+
+function handleLogout() {
+  auth.signOut().then(() => window.location.href = "login.html");
+}
+
+function openAddCodModal() {
+  const modal = document.getElementById('addCodModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeAddCodModal() {
+  const modal = document.getElementById('addCodModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function openCustomTrackModal() {
+  const modal = document.getElementById('customTrackModal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeCustomTrackModal() {
+  const modal = document.getElementById('customTrackModal');
+  if (modal) modal.classList.add('hidden');
 }
