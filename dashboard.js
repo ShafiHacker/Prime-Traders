@@ -863,3 +863,79 @@ async function handleForgotPassword() {
     alert("Error: " + errMsg);
   }
 }
+// Function to handle switching between Active Users, Deleted Users, Tracking, and Wholeseller Sections
+function showAdminSection(sectionType) {
+  const activeSection = document.getElementById('activeUsersSection');
+  const deletedSection = document.getElementById('deletedUsersSection');
+  const trackingSection = document.getElementById('trackingSection');
+  const wholesellerSection = document.getElementById('wholesellerSection');
+
+  if (activeSection) activeSection.classList.add('hidden');
+  if (deletedSection) deletedSection.classList.add('hidden');
+  if (trackingSection) trackingSection.classList.add('hidden');
+  if (wholesellerSection) wholesellerSection.classList.add('hidden');
+
+  if (sectionType === 'active' && activeSection) activeSection.classList.remove('hidden');
+  else if (sectionType === 'deleted' && deletedSection) deletedSection.classList.remove('hidden');
+  else if (sectionType === 'tracking' && trackingSection) trackingSection.classList.remove('hidden');
+  else if (sectionType === 'wholeseller' && wholesellerSection) {
+    wholesellerSection.classList.remove('hidden');
+    loadWholesellerOrdersTable();
+  }
+}
+
+// Function to fetch and display orders inside the Wholeseller Section Table
+function loadWholesellerOrdersTable() {
+  const tbody = document.getElementById('wholesellerOrdersTable');
+  if (!tbody) return;
+
+  db.collection('orders').onSnapshot(snapshot => {
+    if (snapshot.empty) {
+      tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No wholeseller orders received yet.</td></tr>`;
+      return;
+    }
+
+    let html = '';
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const id = doc.id;
+
+      let itemsStr = '';
+      if (data.items && Array.isArray(data.items)) {
+        itemsStr = data.items.map(i => `${i.title} (x${i.qty || 1})`).join(', ');
+      } else {
+        itemsStr = data.itemDetail || 'N/A';
+      }
+
+      html += `
+        <tr class="border-b border-slate-700/50 text-xs">
+          <td class="p-3 font-bold text-white">
+            ${data.customerName || data.custName || 'N/A'}
+            <div class="text-[10px] text-amber-400">${data.customerPhone || data.custPhone || ''}</div>
+            <div class="text-[10px] text-slate-400">${data.customerAddress || data.custAddress || ''}</div>
+          </td>
+          <td class="p-3 text-slate-200">${itemsStr}</td>
+          <td class="p-3 font-bold text-amber-300">PKR ${data.totalAmount || data.totalCod || 0}</td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-900/50 text-amber-300 border border-amber-500/30">${data.status || 'Pending'}</span>
+          </td>
+          <td class="p-3 text-center">
+            <button onclick="deleteWholesellerOrder('${id}')" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded text-[10px] font-bold">Delete</button>
+          </td>
+        </tr>
+      `;
+    });
+
+    tbody.innerHTML = html;
+  });
+}
+
+async function deleteWholesellerOrder(id) {
+  if (confirm("Are you sure you want to delete this order?")) {
+    try {
+      await db.collection('orders').doc(id).delete();
+    } catch(e) {
+      alert("Error deleting order: " + e.message);
+    }
+  }
+}
