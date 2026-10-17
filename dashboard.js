@@ -312,3 +312,34 @@ function closeCustomTrackModal() {
   const modal = document.getElementById('customTrackModal');
   if (modal) modal.classList.add('hidden');
 }
+// Upload Custom Tracking IDs Pool Function
+async function uploadCustomTrackingIDs() {
+  const textarea = document.getElementById('trackingIdListInput');
+  if (!textarea || !textarea.value.trim()) {
+    alert("Karam karke tracking IDs enter karein!");
+    return;
+  }
+
+  const lines = textarea.value.split('\n');
+  let count = 0;
+
+  try {
+    for (let line of lines) {
+      const trackId = line.trim();
+      if (trackId !== '') {
+        await db.collection('available_track_ids').add({
+          trackId: trackId,
+          status: 'unused',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        count++;
+      }
+    }
+
+    alert(`Success! ${count} tracking IDs pool mein save ho gayi hain. 🎉`);
+    textarea.value = '';
+    closeCustomTrackModal();
+  } catch (err) {
+    alert("Error uploading tracking IDs: " + err.message);
+  }
+}
