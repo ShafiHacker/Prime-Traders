@@ -156,17 +156,28 @@
             let html = '';
             parcels.forEach(p => {
                 const trackId = p.trackingId || p.id;
-                const custName = p.customerName || p.customerDetails?.split('\n')[0] || 'N/A';
-                const custPhone = p.customerPhone || p.customerDetails?.split('\n')[1] || '';
-                const city = p.destinationCity || 'Karachi';
-                const address = p.destinationAddress || 'N/A';
-                const amount = p.codAmount || p.totalAmount || 0;
+                
+                // Flexible field fallbacks for name and phone
+                let cName = p.customerName || p.name || 'N/A';
+                let cPhone = p.customerPhone || p.phone || '';
+                
+                if (cName === 'N/A' && p.customerDetails) {
+                    const parts = p.customerDetails.split('\n');
+                    cName = parts[0] || 'N/A';
+                    if (!cPhone && parts[1]) cPhone = parts[1];
+                }
+
+                // Flexible field fallbacks for address and city
+                let city = p.destinationCity || p.city || 'Karachi';
+                let address = p.destinationAddress || p.address || 'N/A';
+
+                const amount = (p.codAmount !== undefined) ? p.codAmount : (p.totalAmount || 0);
                 const status = p.status || 'Pending';
 
-                // Check if this order came from Wholeseller website (if items array exists)
+                // Check if this order came from Wholeseller website
                 const isWholeseller = p.items && Array.isArray(p.items) && p.items.length > 0;
                 const originBadge = isWholeseller ? `
-                    <button onclick="viewOrderItems('${p.id}')" class="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2 py-1 rounded text-[10px] font-bold hover:bg-amber-500 hover:text-slate-950 transition flex items-center gap-1">
+                    <button onclick="viewOrderItems('${p.id}')" class="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2.5 py-1 rounded-lg text-[10px] font-bold hover:bg-amber-500 hover:text-slate-950 transition flex items-center gap-1 shadow">
                         <i class="fa-solid fa-store"></i> Wholeseller Order
                     </button>
                 ` : `<span class="text-slate-500 text-[10px]">Direct Entry</span>`;
@@ -176,12 +187,12 @@
                 else if (status.includes('Transit') || status.includes('Way')) statusBadge = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
 
                 html += `
-                    <tr class="hover:bg-slate-900/50 transition">
-                        <td class="p-3 font-bold text-amber-400">${trackId}</td>
+                    <tr class="hover:bg-slate-900/50 transition border-b border-slate-800/40">
+                        <td class="p-3 font-bold text-amber-400 font-mono">${trackId}</td>
                         <td class="p-3">${originBadge}</td>
                         <td class="p-3">
-                            <div class="font-bold text-white">${custName}</div>
-                            <div class="text-[10px] text-slate-400">${custPhone}</div>
+                            <div class="font-bold text-white">${cName}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">${cPhone}</div>
                         </td>
                         <td class="p-3">
                             <div class="font-bold text-slate-200">${city}</div>
@@ -224,7 +235,7 @@
                         </div>
                         <div class="text-right">
                             <div class="font-bold text-amber-400">x${item.qty}</div>
-                            <div class="text-[10px] text-slate-400">PKR ${item.price * item.qty}</div>
+                            <div class="text-[10px] text-slate-400">PKR ${(item.price || 0) * (item.qty || 1)}</div>
                         </div>
                     </div>
                 `;
