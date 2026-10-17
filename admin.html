@@ -7,67 +7,95 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-[#0b1329] text-slate-100 min-h-screen flex flex-col font-sans">
 
-    <!-- Top Navigation Header -->
-    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
+    <!-- Top Bar Navigation -->
+    <header class="bg-[#0f172a] border-b border-slate-800 sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="bg-purple-600 text-white font-black text-xl w-10 h-10 flex items-center justify-center rounded-xl shadow-lg">A</div>
                 <div>
                     <h1 class="text-base font-black tracking-wider uppercase text-white">PRIME TRADERS</h1>
-                    <p class="text-[10px] text-purple-400 font-bold uppercase tracking-widest">Admin Control Panel</p>
+                    <p class="text-[10px] text-purple-400 font-bold uppercase tracking-widest">ADMIN CONTROL PANEL</p>
                 </div>
             </div>
 
             <div class="flex items-center gap-3 text-xs">
-                <span id="adminUserEmail" class="text-slate-400 font-bold hidden sm:inline">Admin</span>
-                <a href="admin-catalog.html" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-3 py-1.5 rounded-lg transition flex items-center gap-1 shadow">
-                    <i class="fa-solid fa-store"></i> Catalog Panel
-                </a>
+                <span class="text-slate-400 font-bold">Admin</span>
+                <button class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1.5 rounded-lg transition">
+                    <i class="fa-solid fa-user-pen mr-1"></i> Edit Profile
+                </button>
                 <button onclick="logoutAdmin()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg transition">
-                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                    <i class="fa-solid fa-right-from-bracket mr-1"></i> Logout
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Content Area -->
+    <!-- Main Admin Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
 
-        <!-- Stats Overview Cards -->
+        <!-- Top Original Stat Cards -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                <span class="text-[10px] font-bold text-slate-400 uppercase">Total Shipments</span>
-                <div id="statTotalShipments" class="text-2xl font-black text-white mt-1">0</div>
+            <div class="bg-[#111c38] border border-slate-800/80 p-4 rounded-xl shadow-lg">
+                <span class="text-[11px] font-bold text-slate-400 uppercase">Total Shipments</span>
+                <div id="statTotalShipments" class="text-3xl font-black text-white mt-2">0</div>
             </div>
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                <span class="text-[10px] font-bold text-amber-400 uppercase">Pending Parcels</span>
-                <div id="statPendingParcels" class="text-2xl font-black text-amber-400 mt-1">0</div>
+            <div class="bg-[#111c38] border border-slate-800/80 p-4 rounded-xl shadow-lg">
+                <span class="text-[11px] font-bold text-amber-400 uppercase">Active Users</span>
+                <div id="statActiveUsers" class="text-3xl font-black text-amber-400 mt-2">0</div>
             </div>
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                <span class="text-[10px] font-bold text-blue-400 uppercase">In Transit</span>
-                <div id="statInTransit" class="text-2xl font-black text-blue-400 mt-1">0</div>
+            <div class="bg-[#111c38] border border-slate-800/80 p-4 rounded-xl shadow-lg">
+                <span class="text-[11px] font-bold text-rose-400 uppercase">Deleted Users Archive</span>
+                <div id="statDeletedUsers" class="text-3xl font-black text-rose-400 mt-2">0</div>
             </div>
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
-                <span class="text-[10px] font-bold text-emerald-400 uppercase">Delivered</span>
-                <div id="statDelivered" class="text-2xl font-black text-emerald-400 mt-1">0</div>
+            <div class="bg-[#111c38] border border-slate-800/80 p-4 rounded-xl shadow-lg">
+                <span class="text-[11px] font-bold text-sky-400 uppercase">Pending Approval</span>
+                <div id="statPendingApproval" class="text-3xl font-black text-sky-400 mt-2">0</div>
             </div>
         </div>
 
-        <!-- Shipment & Parcel Tracking Details Section -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
-            <div class="p-4 border-b border-slate-800 flex justify-between items-center">
-                <h2 class="text-sm font-black text-white uppercase"><i class="fa-solid fa-truck-ramp-box text-purple-400 mr-2"></i> Shipment & Parcel Tracking Details</h2>
-                <span class="text-[10px] text-slate-400 font-bold bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">Live Express Feed</span>
+        <!-- Original Action Control Buttons Grid + Wholeseller Button -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <!-- Left Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+                <button class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-lg transition shadow">
+                    <i class="fa-solid fa-users mr-1"></i> Registered Active Users
+                </button>
+                <button class="bg-rose-950/80 border border-rose-800 hover:bg-rose-900 text-rose-300 font-bold px-4 py-2 rounded-lg transition">
+                    <i class="fa-solid fa-box-archive mr-1"></i> Deleted Users Archive
+                </button>
+                <button class="bg-sky-950/80 border border-sky-800 hover:bg-sky-900 text-sky-300 font-bold px-4 py-2 rounded-lg transition">
+                    <i class="fa-solid fa-truck-fast mr-1"></i> Shipment Tracking Details
+                </button>
+            </div>
+
+            <!-- Right Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+                <button class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-lg transition shadow">
+                    <i class="fa-solid fa-barcode mr-1"></i> + Upload Tracking IDs Pool
+                </button>
+                <button class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg transition shadow">
+                    <i class="fa-solid fa-circle-plus mr-1"></i> + Manual Parcel Entry
+                </button>
+                <!-- Added Wholeseller Button next to original buttons -->
+                <a href="admin-catalog.html" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-4 py-2 rounded-lg transition shadow flex items-center gap-1.5">
+                    <i class="fa-solid fa-store"></i> + Wholeseller Orders
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Tracking Details Table Container -->
+        <div class="bg-[#111c38] border border-slate-800 rounded-xl shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-slate-800/80">
+                <h2 class="text-sm font-bold text-sky-400">Shipment & Parcel Tracking Details</h2>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-slate-300">
-                    <thead class="bg-slate-950/80 uppercase text-[10px] text-slate-400 font-bold border-b border-slate-800">
+                <table class="w-full text-left text-xs text-slate-200">
+                    <thead class="bg-[#0d152a] text-[11px] text-slate-400 font-semibold border-b border-slate-800">
                         <tr>
                             <th class="p-3">Tracking ID</th>
-                            <th class="p-3">Source / Origin</th>
                             <th class="p-3">Customer Details</th>
                             <th class="p-3">Destination City & Address</th>
                             <th class="p-3">COD Amount</th>
@@ -77,7 +105,7 @@
                     </thead>
                     <tbody id="shipmentsTableBody" class="divide-y divide-slate-800/60 font-medium">
                         <tr>
-                            <td colspan="7" class="p-8 text-center text-slate-500">Loading tracking data...</td>
+                            <td colspan="6" class="p-8 text-center text-slate-500">Loading tracking data...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -85,19 +113,6 @@
         </div>
 
     </main>
-
-    <!-- Wholeseller Items Detail Modal -->
-    <div id="itemsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="text-sm font-bold text-amber-400 uppercase"><i class="fa-solid fa-boxes-packing mr-2"></i> Wholeseller Order Items</h3>
-                <button onclick="closeItemsModal()" class="text-slate-400 hover:text-white bg-slate-800 p-1.5 rounded-full w-7 h-7 flex items-center justify-center text-xs">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            <div id="itemsModalContent" class="space-y-2 text-xs max-h-60 overflow-y-auto"></div>
-        </div>
-    </div>
 
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -116,147 +131,74 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        let allParcelsList = [];
-
         function listenToShipments() {
             db.collection('parcels').onSnapshot(snapshot => {
-                allParcelsList = [];
-                let total = 0, pending = 0, transit = 0, delivered = 0;
+                let total = 0, pending = 0;
+                let html = '';
 
                 snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const p = { id: doc.id, ...data };
-                    allParcelsList.push(p);
-
+                    const p = doc.data();
+                    const docId = doc.id;
                     total++;
-                    if (p.status === 'Pending') pending++;
-                    else if (p.status === 'Delivered') delivered++;
-                    else transit++;
+
+                    const trackId = p.trackingId || docId;
+                    const cDetails = p.customerDetails || `${p.customerName || 'N/A'}\n${p.customerPhone || ''}`;
+                    const cCity = p.destinationCity || p.city || 'Karachi';
+                    const cAddr = p.destinationAddress || p.address || 'N/A';
+                    const cod = p.codAmount !== undefined ? p.codAmount : (p.totalAmount || 0);
+                    const status = p.status || 'Pending';
+
+                    if (status === 'Pending') pending++;
+
+                    let statusBadge = 'bg-amber-950/60 text-amber-400 border-amber-500/30';
+                    if (status === 'Delivered') statusBadge = 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30';
+                    else if (status.includes('Transit') || status.includes('Way')) statusBadge = 'bg-sky-950/60 text-sky-400 border-sky-500/30';
+
+                    html += `
+                        <tr class="hover:bg-slate-900/40 transition">
+                            <td class="p-3 font-bold text-amber-400 font-mono">${trackId}</td>
+                            <td class="p-3 font-bold text-white whitespace-pre-line">${cDetails}</td>
+                            <td class="p-3">
+                                <div class="font-bold text-slate-200">${cCity}</div>
+                                <div class="text-[10px] text-slate-400 max-w-xs truncate">${cAddr}</div>
+                            </td>
+                            <td class="p-3 font-black text-amber-300">PKR ${cod}</td>
+                            <td class="p-3">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${statusBadge}">${status}</span>
+                            </td>
+                            <td class="p-3 text-right space-x-1">
+                                ${status === 'Pending' ? `
+                                    <button onclick="assignRider('${docId}', 'Rider Korangi Section')" class="bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold px-2 py-1 rounded shadow">
+                                        Approve -> Rider (Korangi)
+                                    </button>
+                                    <button onclick="assignRider('${docId}', 'Rider Shah-e-Faisal Section')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold px-2 py-1 rounded shadow">
+                                        Approve -> Rider (Shah-e-Faisal)
+                                    </button>
+                                ` : `<span class="text-[10px] text-emerald-400 font-bold mr-2">Assigned: ${p.assignedRider || 'Rider'}</span>`}
+                                <button onclick="deleteShipment('${docId}')" class="bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold px-2 py-1 rounded">
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                    `;
                 });
 
                 document.getElementById('statTotalShipments').innerText = total;
-                document.getElementById('statPendingParcels').innerText = pending;
-                document.getElementById('statInTransit').innerText = transit;
-                document.getElementById('statDelivered').innerText = delivered;
+                document.getElementById('statPendingApproval').innerText = pending;
 
-                renderShipmentsTable(allParcelsList);
+                const tbody = document.getElementById('shipmentsTableBody');
+                tbody.innerHTML = html || `<tr><td colspan="6" class="p-8 text-center text-slate-500">No shipments found.</td></tr>`;
             }, err => {
                 console.error("Firestore Error:", err);
-                document.getElementById('shipmentsTableBody').innerHTML = `<tr><td colspan="7" class="p-6 text-center text-rose-400">Error loading tracking data.</td></tr>`;
             });
-        }
-
-        function renderShipmentsTable(parcels) {
-            const tbody = document.getElementById('shipmentsTableBody');
-            if (!parcels.length) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500">No shipments found.</td></tr>`;
-                return;
-            }
-
-            let html = '';
-            parcels.forEach(p => {
-                const trackId = p.trackingId || p.id;
-                
-                // Flexible field fallbacks for name and phone
-                let cName = p.customerName || p.name || 'N/A';
-                let cPhone = p.customerPhone || p.phone || '';
-                
-                if (cName === 'N/A' && p.customerDetails) {
-                    const parts = p.customerDetails.split('\n');
-                    cName = parts[0] || 'N/A';
-                    if (!cPhone && parts[1]) cPhone = parts[1];
-                }
-
-                // Flexible field fallbacks for address and city
-                let city = p.destinationCity || p.city || 'Karachi';
-                let address = p.destinationAddress || p.address || 'N/A';
-
-                const amount = (p.codAmount !== undefined) ? p.codAmount : (p.totalAmount || 0);
-                const status = p.status || 'Pending';
-
-                // Check if this order came from Wholeseller website
-                const isWholeseller = p.items && Array.isArray(p.items) && p.items.length > 0;
-                const originBadge = isWholeseller ? `
-                    <button onclick="viewOrderItems('${p.id}')" class="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-2.5 py-1 rounded-lg text-[10px] font-bold hover:bg-amber-500 hover:text-slate-950 transition flex items-center gap-1 shadow">
-                        <i class="fa-solid fa-store"></i> Wholeseller Order
-                    </button>
-                ` : `<span class="text-slate-500 text-[10px]">Direct Entry</span>`;
-
-                let statusBadge = 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-                if (status === 'Delivered') statusBadge = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-                else if (status.includes('Transit') || status.includes('Way')) statusBadge = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-
-                html += `
-                    <tr class="hover:bg-slate-900/50 transition border-b border-slate-800/40">
-                        <td class="p-3 font-bold text-amber-400 font-mono">${trackId}</td>
-                        <td class="p-3">${originBadge}</td>
-                        <td class="p-3">
-                            <div class="font-bold text-white">${cName}</div>
-                            <div class="text-[10px] text-slate-400 font-mono">${cPhone}</div>
-                        </td>
-                        <td class="p-3">
-                            <div class="font-bold text-slate-200">${city}</div>
-                            <div class="text-[10px] text-slate-400 max-w-xs truncate">${address}</div>
-                        </td>
-                        <td class="p-3 font-black text-amber-300">PKR ${amount}</td>
-                        <td class="p-3">
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${statusBadge}">${status}</span>
-                        </td>
-                        <td class="p-3 text-right space-x-1">
-                            ${status === 'Pending' ? `
-                                <button onclick="assignRider('${p.id}', 'Rider Korangi Section')" class="bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold px-2 py-1 rounded shadow">
-                                    Approve -> Rider (Korangi)
-                                </button>
-                                <button onclick="assignRider('${p.id}', 'Rider Shah-e-Faisal Section')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold px-2 py-1 rounded shadow">
-                                    Approve -> Rider (Shah-e-Faisal)
-                                </button>
-                            ` : `<span class="text-[10px] text-emerald-400 font-bold mr-2">Assigned: ${p.assignedRider || 'Rider'}</span>`}
-                            <button onclick="deleteShipment('${p.id}')" class="bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold px-2 py-1 rounded">
-                                Delete
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-            tbody.innerHTML = html;
-        }
-
-        function viewOrderItems(docId) {
-            const parcel = allParcelsList.find(p => p.id === docId);
-            if (!parcel || !parcel.items) return;
-
-            let html = '';
-            parcel.items.forEach((item, i) => {
-                html += `
-                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center">
-                        <div>
-                            <div class="font-bold text-white">${i+1}. ${item.title}</div>
-                            <div class="text-[10px] text-slate-400">Size: ${item.selectedSize || 'Standard'} | Color: ${item.selectedColor || 'Default'}</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="font-bold text-amber-400">x${item.qty}</div>
-                            <div class="text-[10px] text-slate-400">PKR ${(item.price || 0) * (item.qty || 1)}</div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            document.getElementById('itemsModalContent').innerHTML = html;
-            document.getElementById('itemsModal').classList.remove('hidden');
-        }
-
-        function closeItemsModal() {
-            document.getElementById('itemsModal').classList.add('hidden');
         }
 
         async function assignRider(id, riderName) {
             try {
                 await db.collection('parcels').doc(id).update({
                     status: `Approved / In Transit (${riderName})`,
-                    assignedRider: riderName,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    assignedRider: riderName
                 });
-                alert(`Order assigned to ${riderName}!`);
             } catch (e) {
                 alert("Error assigning rider: " + e.message);
             }
@@ -273,9 +215,7 @@
         }
 
         function logoutAdmin() {
-            firebase.auth().signOut().then(() => {
-                window.location.href = 'login.html';
-            });
+            firebase.auth().signOut().then(() => window.location.href = 'login.html');
         }
 
         window.onload = () => listenToShipments();
