@@ -7,106 +7,146 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-[#0b1329] text-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen">
 
-    <!-- Top Bar Navigation -->
-    <header class="bg-[#0f172a] border-b border-slate-800 sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+    <!-- Header Navigation -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="bg-purple-600 text-white font-black text-xl w-10 h-10 flex items-center justify-center rounded-xl shadow-lg">A</div>
+                <div class="bg-purple-600 text-white font-black text-2xl w-10 h-10 flex items-center justify-center rounded-lg shadow-md">A</div>
                 <div>
-                    <h1 class="text-base font-black tracking-wider uppercase text-white">PRIME TRADERS</h1>
-                    <p class="text-[10px] text-purple-400 font-bold uppercase tracking-widest">ADMIN CONTROL PANEL</p>
+                    <h1 class="text-base font-bold tracking-wider text-white uppercase">PRIME TRADERS</h1>
+                    <p class="text-[10px] text-purple-400 tracking-widest uppercase">Admin Control Panel</p>
                 </div>
             </div>
 
-            <div class="flex items-center gap-3 text-xs">
-                <span class="text-slate-400 font-bold">Admin</span>
-                <button class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-3 py-1.5 rounded-lg transition">
-                    <i class="fa-solid fa-user-pen mr-1"></i> Edit Profile
+            <div class="flex items-center gap-3">
+                <span id="userNameDisplay" class="text-xs font-bold text-slate-300 hidden md:inline-block">Admin</span>
+                <button onclick="openProfileModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                    <i class="fa-solid fa-user-pen"></i> Edit Profile
                 </button>
-                <button onclick="logoutAdmin()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg transition">
-                    <i class="fa-solid fa-right-from-bracket mr-1"></i> Logout
+                <button onclick="handleLogout()" class="bg-rose-600/20 text-rose-400 border border-rose-500/30 hover:bg-rose-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Admin Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
-
-        <!-- Top Original Stat Cards -->
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+        
+        <!-- Stats Grid -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="bg-[#111c38] border border-slate-800/80 p-4 rounded-xl shadow-lg">
-                <span class="text-[11px] font-bold text-slate-400 uppercase">Total Shipments</span>
-                <div id="statTotalShipments" class="text-3xl font-black text-white mt-2">0</div>
+            <div onclick="showAdminSection('tracking')" class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow cursor-pointer hover:border-slate-500 transition">
+                <p class="text-xs text-slate-400">Total Shipments</p>
+                <h3 id="cardTotalShipments" class="text-2xl font-bold text-white mt-1">0</h3>
             </div>
-            <div class="bg-[#111c38] border border-slate-800/80 p-4 rounded-xl shadow-lg">
-                <span class="text-[11px] font-bold text-amber-400 uppercase">Active Users</span>
-                <div id="statActiveUsers" class="text-3xl font-black text-amber-400 mt-2">0</div>
+            <div onclick="showAdminSection('active')" class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow cursor-pointer hover:border-amber-500/50 transition">
+                <p class="text-xs text-amber-400">Active Users</p>
+                <h3 id="cardUsers" class="text-2xl font-bold text-amber-400 mt-1">0</h3>
             </div>
-            <div class="bg-[#111c38] border border-slate-800/80 p-4 rounded-xl shadow-lg">
-                <span class="text-[11px] font-bold text-rose-400 uppercase">Deleted Users Archive</span>
-                <div id="statDeletedUsers" class="text-3xl font-black text-rose-400 mt-2">0</div>
+            <div onclick="showAdminSection('deleted')" class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow cursor-pointer hover:border-rose-500/50 transition">
+                <p class="text-xs text-rose-400">Deleted Users Archive</p>
+                <h3 id="cardDeletedUsers" class="text-2xl font-bold text-rose-400 mt-1">0</h3>
             </div>
-            <div class="bg-[#111c38] border border-slate-800/80 p-4 rounded-xl shadow-lg">
-                <span class="text-[11px] font-bold text-sky-400 uppercase">Pending Approval</span>
-                <div id="statPendingApproval" class="text-3xl font-black text-sky-400 mt-2">0</div>
-            </div>
-        </div>
-
-        <!-- Original Action Control Buttons Grid + Wholeseller Button -->
-        <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
-            <!-- Left Action Buttons -->
-            <div class="flex flex-wrap items-center gap-2 text-xs">
-                <button class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-lg transition shadow">
-                    <i class="fa-solid fa-users mr-1"></i> Registered Active Users
-                </button>
-                <button class="bg-rose-950/80 border border-rose-800 hover:bg-rose-900 text-rose-300 font-bold px-4 py-2 rounded-lg transition">
-                    <i class="fa-solid fa-box-archive mr-1"></i> Deleted Users Archive
-                </button>
-                <button class="bg-sky-950/80 border border-sky-800 hover:bg-sky-900 text-sky-300 font-bold px-4 py-2 rounded-lg transition">
-                    <i class="fa-solid fa-truck-fast mr-1"></i> Shipment Tracking Details
-                </button>
-            </div>
-
-            <!-- Right Action Buttons -->
-            <div class="flex flex-wrap items-center gap-2 text-xs">
-                <button class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-lg transition shadow">
-                    <i class="fa-solid fa-barcode mr-1"></i> + Upload Tracking IDs Pool
-                </button>
-                <button class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg transition shadow">
-                    <i class="fa-solid fa-circle-plus mr-1"></i> + Manual Parcel Entry
-                </button>
-                <!-- Added Wholeseller Button next to original buttons -->
-                <a href="admin-catalog.html" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-4 py-2 rounded-lg transition shadow flex items-center gap-1.5">
-                    <i class="fa-solid fa-store"></i> + Wholeseller Orders
-                </a>
+            <div onclick="showAdminSection('tracking')" class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow cursor-pointer hover:border-blue-500/50 transition">
+                <p class="text-xs text-blue-400">Pending Approval</p>
+                <h3 id="cardPendingParcels" class="text-2xl font-bold text-blue-400 mt-1">0</h3>
             </div>
         </div>
 
-        <!-- Main Tracking Details Table Container -->
-        <div class="bg-[#111c38] border border-slate-800 rounded-xl shadow-2xl overflow-hidden">
-            <div class="p-4 border-b border-slate-800/80">
-                <h2 class="text-sm font-bold text-sky-400">Shipment & Parcel Tracking Details</h2>
+        <!-- Quick View Action Buttons & Add COD Button -->
+        <div class="flex flex-wrap justify-between items-center gap-2">
+            <div class="flex flex-wrap gap-2">
+                <button onclick="showAdminSection('active')" class="bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-users"></i> Registered Active Users
+                </button>
+                <button onclick="showAdminSection('deleted')" class="bg-rose-600/20 text-rose-400 border border-rose-500/30 hover:bg-rose-600 hover:text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-box-archive"></i> Deleted Users Archive
+                </button>
+                <button onclick="showAdminSection('tracking')" class="bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-truck-fast"></i> Shipment Tracking Details
+                </button>
             </div>
 
+            <div class="flex gap-2">
+                <!-- Custom Tracking ID Pool Button -->
+                <button onclick="openCustomTrackModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-barcode"></i> + Upload Tracking IDs Pool
+                </button>
+                <!-- Add New COD Parcel Button -->
+                <button onclick="openAddCodModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-plus-circle"></i> + Manual Parcel Entry
+                </button>
+            </div>
+        </div>
+
+        <!-- Section 1: Registered Active Users Table -->
+        <div id="activeUsersSection" class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
+            <div class="p-4 border-b border-slate-700 font-bold text-sm text-white flex justify-between items-center">
+                <span>Registered Active Users</span>
+            </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-slate-200">
-                    <thead class="bg-[#0d152a] text-[11px] text-slate-400 font-semibold border-b border-slate-800">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-900 text-slate-400 border-b border-slate-700">
+                        <tr>
+                            <th class="p-3">User & Business</th>
+                            <th class="p-3">Email</th>
+                            <th class="p-3">Type</th>
+                            <th class="p-3">Role</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <tr><td colspan="6" class="p-4 text-center text-slate-400">Loading users...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 2: Deleted Users Archive Table -->
+        <div id="deletedUsersSection" class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow hidden">
+            <div class="p-4 border-b border-slate-700 font-bold text-sm text-rose-400 flex justify-between items-center">
+                <span>Deleted Users Archive</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-900 text-slate-400 border-b border-slate-700">
+                        <tr>
+                            <th class="p-3">User & Business</th>
+                            <th class="p-3">Email</th>
+                            <th class="p-3">Type</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3 text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deletedUserTableBody">
+                        <tr><td colspan="5" class="p-4 text-center text-slate-400">No deleted users in archive.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 3: Shipment Tracking Details Table -->
+        <div id="trackingSection" class="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow">
+            <div class="p-4 border-b border-slate-700 font-bold text-sm text-blue-400 flex justify-between items-center">
+                <span>Shipment & Parcel Tracking Details</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-900 text-slate-400 border-b border-slate-700">
                         <tr>
                             <th class="p-3">Tracking ID</th>
                             <th class="p-3">Customer Details</th>
                             <th class="p-3">Destination City & Address</th>
                             <th class="p-3">COD Amount</th>
                             <th class="p-3">Status</th>
-                            <th class="p-3 text-right">Actions</th>
+                            <th class="p-3 text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="shipmentsTableBody" class="divide-y divide-slate-800/60 font-medium">
-                        <tr>
-                            <td colspan="6" class="p-8 text-center text-slate-500">Loading tracking data...</td>
-                        </tr>
+                    <tbody id="adminParcelTable">
+                        <tr><td colspan="6" class="p-4 text-center text-slate-400">Loading tracking data...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -114,111 +154,74 @@
 
     </main>
 
+    <!-- Admin Custom Tracking IDs Manager Modal -->
+    <div id="customTrackModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-lg w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="text-base font-bold text-purple-400"><i class="fa-solid fa-barcode mr-2"></i> Custom Tracking IDs Pool Storage</h3>
+                <button onclick="closeCustomTrackModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <p class="text-slate-300">Apni external platform ki Tracking IDs ki list yahan paste karein (Har line par 1 ID):</p>
+                <textarea id="trackingIdListInput" rows="6" placeholder="e.g.&#10;PT-90001&#10;PT-90002&#10;PT-90003" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-amber-400 font-mono outline-none"></textarea>
+                <div class="flex justify-between items-center pt-2">
+                    <span id="poolAvailableCount" class="text-slate-400 text-[11px]">Unused Available: Loading...</span>
+                    <button onclick="uploadCustomTrackingIDs()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-lg shadow">
+                        + Save to Available Pool
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Add COD Parcel Modal -->
+    <div id="addCodModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-2xl max-w-lg w-full space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="text-base font-bold text-emerald-400"><i class="fa-solid fa-box mr-2"></i> Create COD Parcel Booking</h3>
+                <button onclick="closeAddCodModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleAdminCreateParcel(event)" class="space-y-3 text-xs">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 mb-1 font-semibold">Customer Name</label>
+                        <input type="text" id="adminCustName" required class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 mb-1 font-semibold">Customer Phone</label>
+                        <input type="text" id="adminCustPhone" required class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 mb-1 font-semibold">Destination City</label>
+                        <input type="text" id="adminCustCity" required class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 mb-1 font-semibold">COD Amount (PKR)</label>
+                        <input type="number" id="adminTotalCod" required class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-slate-300 mb-1 font-semibold">Delivery Address</label>
+                    <input type="text" id="adminCustAddress" required class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-300 mb-1 font-semibold">Item Description / Product Details</label>
+                    <input type="text" id="adminItemDetail" placeholder="e.g. Shoes, Watch, Cloths" class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white outline-none">
+                </div>
+                <div class="flex gap-2 justify-end pt-3 border-t border-slate-700">
+                    <button type="button" onclick="closeAddCodModal()" class="px-4 py-2 bg-slate-700 text-white rounded-lg font-bold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-lg shadow">Book Parcel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script>
-        const firebaseConfig = {
-          apiKey: "AIzaSyCRkKoE48FjYIjYfUNFEYzcxNueKUm6YOM",
-          authDomain: "prime-traders-f3eec.firebaseapp.com",
-          projectId: "prime-traders-f3eec",
-          storageBucket: "prime-traders-f3eec.firebasestorage.app",
-          messagingSenderId: "499740236001",
-          appId: "1:499740236001:web:e623dfe11f6f96df22ffa0",
-          measurementId: "G-6CGVKBZFJK"
-        };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        function listenToShipments() {
-            db.collection('parcels').onSnapshot(snapshot => {
-                let total = 0, pending = 0;
-                let html = '';
-
-                snapshot.forEach(doc => {
-                    const p = doc.data();
-                    const docId = doc.id;
-                    total++;
-
-                    const trackId = p.trackingId || docId;
-                    const cDetails = p.customerDetails || `${p.customerName || 'N/A'}\n${p.customerPhone || ''}`;
-                    const cCity = p.destinationCity || p.city || 'Karachi';
-                    const cAddr = p.destinationAddress || p.address || 'N/A';
-                    const cod = p.codAmount !== undefined ? p.codAmount : (p.totalAmount || 0);
-                    const status = p.status || 'Pending';
-
-                    if (status === 'Pending') pending++;
-
-                    let statusBadge = 'bg-amber-950/60 text-amber-400 border-amber-500/30';
-                    if (status === 'Delivered') statusBadge = 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30';
-                    else if (status.includes('Transit') || status.includes('Way')) statusBadge = 'bg-sky-950/60 text-sky-400 border-sky-500/30';
-
-                    html += `
-                        <tr class="hover:bg-slate-900/40 transition">
-                            <td class="p-3 font-bold text-amber-400 font-mono">${trackId}</td>
-                            <td class="p-3 font-bold text-white whitespace-pre-line">${cDetails}</td>
-                            <td class="p-3">
-                                <div class="font-bold text-slate-200">${cCity}</div>
-                                <div class="text-[10px] text-slate-400 max-w-xs truncate">${cAddr}</div>
-                            </td>
-                            <td class="p-3 font-black text-amber-300">PKR ${cod}</td>
-                            <td class="p-3">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${statusBadge}">${status}</span>
-                            </td>
-                            <td class="p-3 text-right space-x-1">
-                                ${status === 'Pending' ? `
-                                    <button onclick="assignRider('${docId}', 'Rider Korangi Section')" class="bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold px-2 py-1 rounded shadow">
-                                        Approve -> Rider (Korangi)
-                                    </button>
-                                    <button onclick="assignRider('${docId}', 'Rider Shah-e-Faisal Section')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold px-2 py-1 rounded shadow">
-                                        Approve -> Rider (Shah-e-Faisal)
-                                    </button>
-                                ` : `<span class="text-[10px] text-emerald-400 font-bold mr-2">Assigned: ${p.assignedRider || 'Rider'}</span>`}
-                                <button onclick="deleteShipment('${docId}')" class="bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold px-2 py-1 rounded">
-                                    Delete
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                });
-
-                document.getElementById('statTotalShipments').innerText = total;
-                document.getElementById('statPendingApproval').innerText = pending;
-
-                const tbody = document.getElementById('shipmentsTableBody');
-                tbody.innerHTML = html || `<tr><td colspan="6" class="p-8 text-center text-slate-500">No shipments found.</td></tr>`;
-            }, err => {
-                console.error("Firestore Error:", err);
-            });
-        }
-
-        async function assignRider(id, riderName) {
-            try {
-                await db.collection('parcels').doc(id).update({
-                    status: `Approved / In Transit (${riderName})`,
-                    assignedRider: riderName
-                });
-            } catch (e) {
-                alert("Error assigning rider: " + e.message);
-            }
-        }
-
-        async function deleteShipment(id) {
-            if (confirm("Are you sure you want to delete this shipment?")) {
-                try {
-                    await db.collection('parcels').doc(id).delete();
-                } catch(e) {
-                    alert("Error deleting shipment: " + e.message);
-                }
-            }
-        }
-
-        function logoutAdmin() {
-            firebase.auth().signOut().then(() => window.location.href = 'login.html');
-        }
-
-        window.onload = () => listenToShipments();
-    </script>
+    <script src="dashboard.js?v=10.0"></script>
 </body>
 </html>
