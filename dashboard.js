@@ -43,7 +43,7 @@ auth.onAuthStateChanged(async (user) => {
       listenToUsersLive();
       loadAdminDashboard();
       loadAdminStats();
-      loadLogisticsSettings(); // Load saved DC settings on admin panel load
+      loadLogisticsSettings(user.email); // Pass logged-in user email for permission control
     }
 
     if (path.includes('rider.html')) {
@@ -170,37 +170,101 @@ async function restoreUser(uid) {
   }
 }
 
-// Logistics & DC Rates Management Functions
-async function loadLogisticsSettings() {
+// Multi-Vendor Logistics & DC Rates Management Functions
+async function loadLogisticsSettings(userEmail) {
     try {
         const doc = await db.collection('settings').doc('logistics').get();
         if (doc.exists) {
             const data = doc.data();
-            if (document.getElementById('settingBaseDC')) document.getElementById('settingBaseDC').value = data.baseDC || 150;
-            if (document.getElementById('settingPerKm')) document.getElementById('settingPerKm').value = data.perKm || 20;
-            if (document.getElementById('settingPerKg')) document.getElementById('settingPerKg').value = data.perKg || 50;
-            if (document.getElementById('settingOuterCityDC')) document.getElementById('settingOuterCityDC').value = data.outerCityDC || 450;
+            
+            // 1. Kashan Values
+            if (data.kashan) {
+                if (document.getElementById('kashanBaseDC')) document.getElementById('kashanBaseDC').value = data.kashan.baseDC || 150;
+                if (document.getElementById('kashanPerKm')) document.getElementById('kashanPerKm').value = data.kashan.perKm || 20;
+                if (document.getElementById('kashanPerKg')) document.getElementById('kashanPerKg').value = data.kashan.perKg || 50;
+                if (document.getElementById('kashanOuterCityDC')) document.getElementById('kashanOuterCityDC').value = data.kashan.outerCityDC || 450;
+            }
+            // 2. Abubakar Values
+            if (data.abubakar) {
+                if (document.getElementById('abubakarBaseDC')) document.getElementById('abubakarBaseDC').value = data.abubakar.baseDC || 150;
+                if (document.getElementById('abubakarPerKm')) document.getElementById('abubakarPerKm').value = data.abubakar.perKm || 20;
+                if (document.getElementById('abubakarPerKg')) document.getElementById('abubakarPerKg').value = data.abubakar.perKg || 50;
+                if (document.getElementById('abubakarOuterCityDC')) document.getElementById('abubakarOuterCityDC').value = data.abubakar.outerCityDC || 450;
+            }
+            // 3. Shafi Values
+            if (data.shafi) {
+                if (document.getElementById('shafiBaseDC')) document.getElementById('shafiBaseDC').value = data.shafi.baseDC || 150;
+                if (document.getElementById('shafiPerKm')) document.getElementById('shafiPerKm').value = data.shafi.perKm || 20;
+                if (document.getElementById('shafiPerKg')) document.getElementById('shafiPerKg').value = data.shafi.perKg || 50;
+                if (document.getElementById('shafiOuterCityDC')) document.getElementById('shafiOuterCityDC').value = data.shafi.outerCityDC || 450;
+            }
         }
+
+        // Apply Role-Based Freezing Logic
+        applyVendorPermissions(userEmail);
+
     } catch (e) {
         console.error("Error loading logistics settings:", e);
     }
 }
 
-async function saveLogisticsSettings() {
-    const baseDC = parseFloat(document.getElementById('settingBaseDC').value) || 0;
-    const perKm = parseFloat(document.getElementById('settingPerKm').value) || 0;
-    const perKg = parseFloat(document.getElementById('settingPerKg').value) || 0;
-    const outerCityDC = parseFloat(document.getElementById('settingOuterCityDC').value) || 450;
+// Freeze / Unfreeze inputs based on logged-in vendor email
+function applyVendorPermissions(email) {
+    const emailStr = (email || "").toLowerCase();
 
+    const kashanInputs = document.querySelectorAll('#cardVendorKashan input');
+    const abubakarInputs = document.querySelectorAll('#cardVendorAbubakar input');
+    const shafiInputs = document.querySelectorAll('#cardVendorShafi input');
+
+    // Default: freeze all
+    kashanInputs.forEach(i => i.disabled = true);
+    abubakarInputs.forEach(i => i.disabled = true);
+    shafiInputs.forEach(i => i.disabled = true);
+
+    // Unfreeze only the logged-in vendor's section
+    if (emailStr.includes('kashan')) {
+        kashanInputs.forEach(i => i.disabled = false);
+    } else if (emailStr.includes('abubakar')) {
+        abubakarInputs.forEach(i => i.disabled = false);
+    } else if (emailStr.includes('shafi') || emailStr.includes('admin')) {
+        shafiInputs.forEach(i => i.disabled = false);
+    } else {
+        // If any other account, keep Shafi open by default or allow all if needed
+        shafiInputs.forEach(i => i.disabled = false);
+    }
+}
+
+async function saveLogisticsSettings() {
     try {
+        const kashanData = {
+            baseDC: parseFloat(document.getElementById('kashanBaseDC').value) || 0,
+            perKm: parseFloat(document.getElementById('kashanPerKm').value) || 0,
+            perKg: parseFloat(document.getElementById('kashanPerKg').value) || 0,
+            outerCityDC: parseFloat(document.getElementById('kashanOuterCityDC').value) || 0
+        };
+
+        const abubakarData = {
+            baseDC: parseFloat(document.getElementById('abubakarBaseDC').value) || 0,
+            perKm: parseFloat(document.getElementById('abubakarPerKm').value) || 0,
+            perKg: parseFloat(document.getElementById('abubakarPerKg').value) || 0,
+            outerCityDC: parseFloat(document.getElementById('abubakarOuterCityDC').value) || 0
+        };
+
+        const shafiData = {
+            baseDC: parseFloat(document.getElementById('shafiBaseDC').value) || 0,
+            perKm: parseFloat(document.getElementById('shafiPerKm').value) || 0,
+            perKg: parseFloat(document.getElementById('shafiPerKg').value) || 0,
+            outerCityDC: parseFloat(document.getElementById('shafiOuterCityDC').value) || 0
+        };
+
         await db.collection('settings').doc('logistics').set({
-            baseDC,
-            perKm,
-            perKg,
-            outerCityDC,
+            kashan: kashanData,
+            abubakar: abubakarData,
+            shafi: shafiData,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        alert("Logistics & DC Rates Saved Successfully! 🚚");
+
+        alert("Multi-Vendor Logistics & DC Rates Saved Successfully! 🚚");
     } catch (err) {
         alert("Error saving settings: " + err.message);
     }
