@@ -238,9 +238,12 @@ async function loadAdminDashboard() {
             }">${data.status || 'Pending'}</span>
           </td>
           <td class="p-3 text-center flex justify-center gap-1.5 flex-wrap">
+            <button onclick='openShippingSlipModal(${JSON.stringify(data).replace(/'/g, "'")})' class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-2 py-1 rounded text-[10px] font-black shadow flex items-center gap-1">
+                <i class="fa-solid fa-print"></i> Slip
+            </button>
             ${!data.approvedByAdmin ? `
-              <button onclick="approveParcelToRider('${docId}', 'rider.k@primetraders.com', 'Rider Korangi Section')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-bold shadow">Approve -> Rider (Korangi)</button>
-              <button onclick="approveParcelToRider('${docId}', 'rider.s@primetraders.com', 'Rider Shah-e-Faisal Section')" class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-[10px] font-bold shadow">Approve -> Rider (Shah-e-Faisal)</button>
+              <button onclick="approveParcelToRider('${docId}', 'rider.k@primetraders.com', 'Rider Korangi Section')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[10px] font-bold shadow">Approve -> Korangi</button>
+              <button onclick="approveParcelToRider('${docId}', 'rider.s@primetraders.com', 'Rider Shah-e-Faisal Section')" class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-[10px] font-bold shadow">Approve -> Shah-e-Faisal</button>
             ` : `<span class="text-emerald-400 font-bold text-[10px]">Assigned: ${data.assignedRiderName || 'Rider'}</span>`}
             <button onclick="deleteParcel('${docId}')" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded text-[10px] font-bold">Delete</button>
           </td>
@@ -397,6 +400,7 @@ function closeCustomTrackModal() {
   const modal = document.getElementById('customTrackModal');
   if (modal) modal.classList.add('hidden');
 }
+
 // Open Shipping Label Slip Modal for Admin
 function openShippingSlipModal(parcelData) {
     document.getElementById('slipShipperName').innerText = "PRIME TRADERS LOGISTICS";
