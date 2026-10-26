@@ -163,7 +163,7 @@
 
     </div>
 
-    <!-- Password Show/Hide Script -->
+    <!-- Scripts -->
     <script>
         function togglePasswordVisibility() {
             const passwordInput = document.getElementById('loginPassword');
@@ -177,6 +177,77 @@
                 eyeIcon.classList.remove('fa-eye-slash');
                 eyeIcon.classList.add('fa-eye');
             }
+        }
+
+        // Tab Switcher Function
+        function switchTab(tabName) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const tabLogin = document.getElementById('tabLogin');
+            const tabRegister = document.getElementById('tabRegister');
+
+            if (tabName === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                tabLogin.className = "flex-1 py-2 text-center text-amber-400 border-b-2 border-amber-400 focus:outline-none transition";
+                tabRegister.className = "flex-1 py-2 text-center text-slate-400 hover:text-slate-200 focus:outline-none transition";
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                tabRegister.className = "flex-1 py-2 text-center text-amber-400 border-b-2 border-amber-400 focus:outline-none transition";
+                tabLogin.className = "flex-1 py-2 text-center text-slate-400 hover:text-slate-200 focus:outline-none transition";
+            }
+        }
+
+        // Account Type Selector
+        function setAccountType(type) {
+            const regAccountType = document.getElementById('regAccountType');
+            const btnBusiness = document.getElementById('btnTypeBusiness');
+            const btnSelf = document.getElementById('btnTypeSelf');
+            const businessFields = document.getElementById('businessNameField');
+            const ntnNumField = document.getElementById('ntnNumField');
+            const ntnFileField = document.getElementById('ntnFileField');
+
+            regAccountType.value = type;
+
+            if (type === 'business') {
+                btnBusiness.className = "flex-1 py-2 text-xs font-bold rounded-lg border border-amber-400 bg-amber-400 text-slate-900 transition flex items-center justify-center gap-1";
+                btnSelf.className = "flex-1 py-2 text-xs font-bold rounded-lg border border-slate-700 bg-slate-900 text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+                if (businessFields) businessFields.style.display = 'block';
+                if (ntnNumField) ntnNumField.style.display = 'block';
+                if (ntnFileField) ntnFileField.style.display = 'block';
+            } else {
+                btnSelf.className = "flex-1 py-2 text-xs font-bold rounded-lg border border-amber-400 bg-amber-400 text-slate-900 transition flex items-center justify-center gap-1";
+                btnBusiness.className = "flex-1 py-2 text-xs font-bold rounded-lg border border-slate-700 bg-slate-900 text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
+                if (businessFields) businessFields.style.display = 'none';
+                if (ntnNumField) ntnNumField.style.display = 'none';
+                if (ntnFileField) ntnFileField.style.display = 'none';
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPassword').value;
+            auth.signInWithEmailAndPassword(email, pass)
+                .then(() => { window.location.href = 'admin.html'; })
+                .catch(err => { alert("Login Error: " + err.message); });
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            alert("Registration logic triggered.");
+        }
+
+        function handleForgotPassword() {
+            const email = document.getElementById('loginEmail').value;
+            if (!email) {
+                alert("Pehle email enter karein.");
+                return;
+            }
+            auth.sendPasswordResetEmail(email)
+                .then(() => { alert("Password reset email bhej di gayi hai!"); })
+                .catch(err => { alert("Error: " + err.message); });
         }
     </script>
 
