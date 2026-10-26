@@ -43,6 +43,7 @@ auth.onAuthStateChanged(async (user) => {
       listenToUsersLive();
       loadAdminDashboard();
       loadAdminStats();
+      loadLogisticsSettings(); // Load saved DC settings on admin panel load
     }
 
     if (path.includes('rider.html')) {
@@ -167,6 +168,42 @@ async function restoreUser(uid) {
   } catch (e) {
     alert("Error restoring user: " + e.message);
   }
+}
+
+// Logistics & DC Rates Management Functions
+async function loadLogisticsSettings() {
+    try {
+        const doc = await db.collection('settings').doc('logistics').get();
+        if (doc.exists) {
+            const data = doc.data();
+            if (document.getElementById('settingBaseDC')) document.getElementById('settingBaseDC').value = data.baseDC || 150;
+            if (document.getElementById('settingPerKm')) document.getElementById('settingPerKm').value = data.perKm || 20;
+            if (document.getElementById('settingPerKg')) document.getElementById('settingPerKg').value = data.perKg || 50;
+            if (document.getElementById('settingOuterCityDC')) document.getElementById('settingOuterCityDC').value = data.outerCityDC || 450;
+        }
+    } catch (e) {
+        console.error("Error loading logistics settings:", e);
+    }
+}
+
+async function saveLogisticsSettings() {
+    const baseDC = parseFloat(document.getElementById('settingBaseDC').value) || 0;
+    const perKm = parseFloat(document.getElementById('settingPerKm').value) || 0;
+    const perKg = parseFloat(document.getElementById('settingPerKg').value) || 0;
+    const outerCityDC = parseFloat(document.getElementById('settingOuterCityDC').value) || 450;
+
+    try {
+        await db.collection('settings').doc('logistics').set({
+            baseDC,
+            perKm,
+            perKg,
+            outerCityDC,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        alert("Logistics & DC Rates Saved Successfully! 🚚");
+    } catch (err) {
+        alert("Error saving settings: " + err.message);
+    }
 }
 
 // Admin Parcels Dashboard
