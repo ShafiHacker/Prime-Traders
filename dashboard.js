@@ -397,3 +397,36 @@ function closeCustomTrackModal() {
   const modal = document.getElementById('customTrackModal');
   if (modal) modal.classList.add('hidden');
 }
+// Open Shipping Label Slip Modal for Admin
+function openShippingSlipModal(parcelData) {
+    document.getElementById('slipShipperName').innerText = "PRIME TRADERS LOGISTICS";
+    document.getElementById('slipShipperAddress').innerText = "Main Office Karachi, Pakistan";
+    document.getElementById('slipShipperPhone').innerText = "0300-1234567";
+
+    document.getElementById('slipCustName').innerText = parcelData.custName || 'N/A';
+    document.getElementById('slipCustPhone').innerText = parcelData.custPhone || 'N/A';
+    document.getElementById('slipCustAddress').innerText = parcelData.custAddress || 'N/A';
+    document.getElementById('slipTrackId').innerText = parcelData.trackId || 'PT-100000';
+    document.getElementById('slipCity').innerText = parcelData.custCity || 'Karachi';
+    document.getElementById('slipWeight').innerText = (parcelData.weightKg || 0.5) + ' Kg';
+    document.getElementById('slipCodAmount').innerText = 'PKR ' + (parcelData.totalCod || 0);
+
+    // Format Date
+    const dateStr = parcelData.createdAt?.toDate ? parcelData.createdAt.toDate().toLocaleDateString() : new Date().toLocaleDateString();
+    document.getElementById('slipDate').innerText = dateStr;
+
+    // Items description string
+    let itemsText = '';
+    if (parcelData.items && Array.isArray(parcelData.items)) {
+        itemsText = parcelData.items.map(i => `${i.title} (${i.selectedSize || 'Std'}, x${i.qty || 1})`).join(', ');
+    } else {
+        itemsText = parcelData.itemDetail || 'General E-Commerce Parcel';
+    }
+    document.getElementById('slipItemsDesc').innerText = itemsText;
+
+    document.getElementById('shippingSlipModal').classList.remove('hidden');
+}
+
+function closeShippingSlipModal() {
+    document.getElementById('shippingSlipModal').classList.add('hidden');
+}
