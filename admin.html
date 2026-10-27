@@ -9,22 +9,21 @@
     <script>
         // Tab Switching Logic for Sidebar Navigation
         function switchAdminTab(tabId) {
-            // Hide all main content views
             document.querySelectorAll('.admin-view-section').forEach(el => {
                 el.classList.add('hidden');
             });
-            // Show target section
             const target = document.getElementById(tabId);
             if (target) {
                 target.classList.remove('hidden');
             }
-            // Update active state on sidebar links
             document.querySelectorAll('.sidebar-link').forEach(el => {
                 el.classList.remove('bg-purple-600/20', 'text-purple-400', 'border', 'border-purple-500/30');
                 el.classList.add('hover:bg-slate-800', 'text-slate-300');
             });
-            event.currentTarget.classList.remove('hover:bg-slate-800', 'text-slate-300');
-            event.currentTarget.classList.add('bg-purple-600/20', 'text-purple-400', 'border', 'border-purple-500/30');
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.remove('hover:bg-slate-800', 'text-slate-300');
+                event.currentTarget.classList.add('bg-purple-600/20', 'text-purple-400', 'border', 'border-purple-500/30');
+            }
         }
     </script>
 </head>
@@ -64,9 +63,15 @@
                     </button>
                 </div>
 
-                <!-- OPERATIONS & CONFIG -->
+                <!-- OPERATIONS & LOGISTICS SETTINGS -->
                 <div class="space-y-1">
                     <p class="text-[10px] uppercase font-bold text-slate-500 px-3 mb-2 tracking-wider">Operations & Logistics</p>
+                    <button onclick="switchAdminTab('logisticsSettingsView')" class="sidebar-link w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
+                        <i class="fa-solid fa-truck-ramp-box w-4 text-amber-400"></i> Logistics & DC Settings
+                    </button>
+                    <button onclick="switchAdminTab('petrolRateView')" class="sidebar-link w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
+                        <i class="fa-solid fa-gas-pump w-4 text-emerald-400"></i> Daily Petrol Rate
+                    </button>
                     <button onclick="openKmSettingsModal()" class="w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
                         <i class="fa-solid fa-route w-4 text-amber-400"></i> DC KM Settings
                     </button>
@@ -122,7 +127,7 @@
         <!-- Main Content Container with Tab Sections -->
         <main class="max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6 flex-1">
             
-            <!-- VIEW 1: DASHBOARD OVERVIEW (Stats, Quick Actions, Settings) -->
+            <!-- VIEW 1: DASHBOARD OVERVIEW (Stats Only) -->
             <div id="dashboardOverviewView" class="admin-view-section space-y-6">
                 <!-- Stats Grid -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -141,100 +146,6 @@
                     <div onclick="switchAdminTab('shipmentsView'); showAdminSection('tracking')" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl cursor-pointer hover:border-blue-500/50 transition space-y-1">
                         <p class="text-xs text-blue-400 font-bold uppercase tracking-wider">Pending Approval</p>
                         <h3 id="cardPendingParcels" class="text-3xl font-black text-blue-400">0</h3>
-                    </div>
-                </div>
-
-                <!-- Quick Action Toolbar -->
-                <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl flex flex-wrap justify-between items-center gap-3">
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="switchAdminTab('activeUsersView'); showAdminSection('active')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-700">
-                            <i class="fa-solid fa-users text-amber-400"></i> Active Users
-                        </button>
-                        <button onclick="switchAdminTab('deletedArchiveView'); showAdminSection('deleted')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-700">
-                            <i class="fa-solid fa-box-archive text-rose-400"></i> Deleted Archive
-                        </button>
-                        <button onclick="switchAdminTab('shipmentsView'); showAdminSection('tracking')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border border-slate-700">
-                            <i class="fa-solid fa-truck-fast text-blue-400"></i> Tracking Details
-                        </button>
-                    </div>
-
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="openKmSettingsModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow">
-                            <i class="fa-solid fa-route"></i> DC Charge KM Setting
-                        </button>
-                        <button onclick="openCustomTrackModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow">
-                            <i class="fa-solid fa-barcode"></i> + Upload Tracking Pool
-                        </button>
-                        <button onclick="switchAdminTab('wholesellerOrdersView'); showAdminSection('wholeseller')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow">
-                            <i class="fa-solid fa-store"></i> + Wholeseller Orders
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Admin Logistics & Delivery Charges (DC) Settings Card -->
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                        <div>
-                            <h3 class="text-sm font-black text-amber-400 flex items-center gap-2 uppercase tracking-wider">
-                                <i class="fa-solid fa-truck-ramp-box"></i> Logistics & Delivery Charges (DC) Settings
-                            </h3>
-                            <p class="text-[11px] text-slate-400">Configure per-KM, per-KG weight rates and outer city fixed DC.</p>
-                        </div>
-                        <button onclick="saveLogisticsSettings()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-4 py-2 rounded-xl text-xs transition shadow flex items-center gap-1.5">
-                            <i class="fa-solid fa-floppy-disk"></i> Save Rates
-                        </button>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                        <div>
-                            <label class="block text-slate-400 font-bold mb-1">Karachi Per-KM Rate (PKR):</label>
-                            <input type="number" id="settingPerKm" placeholder="e.g. 20" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold outline-none focus:border-amber-500">
-                        </div>
-                        <div>
-                            <label class="block text-slate-400 font-bold mb-1">Per-KG Weight Rate (PKR):</label>
-                            <input type="number" id="settingPerKg" placeholder="e.g. 50" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold outline-none focus:border-amber-500">
-                        </div>
-                        <div>
-                            <label class="block text-slate-400 font-bold mb-1">Outer City Fixed DC (PKR):</label>
-                            <input type="number" id="settingOuterCityDC" placeholder="e.g. 450" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold outline-none focus:border-amber-500">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Daily Petrol Rate Management Card -->
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                        <div>
-                            <h3 class="text-sm font-black text-emerald-400 flex items-center gap-2 uppercase tracking-wider">
-                                <i class="fa-solid fa-gas-pump"></i> Daily Petrol Rate Management
-                            </h3>
-                            <p class="text-[11px] text-slate-400">Update today's petrol rate and download historical rate reports by date range.</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="downloadOldRatesReport()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition shadow flex items-center gap-1">
-                                <i class="fa-solid fa-download"></i> Download Old Rates
-                            </button>
-                            <button onclick="savePetrolRate()" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black px-3.5 py-2 rounded-xl text-xs transition shadow flex items-center gap-1.5">
-                                <i class="fa-solid fa-floppy-disk"></i> Save Petrol Rate
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                        <div>
-                            <label class="block text-slate-400 font-bold mb-1">Today's Petrol Rate (PKR / Liter):</label>
-                            <input type="number" id="settingPetrolRate" placeholder="e.g. 285" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold outline-none focus:border-emerald-500">
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-slate-400 font-bold mb-1">Start Date:</label>
-                                <input type="date" id="rateStartDate" class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs">
-                            </div>
-                            <div>
-                                <label class="block text-slate-400 font-bold mb-1">End Date:</label>
-                                <input type="date" id="rateEndDate" class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs">
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -341,11 +252,82 @@
                 </div>
             </div>
 
+            <!-- VIEW 6: LOGISTICS & DC SETTINGS VIEW -->
+            <div id="logisticsSettingsView" class="admin-view-section hidden space-y-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div>
+                            <h3 class="text-sm font-black text-amber-400 flex items-center gap-2 uppercase tracking-wider">
+                                <i class="fa-solid fa-truck-ramp-box"></i> Logistics & Delivery Charges (DC) Settings
+                            </h3>
+                            <p class="text-[11px] text-slate-400">Configure per-KM, per-KG weight rates and outer city fixed DC.</p>
+                        </div>
+                        <button onclick="saveLogisticsSettings()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-4 py-2 rounded-xl text-xs transition shadow flex items-center gap-1.5">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Rates
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                        <div>
+                            <label class="block text-slate-400 font-bold mb-1">Karachi Per-KM Rate (PKR):</label>
+                            <input type="number" id="settingPerKm" placeholder="e.g. 20" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 font-bold mb-1">Per-KG Weight Rate (PKR):</label>
+                            <input type="number" id="settingPerKg" placeholder="e.g. 50" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold outline-none focus:border-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 font-bold mb-1">Outer City Fixed DC (PKR):</label>
+                            <input type="number" id="settingOuterCityDC" placeholder="e.g. 450" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold outline-none focus:border-amber-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 7: DAILY PETROL RATE VIEW -->
+            <div id="petrolRateView" class="admin-view-section hidden space-y-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div>
+                            <h3 class="text-sm font-black text-emerald-400 flex items-center gap-2 uppercase tracking-wider">
+                                <i class="fa-solid fa-gas-pump"></i> Daily Petrol Rate Management
+                            </h3>
+                            <p class="text-[11px] text-slate-400">Update today's petrol rate and download historical rate reports by date range.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="downloadOldRatesReport()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition shadow flex items-center gap-1">
+                                <i class="fa-solid fa-download"></i> Download Old Rates
+                            </button>
+                            <button onclick="savePetrolRate()" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black px-3.5 py-2 rounded-xl text-xs transition shadow flex items-center gap-1.5">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Petrol Rate
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <label class="block text-slate-400 font-bold mb-1">Today's Petrol Rate (PKR / Liter):</label>
+                            <input type="number" id="settingPetrolRate" placeholder="e.g. 285" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white font-bold outline-none focus:border-emerald-500">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-slate-400 font-bold mb-1">Start Date:</label>
+                                <input type="date" id="rateStartDate" class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 font-bold mb-1">End Date:</label>
+                                <input type="date" id="rateEndDate" class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </main>
 
         <!-- Footer -->
         <footer class="bg-slate-900 border-t border-slate-800 py-4 text-center text-slate-500 text-[11px]">
-            &copy; 2026 Prime Traders Express & Logistics. All Rights Reserved.
+            © 2026 Prime Traders Express & Logistics. All Rights Reserved.
         </footer>
     </div>
 
