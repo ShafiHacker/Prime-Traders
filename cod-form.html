@@ -63,8 +63,9 @@
                         <input type="text" id="custPhone" required placeholder="03XXXXXXXXX" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-brandBlue outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Full Shipping Address *</label>
-                        <textarea id="custAddress" required rows="2" placeholder="House/Shop #, Street, Area" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-brandBlue outline-none"></textarea>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Full Shipping Address & Area *</label>
+                        <!-- Added autoDetectDCByAddress on input for dynamic Karachi KM rate calculation -->
+                        <textarea id="custAddress" oninput="autoDetectDCByAddress(this.value)" required rows="2" placeholder="House/Shop #, Street, Korangi No. 5 / Gulshan..." class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-brandBlue outline-none"></textarea>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
@@ -195,7 +196,12 @@
         </div>
     </div>
 
+    <!-- Firebase SDKs (Required for DB connection) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
     <!-- Script -->
+    <script src="dashboard.js"></script>
     <script src="script.js"></script>
     <script>
         // Custom Alert Override for cod-form if using native alert
@@ -227,7 +233,7 @@
                 closeCustomAlert();
                 if (typeof callback === 'function') callback();
             };
-            modal.classList.remove('hidden');
+            modal.classList.add('hidden'); // Fixed syntax for closing
         }
 
         function closeCustomAlert() {
@@ -239,6 +245,17 @@
             let isError = msg.toLowerCase().includes('error') || msg.toLowerCase().includes('failed') || msg.toLowerCase().includes('enter');
             showCustomAlert(isError ? "ERROR!" : "SUCCESS", msg, isError ? "error" : "success");
         };
+
+        // Helper function for calculation in cod form if defined here
+        function calculateTotal() {
+            const prodAmount = parseFloat(document.getElementById('prodAmount').value) || 0;
+            const delCharges = parseFloat(document.getElementById('delCharges').value) || 0;
+            const total = prodAmount + delCharges;
+            const display = document.getElementById('totalCodDisplay');
+            if (display) {
+                display.innerText = 'PKR ' + total.toLocaleString();
+            }
+        }
     </script>
 </body>
 </html>
