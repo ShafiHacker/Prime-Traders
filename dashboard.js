@@ -17,6 +17,40 @@ const db = firebase.firestore();
 
 let currentParcelCount = 1;
 
+// Predefined Karachi Areas Distance List
+const karachiAreasData = [
+    { sNo: 1, area: "Korangi Industrial Area", km: 5 },
+    { sNo: 2, area: "Korangi No. 5", km: 7 },
+    { sNo: 3, area: "Landhi", km: 12 },
+    { sNo: 4, area: "Shah Faisal Colony", km: 12 },
+    { sNo: 5, area: "Malir", km: 16 },
+    { sNo: 6, area: "DHA Phase 2", km: 10 },
+    { sNo: 7, area: "DHA Phase 5", km: 14 },
+    { sNo: 8, area: "Clifton / Boat Basin", km: 17 },
+    { sNo: 9, area: "Saddar", km: 18 },
+    { sNo: 10, area: "I.I. Chundrigar Road", km: 21 },
+    { sNo: 11, area: "PECHS", km: 16 },
+    { sNo: 12, area: "Bahadurabad", km: 19 },
+    { sNo: 13, area: "Gulshan-e-Iqbal", km: 19 },
+    { sNo: 14, area: "Gulistan-e-Johar", km: 20 },
+    { sNo: 15, area: "University Road", km: 21 },
+    { sNo: 16, area: "NED University", km: 24 },
+    { sNo: 17, area: "North Nazimabad", km: 24 },
+    { sNo: 18, area: "Nazimabad", km: 22 },
+    { sNo: 19, area: "Liaquatabad", km: 21 },
+    { sNo: 20, area: "Federal B Area", km: 23 },
+    { sNo: 21, area: "New Karachi", km: 29 },
+    { sNo: 22, area: "Surjani Town", km: 33 },
+    { sNo: 23, area: "Orangi Town", km: 29 },
+    { sNo: 24, area: "SITE Area", km: 27 },
+    { sNo: 25, area: "Baldia Town", km: 32 },
+    { sNo: 26, area: "Keamari", km: 27 },
+    { sNo: 27, area: "Manora (to ferry/boat point)", km: 30 },
+    { sNo: 28, area: "Port Qasim", km: 24 },
+    { sNo: 29, area: "Bahria Town Karachi", km: 43 },
+    { sNo: 30, area: "Gadap / Super Highway side", km: 35 }
+];
+
 // Auth State Listener
 auth.onAuthStateChanged(async (user) => {
   if (user) {
@@ -170,6 +204,103 @@ async function restoreUser(uid) {
   }
 }
 
+// KM-Based DC Rates Setting Functions
+async function openKmSettingsModal() {
+    document.getElementById('kmSettingsModal').classList.remove('hidden');
+    await loadKmSettingsFromFirebase();
+}
+
+function closeKmSettingsModal() {
+    document.getElementById('kmSettingsModal').classList.add('hidden');
+}
+
+async function loadKmSettingsFromFirebase() {
+    try {
+        const doc = await db.collection('settings').doc('km_dc_rates').get();
+        let rate = 11;
+        if (doc.exists && doc.data().perKmRate) {
+            rate = doc.data().perKmRate;
+        }
+        if (document.getElementById('globalPerKmRate')) {
+            document.getElementById('globalPerKmRate').value = rate;
+        }
+        renderKmTable(rate);
+    } catch (e) {
+        renderKmTable(11);
+    }
+}
+
+function renderKmTable(rate) {
+    const tbody = document.getElementById('kmSettingsTableBody');
+    if (!tbody) return;
+
+    let html = '';
+    karachiAreasData.forEach(item => {
+        let dcCharged = item.km * rate;
+        html += `
+            <tr class="border-b border-slate-800 text-xs">
+                <td class="p-3 text-slate-400">${item.sNo}</td>
+                <td class="p-3 font-bold text-white">${item.area}</td>
+                <td class="p-3 text-amber-400">${item.km} km</td>
+                <td class="p-3 text-slate-300 font-bold">${rate}</td>
+                <td class="p-3 text-right font-black text-emerald-400">PKR ${dcCharged}</td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+function recalculateAllKmCharges() {
+    const rate = parseFloat(document.getElementById('globalPerKmRate').value) || 11;
+    renderKmTable(rate);
+}
+
+async function saveKmSettingsToFirebase() {
+    const rate = parseFloat(document.getElementById('globalPerKmRate').value) || 11;
+    try {
+        await db.collection('settings').doc('km_dc_rates').set({
+            perKmRate: rate,
+            areas: karachiAreasData,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        alert("KM-based DC rates successfully save ho gaye hain! 🎉");
+        closeKmSettingsModal();
+    } catch (e) {
+        alert("Error saving rates: " + e.message);
+    }
+}
+
+// Auto Detect DC amount by Address/Area in booking forms
+async function autoDetectDCByAddress(enteredAddressOrArea) {
+    try {
+        const doc = await db.collection('settings').doc('km_dc_rates').get();
+        let rate = 11;
+        let areas = karachiAreasData;
+        if (doc.exists) {
+            rate = doc.data().perKmRate || 11;
+            areas = doc.data().areas || karachiAreasData;
+        }
+
+        let matchedDC = 250; // Default fallback
+        let lowerInput = enteredAddressOrArea.toLowerCase();
+
+        for (let item of areas) {
+            if (lowerInput.includes(item.area.toLowerCase())) {
+                matchedDC = item.km * rate;
+                break;
+            }
+        }
+
+        const delChargesInput = document.getElementById('delCharges');
+        if (delChargesInput) {
+            delChargesInput.value = matchedDC;
+            if (typeof calculateTotal === 'function') calculateTotal();
+        }
+    } catch (e) {
+        console.error("Auto DC calculation error:", e);
+    }
+}
+
 // Logistics & DC Rates Management Functions
 async function loadLogisticsSettings() {
     try {
@@ -221,13 +352,11 @@ async function savePetrolRate() {
 
     try {
         const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-        // Save current active rate
         await db.collection('settings').doc('petrol_rate').set({
             rate,
             updatedAt: timestamp
         });
 
-        // Save into history archive collection for range reports
         await db.collection('petrol_history').add({
             rate,
             date: new Date().toISOString().split('T')[0],
@@ -490,11 +619,9 @@ function openShippingSlipModal(parcelData) {
     document.getElementById('slipWeight').innerText = (parcelData.weightKg || 0.5) + ' Kg';
     document.getElementById('slipCodAmount').innerText = 'PKR ' + (parcelData.totalCod || 0);
 
-    // Format Date
     const dateStr = parcelData.createdAt?.toDate ? parcelData.createdAt.toDate().toLocaleDateString() : new Date().toLocaleDateString();
     document.getElementById('slipDate').innerText = dateStr;
 
-    // Items description string
     let itemsText = '';
     if (parcelData.items && Array.isArray(parcelData.items)) {
         itemsText = parcelData.items.map(i => `${i.title} (${i.selectedSize || 'Std'}, x${i.qty || 1})`).join(', ');
@@ -510,11 +637,11 @@ function closeShippingSlipModal() {
     document.getElementById('shippingSlipModal').classList.add('hidden');
 }
 
-// Custom Modal Alert Function (Replaces native alert popups)
+// Custom Modal Alert Function
 function showCustomAlert(title, message, type = 'success', callback = null) {
     const modal = document.getElementById('customAlertModal');
     if (!modal) {
-        alert(message); // Fallback
+        alert(message);
         return;
     }
 
@@ -551,7 +678,6 @@ function closeCustomAlert() {
     if (modal) modal.classList.add('hidden');
 }
 
-// Override default window alert to use custom modal automatically
 window.alert = function(msg) {
     let isError = msg.toLowerCase().includes('error') || msg.toLowerCase().includes('failed') || msg.toLowerCase().includes('enter');
     showCustomAlert(isError ? "ERROR!" : "SUCCESS", msg, isError ? "error" : "success");
