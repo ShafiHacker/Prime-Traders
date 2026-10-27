@@ -72,13 +72,13 @@
                     <button onclick="switchAdminTab('petrolRateView')" class="sidebar-link w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
                         <i class="fa-solid fa-gas-pump w-4 text-emerald-400"></i> Daily Petrol Rate
                     </button>
-                    <button onclick="openKmSettingsModal()" class="w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
+                    <button onclick="openKmSettingsModal()" class="sidebar-link w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
                         <i class="fa-solid fa-route w-4 text-amber-400"></i> DC KM Settings
                     </button>
-                    <button onclick="openCustomTrackModal()" class="w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
+                    <button onclick="openCustomTrackModal()" class="sidebar-link w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
                         <i class="fa-solid fa-barcode w-4 text-purple-400"></i> Upload Tracking Pool
                     </button>
-                    <button onclick="openAddCodModal()" class="w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
+                    <button onclick="openAddCodModal()" class="sidebar-link w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
                         <i class="fa-solid fa-plus-circle w-4 text-emerald-400"></i> Manual Parcel Entry
                     </button>
                 </div>
@@ -111,7 +111,7 @@
             </div>
             <div class="hidden md:block">
                 <h2 class="text-sm font-black text-white uppercase tracking-wider">Operations Dashboard</h2>
-                <p class="text-[10px] text-slate-400">Manage shipments, logistics rates, and active system users.</p>
+                <p class="text-[10px] text-slate-400">Manage shipments, logistics rates, and active system users[cite: 15].</p>
             </div>
 
             <div class="flex items-center gap-3">
@@ -127,25 +127,82 @@
         <!-- Main Content Container with Tab Sections -->
         <main class="max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6 flex-1">
             
-            <!-- VIEW 1: DASHBOARD OVERVIEW (Stats Only) -->
+            <!-- VIEW 1: DASHBOARD OVERVIEW (Professional Stats Cards matching 2nd Screenshot) -->
             <div id="dashboardOverviewView" class="admin-view-section space-y-6">
-                <!-- Stats Grid -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div onclick="switchAdminTab('shipmentsView'); showAdminSection('tracking')" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl cursor-pointer hover:border-slate-600 transition space-y-1">
-                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Total Shipments</p>
-                        <h3 id="cardTotalShipments" class="text-3xl font-black text-white">0</h3>
+                <!-- Top Row Stats Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Total Shipments Card -->
+                    <div onclick="switchAdminTab('shipmentsView'); showAdminSection('tracking')" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl cursor-pointer hover:border-blue-500/50 transition relative overflow-hidden group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Total Shipments</p>
+                                <h3 id="cardTotalShipments" class="text-3xl font-black text-white mt-1">0</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                                <i class="fa-solid fa-box text-base"></i>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-emerald-400 font-bold mt-3 flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-trend-up"></i> Live Tracking System Active
+                        </p>
                     </div>
-                    <div onclick="switchAdminTab('activeUsersView'); showAdminSection('active')" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl cursor-pointer hover:border-amber-500/50 transition space-y-1">
-                        <p class="text-xs text-amber-400 font-bold uppercase tracking-wider">Active Users</p>
-                        <h3 id="cardUsers" class="text-3xl font-black text-amber-400">0</h3>
+
+                    <!-- In Transit Card -->
+                    <div onclick="switchAdminTab('shipmentsView'); showAdminSection('tracking')" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl cursor-pointer hover:border-amber-500/50 transition relative overflow-hidden group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-amber-400 font-bold uppercase tracking-wider">In Transit</p>
+                                <h3 id="cardInTransit" class="text-3xl font-black text-amber-400 mt-1">0</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                                <i class="fa-solid fa-bolt text-base"></i>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-400 font-semibold mt-3">Active Courier Dispatches</p>
                     </div>
-                    <div onclick="switchAdminTab('deletedArchiveView'); showAdminSection('deleted')" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl cursor-pointer hover:border-rose-500/50 transition space-y-1">
-                        <p class="text-xs text-rose-400 font-bold uppercase tracking-wider">Deleted Archive</p>
-                        <h3 id="cardDeletedUsers" class="text-3xl font-black text-rose-400">0</h3>
+
+                    <!-- Delivered Today Card -->
+                    <div onclick="switchAdminTab('shipmentsView'); showAdminSection('tracking')" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl cursor-pointer hover:border-emerald-500/50 transition relative overflow-hidden group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-emerald-400 font-bold uppercase tracking-wider">Delivered Today</p>
+                                <h3 id="cardDeliveredToday" class="text-3xl font-black text-emerald-400 mt-1">0</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                                <i class="fa-solid fa-circle-check text-base"></i>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-emerald-400 font-bold mt-3">Completed Deliveries</p>
                     </div>
-                    <div onclick="switchAdminTab('shipmentsView'); showAdminSection('tracking')" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl cursor-pointer hover:border-blue-500/50 transition space-y-1">
-                        <p class="text-xs text-blue-400 font-bold uppercase tracking-wider">Pending Approval</p>
-                        <h3 id="cardPendingParcels" class="text-3xl font-black text-blue-400">0</h3>
+
+                    <!-- Failed Deliveries Card -->
+                    <div onclick="switchAdminTab('shipmentsView'); showAdminSection('tracking')" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl cursor-pointer hover:border-rose-500/50 transition relative overflow-hidden group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-rose-400 font-bold uppercase tracking-wider">Failed Deliveries</p>
+                                <h3 id="cardFailedDeliveries" class="text-3xl font-black text-rose-400 mt-1">0</h3>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                                <i class="fa-solid fa-circle-xmark text-base"></i>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-rose-400 font-bold mt-3">Requires Attention</p>
+                    </div>
+                </div>
+
+                <!-- Secondary Row Stats (Active Users, Deleted Archive, Pending Approval) -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div onclick="switchAdminTab('activeUsersView'); showAdminSection('active')" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl cursor-pointer hover:border-amber-500/50 transition">
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Active Users</p>
+                        <h3 id="cardUsers" class="text-2xl font-black text-amber-400 mt-1">0</h3>
+                    </div>
+                    <div onclick="switchAdminTab('deletedArchiveView'); showAdminSection('deleted')" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl cursor-pointer hover:border-rose-500/50 transition">
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Deleted Archive</p>
+                        <h3 id="cardDeletedUsers" class="text-2xl font-black text-rose-400 mt-1">0</h3>
+                    </div>
+                    <div onclick="switchAdminTab('shipmentsView'); showAdminSection('tracking')" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl cursor-pointer hover:border-blue-500/50 transition">
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Pending Approval</p>
+                        <h3 id="cardPendingParcels" class="text-2xl font-black text-blue-400 mt-1">0</h3>
                     </div>
                 </div>
             </div>
