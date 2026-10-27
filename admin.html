@@ -127,7 +127,7 @@
         <!-- Main Content Container with Tab Sections -->
         <main class="max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6 flex-1">
             
-            <!-- VIEW 1: DASHBOARD OVERVIEW (Professional Stats Cards matching 2nd Screenshot) -->
+            <!-- VIEW 1: DASHBOARD OVERVIEW -->
             <div id="dashboardOverviewView" class="admin-view-section space-y-6">
                 <!-- Top Row Stats Cards -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -190,7 +190,7 @@
                     </div>
                 </div>
 
-                <!-- Secondary Row Stats (Active Users, Deleted Archive, Pending Approval) -->
+                <!-- Secondary Row Stats -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div onclick="switchAdminTab('activeUsersView'); showAdminSection('active')" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl cursor-pointer hover:border-amber-500/50 transition">
                         <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Active Users</p>
@@ -204,6 +204,235 @@
                         <p class="text-xs text-slate-400 font-bold uppercase tracking-wider">Pending Approval</p>
                         <h3 id="cardPendingParcels" class="text-2xl font-black text-blue-400 mt-1">0</h3>
                     </div>
+                </div>
+
+                <!-- Advanced Dashboard Grid (Matching Reference Screenshot layout) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Left Column: Parcel Activity & Pending Deliveries -->
+                    <div class="lg:col-span-2 space-y-6">
+                        
+                        <!-- Parcel Activity Card -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="text-sm font-black text-white uppercase tracking-wider">Parcel Activity</h3>
+                                    <p class="text-[11px] text-slate-400">Last 7 days volume performance</p>
+                                </div>
+                                <select class="bg-slate-950 border border-slate-800 text-slate-300 text-xs px-3 py-1.5 rounded-xl font-bold outline-none">
+                                    <option>This Week</option>
+                                    <option>Last Week</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Activity Chart Mock / Bars -->
+                            <div class="grid grid-cols-7 gap-2 pt-4 items-end h-36 border-b border-slate-800 pb-4">
+                                <div class="bg-purple-600/30 hover:bg-purple-600/50 rounded-t-xl h-[45%] flex flex-col justify-end items-center pb-2 text-[10px] text-purple-300 font-bold transition">Mon</div>
+                                <div class="bg-purple-600/40 hover:bg-purple-600/60 rounded-t-xl h-[65%] flex flex-col justify-end items-center pb-2 text-[10px] text-purple-300 font-bold transition">Tue</div>
+                                <div class="bg-purple-600/50 hover:bg-purple-600/70 rounded-t-xl h-[80%] flex flex-col justify-end items-center pb-2 text-[10px] text-purple-300 font-bold transition">Wed</div>
+                                <div class="bg-purple-600/30 hover:bg-purple-600/50 rounded-t-xl h-[55%] flex flex-col justify-end items-center pb-2 text-[10px] text-purple-300 font-bold transition">Thu</div>
+                                <div class="bg-purple-600/60 hover:bg-purple-600/80 rounded-t-xl h-[90%] flex flex-col justify-end items-center pb-2 text-[10px] text-purple-300 font-bold transition">Fri</div>
+                                <div class="bg-purple-600/40 hover:bg-purple-600/60 rounded-t-xl h-[70%] flex flex-col justify-end items-center pb-2 text-[10px] text-purple-300 font-bold transition">Sat</div>
+                                <div class="bg-amber-500 rounded-t-xl h-[98%] flex flex-col justify-end items-center pb-2 text-[10px] text-slate-950 font-black shadow-lg">Sun</div>
+                            </div>
+
+                            <div class="flex justify-between items-center text-xs">
+                                <div>
+                                    <span class="text-slate-400">Total Volume:</span>
+                                    <p class="font-black text-white text-base">8,452 parcels</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-slate-400">Peak Day:</span>
+                                    <p class="font-black text-amber-400 text-base">Sunday</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pending Deliveries Card -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="text-sm font-black text-white uppercase tracking-wider">Pending Deliveries</h3>
+                                    <p class="text-[11px] text-slate-400">Requires action & urgent dispatches</p>
+                                </div>
+                                <span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-black px-2.5 py-1 rounded-full uppercase">24 Urgent</span>
+                            </div>
+
+                            <div class="space-y-2.5 text-xs">
+                                <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex justify-between items-center">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                                        <div>
+                                            <p class="font-bold text-white">#SR-2847</p>
+                                            <p class="text-[10px] text-slate-400">Downtown Area</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-rose-400 font-bold">Overdue</span>
+                                        <p class="text-[10px] text-slate-500">2h ago</p>
+                                    </div>
+                                </div>
+
+                                <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex justify-between items-center">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold"><i class="fa-solid fa-clock"></i></div>
+                                        <div>
+                                            <p class="font-bold text-white">#SR-2851</p>
+                                            <p class="text-[10px] text-slate-400">Uptown District</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-amber-400 font-bold">Due Soon</span>
+                                        <p class="text-[10px] text-slate-500">30 min</p>
+                                    </div>
+                                </div>
+
+                                <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex justify-between items-center">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold"><i class="fa-solid fa-truck"></i></div>
+                                        <div>
+                                            <p class="font-bold text-white">#SR-2862</p>
+                                            <p class="text-[10px] text-slate-400">Suburbs East</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-blue-400 font-bold">Scheduled</span>
+                                        <p class="text-[10px] text-slate-500">1h 30min</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Right Column: Top Riders Today, Recent Bookings, Today's Revenue -->
+                    <div class="space-y-6">
+                        
+                        <!-- Top Riders Today Leaderboard -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                            <div>
+                                <h3 class="text-sm font-black text-white uppercase tracking-wider">Top Riders Today</h3>
+                                <p class="text-[11px] text-slate-400">Performance leaderboard</p>
+                            </div>
+
+                            <div class="space-y-3 text-xs">
+                                <!-- Rider 1 -->
+                                <div class="space-y-1">
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-7 h-7 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center font-black text-[10px]">1</div>
+                                            <span class="font-bold text-white">Marcus Chen</span>
+                                        </div>
+                                        <span class="font-black text-emerald-400">48</span>
+                                    </div>
+                                    <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                                        <div class="bg-emerald-500 h-full w-[95%] rounded-full"></div>
+                                    </div>
+                                    <p class="text-[9px] text-slate-400">98% on-time • 4.9 ★</p>
+                                </div>
+
+                                <!-- Rider 2 -->
+                                <div class="space-y-1">
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-7 h-7 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center font-black text-[10px]">2</div>
+                                            <span class="font-bold text-white">Sarah Kim</span>
+                                        </div>
+                                        <span class="font-black text-emerald-400">42</span>
+                                    </div>
+                                    <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                                        <div class="bg-emerald-500 h-full w-[85%] rounded-full"></div>
+                                    </div>
+                                    <p class="text-[9px] text-slate-400">96% on-time • 4.8 ★</p>
+                                </div>
+
+                                <!-- Rider 3 -->
+                                <div class="space-y-1">
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-7 h-7 rounded-full bg-amber-700/30 text-amber-500 flex items-center justify-center font-black text-[10px]">3</div>
+                                            <span class="font-bold text-white">David Lopez</span>
+                                        </div>
+                                        <span class="font-black text-emerald-400">38</span>
+                                    </div>
+                                    <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                                        <div class="bg-emerald-500 h-full w-[75%] rounded-full"></div>
+                                    </div>
+                                    <p class="text-[9px] text-slate-400">94% on-time • 4.7 ★</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Bookings List -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                            <div>
+                                <h3 class="text-sm font-black text-white uppercase tracking-wider">Recent Bookings</h3>
+                                <p class="text-[11px] text-slate-400">Latest customer shipments</p>
+                            </div>
+
+                            <div class="space-y-2.5 text-xs">
+                                <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex justify-between items-center">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center"><i class="fa-solid fa-check"></i></div>
+                                        <div>
+                                            <p class="font-bold text-white">Express Package</p>
+                                            <p class="text-[10px] text-slate-400">John Smith</p>
+                                        </div>
+                                    </div>
+                                    <span class="font-black text-emerald-400">PKR 6,850</span>
+                                </div>
+
+                                <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex justify-between items-center">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center"><i class="fa-solid fa-box"></i></div>
+                                        <div>
+                                            <p class="font-bold text-white">Standard Parcel</p>
+                                            <p class="text-[10px] text-slate-400">Maria Garcia</p>
+                                        </div>
+                                    </div>
+                                    <span class="font-black text-blue-400">PKR 3,360</span>
+                                </div>
+
+                                <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex justify-between items-center">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center"><i class="fa-solid fa-wallet"></i></div>
+                                        <div>
+                                            <p class="font-bold text-white">COD Delivery</p>
+                                            <p class="text-[10px] text-slate-400">Tech Corp Ltd</p>
+                                        </div>
+                                    </div>
+                                    <span class="font-black text-amber-400">PKR 43,680</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Today's Revenue Card -->
+                        <div class="bg-gradient-to-br from-rose-950 to-slate-900 border border-rose-500/30 rounded-2xl p-5 shadow-xl space-y-4 text-white">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs text-rose-300 font-bold uppercase tracking-wider">Today's Revenue</p>
+                                    <h3 class="text-3xl font-black mt-1 text-white">PKR 695,716</h3>
+                                    <p class="text-[10px] text-emerald-400 font-bold mt-1"><i class="fa-solid fa-arrow-trend-up"></i> +18.2% from yesterday</p>
+                                </div>
+                                <div class="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-300">
+                                    <i class="fa-solid fa-dollar-sign text-base"></i>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2 pt-3 border-t border-rose-900/50 text-xs">
+                                <div>
+                                    <span class="text-slate-400 text-[10px]">COD Collected</span>
+                                    <p class="font-bold text-white">PKR 348,600</p>
+                                </div>
+                                <div>
+                                    <span class="text-slate-400 text-[10px]">Prepaid</span>
+                                    <p class="font-bold text-white">PKR 347,116</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
                 </div>
             </div>
 
