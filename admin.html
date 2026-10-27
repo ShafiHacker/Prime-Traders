@@ -70,6 +70,10 @@
             </div>
 
             <div class="flex flex-wrap gap-2">
+                <!-- DC Charge KM Setting Button Added Here -->
+                <button onclick="openKmSettingsModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-2 rounded-lg text-xs font-black transition flex items-center gap-1.5 shadow">
+                    <i class="fa-solid fa-route"></i> DC Charge KM Setting
+                </button>
                 <button onclick="openCustomTrackModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow">
                     <i class="fa-solid fa-barcode"></i> + Upload Tracking IDs Pool
                 </button>
@@ -289,6 +293,45 @@
         </div>
     </div>
 
+    <!-- Karachi Area KM-Based DC Settings Modal Added Here -->
+    <div id="kmSettingsModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-4 shadow-2xl text-slate-100">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="text-base font-bold text-amber-400 flex items-center gap-2">
+                    <i class="fa-solid fa-map-location-dot"></i> Karachi Area KM-Based DC Rates Management
+                </h3>
+                <button onclick="closeKmSettingsModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700 text-xs">
+                <div>
+                    <span class="text-slate-400 font-bold">Amount per KM Rate (PKR):</span>
+                    <input type="number" id="globalPerKmRate" value="11" oninput="recalculateAllKmCharges()" class="ml-2 w-20 p-1.5 bg-slate-950 border border-slate-700 rounded text-amber-400 font-bold text-center outline-none">
+                </div>
+                <button onclick="saveKmSettingsToFirebase()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold shadow">
+                    Save KM Rates to Database 💾
+                </button>
+            </div>
+
+            <div class="overflow-x-auto border border-slate-700 rounded-xl">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-950 text-slate-400 border-b border-slate-700">
+                        <tr>
+                            <th class="p-3">S.No.</th>
+                            <th class="p-3">Destination Area</th>
+                            <th class="p-3">Approx. One-Way Distance (KM)</th>
+                            <th class="p-3">Amount per KM Rate</th>
+                            <th class="p-3 text-right">DC Charged (PKR)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kmSettingsTableBody">
+                        <!-- Dynamic Rows -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- Custom Popup Alert Modal (Modern UI Overlay) -->
     <div id="customAlertModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white text-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center space-y-4 transform transition-all scale-95 animate-in fade-in zoom-in duration-200 border border-slate-100">
@@ -309,7 +352,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="dashboard.js?v=24.0"></script>
+    <script src="dashboard.js?v=25.0"></script>
 </body>
 </html>
 
