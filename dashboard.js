@@ -77,7 +77,7 @@ auth.onAuthStateChanged(async (user) => {
       listenToUsersLive();
       loadAdminDashboard();
       loadAdminStats();
-      loadLogisticsSettings(); // Load saved DC & Petrol settings on admin panel load
+      loadLogisticsSettings();
     }
 
     if (path.includes('rider.html')) {
@@ -270,7 +270,6 @@ async function saveKmSettingsToFirebase() {
     }
 }
 
-// Auto Detect DC amount by Address/Area in booking forms
 async function autoDetectDCByAddress(enteredAddressOrArea) {
     try {
         const doc = await db.collection('settings').doc('km_dc_rates').get();
@@ -281,7 +280,7 @@ async function autoDetectDCByAddress(enteredAddressOrArea) {
             areas = doc.data().areas || karachiAreasData;
         }
 
-        let matchedDC = 250; // Default fallback
+        let matchedDC = 250;
         let lowerInput = enteredAddressOrArea.toLowerCase();
 
         for (let item of areas) {
@@ -301,7 +300,6 @@ async function autoDetectDCByAddress(enteredAddressOrArea) {
     }
 }
 
-// Logistics & DC Rates Management Functions
 async function loadLogisticsSettings() {
     try {
         const doc = await db.collection('settings').doc('logistics').get();
@@ -312,7 +310,6 @@ async function loadLogisticsSettings() {
             if (document.getElementById('settingOuterCityDC')) document.getElementById('settingOuterCityDC').value = data.outerCityDC || 450;
         }
 
-        // Load Petrol Rate
         const petrolDoc = await db.collection('settings').doc('petrol_rate').get();
         if (petrolDoc.exists) {
             const pData = petrolDoc.data();
@@ -342,7 +339,6 @@ async function saveLogisticsSettings() {
     }
 }
 
-// Save Daily Petrol Rate & Log History
 async function savePetrolRate() {
     const rate = parseFloat(document.getElementById('settingPetrolRate').value) || 0;
     if (rate <= 0) {
@@ -370,7 +366,6 @@ async function savePetrolRate() {
     }
 }
 
-// Download Old Rates Report based on Date Range
 async function downloadOldRatesReport() {
     const startDate = document.getElementById('rateStartDate').value;
     const endDate = document.getElementById('rateEndDate').value;
@@ -410,7 +405,6 @@ async function downloadOldRatesReport() {
     }
 }
 
-// Admin Parcels Dashboard
 async function loadAdminDashboard() {
   const adminParcelTable = document.getElementById('adminParcelTable');
   if (!adminParcelTable) return;
@@ -480,7 +474,6 @@ async function deleteParcel(docId) {
   }
 }
 
-// Wholeseller Orders Loader
 function loadWholesellerOrdersTable() {
   const tbody = document.getElementById('wholesellerOrdersTable');
   if (!tbody) return;
@@ -532,7 +525,6 @@ async function deleteWholesellerOrder(id) {
   }
 }
 
-// Upload Custom Tracking IDs Pool
 async function uploadCustomTrackingIDs() {
   const textarea = document.getElementById('trackingIdListInput');
   if (!textarea || !textarea.value.trim()) {
@@ -564,7 +556,6 @@ async function uploadCustomTrackingIDs() {
   }
 }
 
-// Stats Overview Loader
 async function loadAdminStats() {
   try {
     const pSnap = await db.collection('parcels').get();
@@ -605,7 +596,6 @@ function closeCustomTrackModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-// Open Shipping Label Slip Modal for Admin
 function openShippingSlipModal(parcelData) {
     document.getElementById('slipShipperName').innerText = "PRIME TRADERS LOGISTICS";
     document.getElementById('slipShipperAddress').innerText = "Main Office Karachi, Pakistan";
@@ -637,11 +627,13 @@ function closeShippingSlipModal() {
     document.getElementById('shippingSlipModal').classList.add('hidden');
 }
 
-// Custom Modal Alert Function
+// Safe Original Alert Reference & Custom Modal Alert
+const originalAlert = window.alert;
+
 function showCustomAlert(title, message, type = 'success', callback = null) {
     const modal = document.getElementById('customAlertModal');
     if (!modal) {
-        alert(message);
+        if (originalAlert) originalAlert(message);
         return;
     }
 
@@ -650,25 +642,31 @@ function showCustomAlert(title, message, type = 'success', callback = null) {
     const iconEl = document.getElementById('customAlertIcon');
     const btnEl = document.getElementById('customAlertBtn');
 
-    titleEl.innerText = title || (type === 'success' ? 'SUCCESS' : 'ERROR!');
-    msgEl.innerText = message || '';
+    if (titleEl) titleEl.innerText = title || (type === 'success' ? 'SUCCESS' : 'ERROR!');
+    if (msgEl) msgEl.innerText = message || '';
 
     if (type === 'success') {
-        titleEl.className = "text-xl font-black uppercase tracking-wider text-emerald-600";
-        iconEl.className = "flex justify-center text-emerald-500 text-5xl mb-2";
-        iconEl.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
-        btnEl.className = "w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-xl text-xs tracking-wider uppercase shadow-lg transition transform active:scale-95";
+        if (titleEl) titleEl.className = "text-xl font-black uppercase tracking-wider text-emerald-600";
+        if (iconEl) {
+            iconEl.className = "flex justify-center text-emerald-500 text-5xl mb-2";
+            iconEl.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+        }
+        if (btnEl) btnEl.className = "w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-xl text-xs tracking-wider uppercase shadow-lg transition transform active:scale-95";
     } else {
-        titleEl.className = "text-xl font-black uppercase tracking-wider text-rose-600";
-        iconEl.className = "flex justify-center text-rose-500 text-5xl mb-2";
-        iconEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i>';
-        btnEl.className = "w-full py-3 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-xl text-xs tracking-wider uppercase shadow-lg transition transform active:scale-95";
+        if (titleEl) titleEl.className = "text-xl font-black uppercase tracking-wider text-rose-600";
+        if (iconEl) {
+            iconEl.className = "flex justify-center text-rose-500 text-5xl mb-2";
+            iconEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i>';
+        }
+        if (btnEl) btnEl.className = "w-full py-3 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-xl text-xs tracking-wider uppercase shadow-lg transition transform active:scale-95";
     }
 
-    btnEl.onclick = function() {
-        closeCustomAlert();
-        if (typeof callback === 'function') callback();
-    };
+    if (btnEl) {
+        btnEl.onclick = function() {
+            closeCustomAlert();
+            if (typeof callback === 'function') callback();
+        };
+    }
 
     modal.classList.remove('hidden');
 }
@@ -679,6 +677,7 @@ function closeCustomAlert() {
 }
 
 window.alert = function(msg) {
-    let isError = msg.toLowerCase().includes('error') || msg.toLowerCase().includes('failed') || msg.toLowerCase().includes('enter');
-    showCustomAlert(isError ? "ERROR!" : "SUCCESS", msg, isError ? "error" : "success");
+    let msgStr = String(msg || '');
+    let isError = msgStr.toLowerCase().includes('error') || msgStr.toLowerCase().includes('failed') || msgStr.toLowerCase().includes('enter');
+    showCustomAlert(isError ? "ERROR!" : "SUCCESS", msgStr, isError ? "error" : "success");
 };
