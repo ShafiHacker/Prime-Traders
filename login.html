@@ -225,13 +225,39 @@
             }
         }
 
-        function handleLogin(e) {
+        // Updated Role-Based Login Routing Logic
+        async function handleLogin(e) {
             e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
+            const email = document.getElementById('loginEmail').value.trim();
             const pass = document.getElementById('loginPassword').value;
-            auth.signInWithEmailAndPassword(email, pass)
-                .then(() => { window.location.href = 'admin.html'; })
-                .catch(err => { alert("Login Error: " + err.message); });
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, pass);
+                const user = userCredential.user;
+
+                // Check Firestore user document for role routing
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                let role = 'customer';
+
+                if (userDoc.exists && userDoc.data().role) {
+                    role = userDoc.data().role.toLowerCase();
+                } else if (user.email.includes('rider')) {
+                    role = 'rider';
+                } else if (user.email.includes('admin')) {
+                    role = 'admin';
+                }
+
+                // Role-based redirection
+                if (role === 'rider') {
+                    window.location.href = 'rider.html';
+                } else if (role === 'admin') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+            } catch (err) {
+                alert("Login Error: " + err.message);
+            }
         }
 
         function handleRegister(e) {
@@ -240,7 +266,7 @@
         }
 
         function handleForgotPassword() {
-            const email = document.getElementById('loginEmail').value;
+            const email = document.getElementById('loginEmail').value.trim();
             if (!email) {
                 alert("Pehle email enter karein.");
                 return;
