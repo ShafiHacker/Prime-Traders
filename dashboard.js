@@ -681,3 +681,61 @@ window.alert = function(msg) {
     let isError = msgStr.toLowerCase().includes('error') || msgStr.toLowerCase().includes('failed') || msgStr.toLowerCase().includes('enter');
     showCustomAlert(isError ? "ERROR!" : "SUCCESS", msgStr, isError ? "error" : "success");
 };
+function loadRiderDashboard() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const tableBody = document.getElementById('riderParcelTable');
+  if (!tableBody) return;
+  
+  // Real-time listener filter specifically for this logged-in rider
+  db.collection('parcels')
+    .where('assignedRiderEmail', '==', user.email)
+    .onSnapshot((snapshot) => {
+      let html = '';
+      let pendingCount = 0;
+      let onWayCount = 0;
+      let deliveredCount = 0;
+      let totalCodCollected = 0;
+
+      if (snapshot.empty) {
+        tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">No parcels currently assigned to your route.</td></tr>`;
+        return;
+      }
+
+      snapshot.forEach((doc) => {
+        const d = doc.data();
+        const docId = doc.id;
+        
+        if (d.status === 'Delivered') {
+          deliveredCount++;
+          totalCodCollected += (d.totalCod || 0);
+        } else if (d.status && d.status.includes('In Transit')) {
+          onWayCount++;
+        } else {
+          pendingCount++;
+        }
+
+        html += `
+          <tr class="border-b border-slate-700/50 text-xs">
+            <td class="p-3 font-bold text-amber-400 font-mono">${d.trackId || docId}</td>
+            <td class="p-3 text-slate-200 font-medium">${d.custName || 'N/A'}<br><span class="text-[10px] text-slate-400">${d.custPhone || ''}</span></td>
+            <td class="p-3 text-slate-300">${d.custCity || 'Karachi'}<br><span class="text-[10px] text-slate-400">${d.custAddress || ''}</span></td>
+            <td class="p-3 font-bold text-emerald-400">PKR ${d.totalCod || 0}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-900/50 text-blue-300 border border-blue-500/30">${d.status || 'Pending'}</span></td>
+            <td class="p-3 text-center">
+              <button onclick="openRiderActionModal('${docId}', 'Delivered')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded text-[10px] font-bold mr-1">Delivered</button>
+              <button onclick="openRiderActionModal('${docId}', 'Rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded text-[10px] font-bold">Failed / Return</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      tableBody.innerHTML = html;
+
+      if (document.getElementById('riderPendingCount')) document.getElementById('riderPendingCount').innerText = pendingCount;
+      if (document.getElementById('riderOnWayCount')) document.getElementById('riderOnWayCount').innerText = onWayCount;
+      if (document.getElementById('riderDeliveredCount')) document.getElementById('riderDeliveredCount').innerText = deliveredCount;
+      if (document.getElementById('riderTotalCod')) document.getElementById('riderTotalCod').innerText = 'PKR ' + totalCodCollected;
+    });
+}
