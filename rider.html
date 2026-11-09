@@ -141,6 +141,61 @@
     <script src="dashboard.js?v=11.0"></script>
     
     <script>
+        // Modal Control Functions for Rider Actions
+        function openRiderActionModal(docId, actionType) {
+            document.getElementById('selectedParcelDocId').value = docId;
+            document.getElementById('selectedActionType').value = actionType;
+            
+            const deliveredSec = document.getElementById('deliveredSection');
+            const rejectedSec = document.getElementById('rejectedSection');
+            const modalTitle = document.getElementById('modalRiderTitle');
+
+            if (actionType === 'Delivered') {
+                modalTitle.innerText = "Mark Parcel as Delivered";
+                modalTitle.className = "text-base font-bold text-emerald-400";
+                deliveredSec.classList.remove('hidden');
+                rejectedSec.classList.add('hidden');
+            } else {
+                modalTitle.innerText = "Mark Parcel as Failed / Return";
+                modalTitle.className = "text-base font-bold text-rose-400";
+                rejectedSec.classList.remove('hidden');
+                deliveredSec.classList.add('hidden');
+            }
+
+            document.getElementById('riderActionModal').classList.remove('hidden');
+        }
+
+        function closeRiderModal() {
+            document.getElementById('riderActionModal').classList.add('hidden');
+        }
+
+        async function submitRiderStatusUpdate() {
+            const docId = document.getElementById('selectedParcelDocId').value;
+            const actionType = document.getElementById('selectedActionType').value;
+
+            if (!docId) return;
+
+            try {
+                let updateData = {};
+                if (actionType === 'Delivered') {
+                    updateData.status = 'Delivered';
+                    updateData.deliveredAt = firebase.firestore.FieldValue.serverTimestamp();
+                } else {
+                    const reason = document.getElementById('riderReturnReason').value;
+                    const comment = document.getElementById('riderReturnComment').value;
+                    updateData.status = `Failed: ${reason}`;
+                    updateData.returnComment = comment;
+                    updateData.failedAt = firebase.firestore.FieldValue.serverTimestamp();
+                }
+
+                await db.collection('parcels').doc(docId).update(updateData);
+                closeRiderModal();
+                alert("Parcel status successfully update ho gaya hai! 🎉");
+            } catch (err) {
+                alert("Error updating status: " + err.message);
+            }
+        }
+
         const originalAlert = window.alert;
 
         function showCustomAlert(title, message, type = 'success', callback = null) {
@@ -183,8 +238,9 @@
         }
 
         window.alert = function(msg) {
-            let isError = msg.toLowerCase().includes('error') || msg.toLowerCase().includes('failed') || msg.toLowerCase().includes('enter');
-            showCustomAlert(isError ? "ERROR!" : "SUCCESS", msg, isError ? "error" : "success");
+            let msgStr = String(msg || '');
+            let isError = msgStr.toLowerCase().includes('error') || msgStr.toLowerCase().includes('failed') || msgStr.toLowerCase().includes('enter');
+            showCustomAlert(isError ? "ERROR!" : "SUCCESS", msgStr, isError ? "error" : "success");
         };
     </script>
 </body>
