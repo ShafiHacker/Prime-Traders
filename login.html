@@ -82,7 +82,7 @@
             <!-- Account Type Selector -->
             <div class="flex gap-2 mb-2">
                 <button type="button" id="btnTypeBusiness" onclick="setAccountType('business')" class="flex-1 py-2 text-xs font-bold rounded-lg border border-amber-400 bg-amber-400 text-slate-900 transition flex items-center justify-center gap-1">
-                    <i class="fa-solid fa-briefcase"></i> Business Account
+                    <i class="fa-solid fa-briefcase"></i> Business Account (Yousaf Ansari)
                 </button>
                 <button type="button" id="btnTypeSelf" onclick="setAccountType('self')" class="flex-1 py-2 text-xs font-bold rounded-lg border border-slate-700 bg-slate-900 text-slate-400 hover:text-white transition flex items-center justify-center gap-1">
                     <i class="fa-solid fa-user"></i> Self Account
@@ -115,9 +115,9 @@
                     <label class="block text-slate-300 mb-1 font-semibold">CNIC Number *</label>
                     <input type="text" id="regCNIC" placeholder="42101-XXXXXXX-X" required class="w-full p-2.5 bg-slate-950/90 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
                 </div>
-                <div id="ntnNumField">
-                    <label class="block text-slate-300 mb-1 font-semibold">NTN Number *</label>
-                    <input type="text" id="regNTN" placeholder="1234567-8" required class="w-full p-2.5 bg-slate-950/90 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
+                <div>
+                    <label class="block text-slate-300 mb-1 font-semibold">Batch No (Optional)</label>
+                    <input type="text" id="regBatchNo" placeholder="Batch-001" class="w-full p-2.5 bg-slate-950/90 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
                 </div>
             </div>
 
@@ -144,15 +144,9 @@
                         <input type="file" id="fileCnicBack" accept="image/*,.pdf" class="w-full text-slate-400 text-[10px] bg-slate-950 p-1.5 border border-slate-700 rounded">
                     </div>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div id="ntnFileField">
-                        <label class="block text-slate-400 text-[10px]">NTN Certificate File</label>
-                        <input type="file" id="fileNTN" accept="image/*,.pdf" class="w-full text-slate-400 text-[10px] bg-slate-950 p-1.5 border border-slate-700 rounded">
-                    </div>
-                    <div>
-                        <label class="block text-slate-400 text-[10px]">Bank Cheque / Proof</label>
-                        <input type="file" id="fileBank" accept="image/*,.pdf" class="w-full text-slate-400 text-[10px] bg-slate-950 p-1.5 border border-slate-700 rounded">
-                    </div>
+                <div>
+                    <label class="block text-slate-400 text-[10px]">Bank Cheque / Proof</label>
+                    <input type="file" id="fileBank" accept="image/*,.pdf" class="w-full text-slate-400 text-[10px] bg-slate-950 p-1.5 border border-slate-700 rounded">
                 </div>
             </div>
 
@@ -205,8 +199,6 @@
             const btnBusiness = document.getElementById('btnTypeBusiness');
             const btnSelf = document.getElementById('btnTypeSelf');
             const businessFields = document.getElementById('businessNameField');
-            const ntnNumField = document.getElementById('ntnNumField');
-            const ntnFileField = document.getElementById('ntnFileField');
 
             regAccountType.value = type;
 
@@ -214,14 +206,10 @@
                 btnBusiness.className = "flex-1 py-2 text-xs font-bold rounded-lg border border-amber-400 bg-amber-400 text-slate-900 transition flex items-center justify-center gap-1";
                 btnSelf.className = "flex-1 py-2 text-xs font-bold rounded-lg border border-slate-700 bg-slate-900 text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
                 if (businessFields) businessFields.style.display = 'block';
-                if (ntnNumField) ntnNumField.style.display = 'block';
-                if (ntnFileField) ntnFileField.style.display = 'block';
             } else {
                 btnSelf.className = "flex-1 py-2 text-xs font-bold rounded-lg border border-amber-400 bg-amber-400 text-slate-900 transition flex items-center justify-center gap-1";
                 btnBusiness.className = "flex-1 py-2 text-xs font-bold rounded-lg border border-slate-700 bg-slate-900 text-slate-400 hover:text-white transition flex items-center justify-center gap-1";
                 if (businessFields) businessFields.style.display = 'none';
-                if (ntnNumField) ntnNumField.style.display = 'none';
-                if (ntnFileField) ntnFileField.style.display = 'none';
             }
         }
 
@@ -237,13 +225,11 @@
 
                 let role = 'customer';
 
-                // Safe role detection (Pehle email check karein taaki permission error na aaye)
                 if (email.includes('admin') || email === 'admin@primetraders.com') {
                     role = 'admin';
                 } else if (email.includes('rider')) {
                     role = 'rider';
                 } else {
-                    // Agar email se pata na chale tab Firestore se check karein
                     try {
                         const userDoc = await db.collection('users').doc(user.uid).get();
                         if (userDoc.exists && userDoc.data().role) {
@@ -254,7 +240,6 @@
                     }
                 }
 
-                // Role-based redirection
                 if (role === 'admin') {
                     window.location.href = 'admin.html';
                 } else if (role === 'rider') {
@@ -266,6 +251,7 @@
                 alert("Login Error: " + err.message);
             }
         }
+
         function handleRegister(e) {
             e.preventDefault();
             alert("Registration logic triggered.");
