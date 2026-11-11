@@ -8,15 +8,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         html, body {
-            height: 100%;
+            min-height: 100vh;
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
         }
         .bg-custom-fit {
             background-image: url('bg-login.png');
-            background-size: 100% 100%;
-            background-position: center center;
+            background-size: cover;
+            background-position: center;
             background-repeat: no-repeat;
         }
     </style>
@@ -24,12 +23,12 @@
 <body class="bg-custom-fit min-h-screen w-full flex items-center justify-center p-4 relative">
 
     <!-- Top Left Home Button -->
-    <a href="index.html" class="absolute top-4 left-4 md:top-6 md:left-6 bg-slate-900/90 hover:bg-amber-500 text-slate-200 hover:text-slate-950 border border-slate-700/80 hover:border-amber-400 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xl backdrop-blur-md z-50">
+    <a href="index.html" class="absolute top-4 left-4 bg-slate-900/90 hover:bg-amber-500 text-slate-200 hover:text-slate-950 border border-slate-700/80 hover:border-amber-400 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xl backdrop-blur-md z-50">
         <i class="fa-solid fa-house"></i> Home
     </a>
 
     <!-- Auth Container Box -->
-    <div class="bg-slate-900/95 border border-slate-700/80 p-6 md:p-8 rounded-2xl max-w-md w-full shadow-2xl space-y-5 text-slate-100 backdrop-blur-md my-auto">
+    <div class="bg-slate-900/95 border border-slate-700/80 p-6 md:p-8 rounded-2xl max-w-md w-full shadow-2xl space-y-5 text-slate-100 backdrop-blur-md my-auto mx-auto">
         
         <!-- Logo Header -->
         <div class="text-center space-y-2">
@@ -81,7 +80,6 @@
         <!-- 2. STUDENT REGISTER FORM -->
         <form id="studentRegisterForm" onsubmit="handleStudentRegister(event)" class="space-y-3 text-xs hidden max-h-[60vh] overflow-y-auto pr-1">
             
-            <!-- Student Header Badge -->
             <div class="w-full py-2 bg-amber-400 text-slate-900 rounded-lg font-bold flex flex-col items-center justify-center text-center">
                 <span class="flex items-center gap-1"><i class="fa-solid fa-user-graduate"></i> Yousaf Ansari</span>
                 <span class="text-[10px] text-slate-800 font-semibold">(Student Program)</span>
@@ -129,7 +127,6 @@
                 <input type="password" id="regStudentPassword" placeholder="Minimum 6 characters" required class="w-full p-2.5 bg-slate-950/90 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
             </div>
 
-            <!-- Mandatory Document Uploads -->
             <div class="border-t border-slate-800 pt-2 space-y-2">
                 <p class="font-bold text-slate-400 text-[11px]">Verification Documents (PNG/JPG/PDF) *:</p>
                 <div class="grid grid-cols-2 gap-2">
@@ -196,14 +193,25 @@
             const pass = document.getElementById('studentLoginPassword').value;
 
             try {
-                // Special check for Yousaf Ansari Admin ID
                 if (email === 'yousafansari@primetraders.com') {
-                    const userCredential = await auth.signInWithEmailAndPassword(email, pass);
+                    await auth.signInWithEmailAndPassword(email, pass);
                     window.location.href = 'ecommerce-dashboard.html';
                     return;
                 }
 
                 const userCredential = await auth.signInWithEmailAndPassword(email, pass);
+                const user = userCredential.user;
+
+                const userDoc = await db.collection('students').doc(user.uid).get();
+                if (userDoc.exists) {
+                    const data = userDoc.data();
+                    if (data.status !== 'approved') {
+                        await auth.signOut();
+                        alert("Aapka data verification par hai. Approval ke baad aapko WhatsApp ya Email par inform kar diya jayega.");
+                        return;
+                    }
+                }
+
                 window.location.href = 'ecommerce-dashboard.html';
             } catch (err) {
                 alert("Login Error: " + err.message);
@@ -225,7 +233,6 @@
                 const userCred = await auth.createUserWithEmailAndPassword(email, password);
                 const uid = userCred.user.uid;
 
-                // Save student details in Firestore 'students' collection so Yousaf Ansari can view them
                 await db.collection('students').doc(uid).set({
                     uid: uid,
                     fullName: fullName,
@@ -235,11 +242,11 @@
                     cnic: cnic,
                     batchNo: batchNo || 'N/A',
                     bankDetails: bank,
-                    role: 'student',
+                    status: 'pending',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                alert("Student account successfully register ho gaya hai!");
+                alert("Student account successfully register ho gaya hai! Verification ke baad approval mil jayegi.");
                 switchStudentTab('login');
             } catch (err) {
                 alert("Registration Error: " + err.message);
@@ -262,38 +269,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="dashboard.js?v=10.0"></script>
+    <script src="dashboard.js?v=12.1"></script>
 </body>
 </html>
-async function handleStudentLogin(e) {
-            e.preventDefault();
-            const email = document.getElementById('studentLoginEmail').value.trim().toLowerCase();
-            const pass = document.getElementById('studentLoginPassword').value;
-
-            try {
-                // Admin / Yousaf Ansari direct login
-                if (email === 'yousafansari@primetraders.com') {
-                    await auth.signInWithEmailAndPassword(email, pass);
-                    window.location.href = 'ecommerce-dashboard.html';
-                    return;
-                }
-
-                const userCredential = await auth.signInWithEmailAndPassword(email, pass);
-                const user = userCredential.user;
-
-                // Check approval status in Firestore
-                const userDoc = await db.collection('students').doc(user.uid).get();
-                if (userDoc.exists) {
-                    const data = userDoc.data();
-                    if (data.status !== 'approved') {
-                        await auth.signOut();
-                        alert("Aapka data verification par hai. Approval ke baad aapko WhatsApp ya Email par inform kar diya jayega.");
-                        return;
-                    }
-                }
-
-                window.location.href = 'ecommerce-dashboard.html';
-            } catch (err) {
-                alert("Login Error: " + err.message);
-            }
-        }
