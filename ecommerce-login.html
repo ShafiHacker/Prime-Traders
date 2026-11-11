@@ -265,3 +265,35 @@
     <script src="dashboard.js?v=10.0"></script>
 </body>
 </html>
+async function handleStudentLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('studentLoginEmail').value.trim().toLowerCase();
+            const pass = document.getElementById('studentLoginPassword').value;
+
+            try {
+                // Admin / Yousaf Ansari direct login
+                if (email === 'yousafansari@primetraders.com') {
+                    await auth.signInWithEmailAndPassword(email, pass);
+                    window.location.href = 'ecommerce-dashboard.html';
+                    return;
+                }
+
+                const userCredential = await auth.signInWithEmailAndPassword(email, pass);
+                const user = userCredential.user;
+
+                // Check approval status in Firestore
+                const userDoc = await db.collection('students').doc(user.uid).get();
+                if (userDoc.exists) {
+                    const data = userDoc.data();
+                    if (data.status !== 'approved') {
+                        await auth.signOut();
+                        alert("Aapka data verification par hai. Approval ke baad aapko WhatsApp ya Email par inform kar diya jayega.");
+                        return;
+                    }
+                }
+
+                window.location.href = 'ecommerce-dashboard.html';
+            } catch (err) {
+                alert("Login Error: " + err.message);
+            }
+        }
