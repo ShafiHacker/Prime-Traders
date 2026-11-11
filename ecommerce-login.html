@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Commerce Portal | Prime Traders</title>
+    <title>Student E-Commerce Portal | Prime Traders</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -28,32 +28,202 @@
         <i class="fa-solid fa-house"></i> Home
     </a>
 
-    <!-- Container Box -->
-    <div class="bg-slate-900/95 border border-slate-700/80 p-6 md:p-8 rounded-2xl max-w-md w-full shadow-2xl space-y-6 text-slate-100 backdrop-blur-md text-center my-auto">
+    <!-- Auth Container Box -->
+    <div class="bg-slate-900/95 border border-slate-700/80 p-6 md:p-8 rounded-2xl max-w-md w-full shadow-2xl space-y-5 text-slate-100 backdrop-blur-md my-auto">
         
         <!-- Logo Header -->
-        <div class="space-y-2">
+        <div class="text-center space-y-2">
             <div class="inline-flex bg-amber-500 text-slate-950 font-black text-2xl w-12 h-12 items-center justify-center rounded-xl shadow-lg mb-1">P</div>
             <h1 class="text-xl font-black tracking-wider text-white uppercase">PRIME TRADERS</h1>
             <p class="text-[11px] text-amber-400 tracking-widest font-semibold uppercase">E-Commerce Student Portal</p>
         </div>
 
-        <p class="text-xs text-slate-300">Please choose an option below to proceed with your student e-commerce account access or registration.</p>
+        <!-- Alert / Error Message -->
+        <div id="authMsg" class="hidden p-3 bg-rose-950/80 border border-rose-500/50 text-rose-300 text-xs rounded-lg text-center font-medium"></div>
 
-        <!-- Action Buttons -->
-        <div class="space-y-3 pt-2">
-            <!-- Student Login Button -->
-            <a href="login.html" class="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-xs tracking-wider uppercase shadow-lg transition flex items-center justify-center gap-2 transform active:scale-95">
-                <i class="fa-solid fa-user-graduate text-sm"></i> Student Login
-            </a>
-
-            <!-- Account Register for Student Button -->
-            <a href="login.html" class="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/40 hover:border-amber-400 font-bold rounded-xl text-xs tracking-wider uppercase shadow-md transition flex items-center justify-center gap-2">
-                <i class="fa-solid fa-user-plus text-sm"></i> Account Register for Student
-            </a>
+        <!-- Navigation Tabs -->
+        <div class="flex border-b border-slate-700 text-xs font-bold">
+            <button id="tabStudentLogin" onclick="switchStudentTab('login')" class="flex-1 py-2 text-center text-amber-400 border-b-2 border-amber-400 focus:outline-none transition uppercase tracking-wider">
+                Student Login
+            </button>
+            <button id="tabStudentRegister" onclick="switchStudentTab('register')" class="flex-1 py-2 text-center text-slate-400 hover:text-slate-200 focus:outline-none transition uppercase tracking-wider">
+                Account Register for Student
+            </button>
         </div>
+
+        <!-- 1. STUDENT LOGIN FORM -->
+        <form id="studentLoginForm" onsubmit="handleStudentLogin(event)" class="space-y-4 text-xs">
+            <div>
+                <label class="block text-slate-300 mb-1 font-semibold">Email Address</label>
+                <div class="relative">
+                    <i class="fa-solid fa-envelope absolute left-3 top-3 text-slate-500"></i>
+                    <input type="email" id="studentLoginEmail" placeholder="student@example.com" required class="w-full pl-9 p-2.5 bg-slate-950/90 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400 transition">
+                </div>
+            </div>
+            <div>
+                <label class="block text-slate-300 mb-1 font-semibold">Password</label>
+                <div class="relative">
+                    <i class="fa-solid fa-lock absolute left-3 top-3 text-slate-500"></i>
+                    <input type="password" id="studentLoginPassword" placeholder="••••••••" required class="w-full pl-9 pr-10 p-2.5 bg-slate-950/90 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400 transition">
+                    <button type="button" onclick="toggleStudentPassword()" class="absolute right-3 top-3 text-slate-400 hover:text-amber-400 focus:outline-none">
+                        <i id="eyeIconStudent" class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <div class="text-right mt-1.5">
+                    <button type="button" onclick="handleForgotPassword()" class="text-amber-400 hover:underline font-semibold text-[11px]">Forgot Password?</button>
+                </div>
+            </div>
+            <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-lg text-xs tracking-wider uppercase shadow-lg transition transform active:scale-95">
+                Sign In to Student Dashboard
+            </button>
+        </form>
+
+        <!-- 2. STUDENT REGISTER FORM -->
+        <form id="studentRegisterForm" onsubmit="handleStudentRegister(event)" class="space-y-3 text-xs hidden max-h-[60vh] overflow-y-auto pr-1">
+            
+            <!-- Student Header Badge -->
+            <div class="w-full py-2 bg-amber-400 text-slate-900 rounded-lg font-bold flex flex-col items-center justify-center text-center">
+                <span class="flex items-center gap-1"><i class="fa-solid fa-user-graduate"></i> Yousaf Ansari</span>
+                <span class="text-[10px] text-slate-800 font-semibold">(Student Program)</span>
+            </div>
+
+            <div>
+                <label class="block text-slate-300 mb-1 font-semibold">Full Name *</label>
+                <input type="text" id="regStudentName" placeholder="Ali Raza" required class="w-full p-2.5 bg-slate-950/90 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
+            </div>
+
+            <div>
+                <label class="block text-slate-300 mb-1 font-semibold">Business / Name *</label>
+                <input type="text" id="regStudentBusinessName" placeholder="Prime Traders Store" required class="w-full p-2.5 bg-slate-950/90 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-slate-300 mb-1 font-semibold">Email Address *</label>
+                    <input type="email" id="regStudentEmail" placeholder="student@example.com" required class="w-full p-2.5 bg-slate-950/90 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
+                </div>
+                <div>
+                    <label class="block text-slate-300 mb-1 font-semibold">Mobile / WhatsApp No *</label>
+                    <input type="text" id="regStudentPhone" placeholder="03XXXXXXXXX" required class="w-full p-2.5 bg-slate-950/90 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-slate-300 mb-1 font-semibold">CNIC Number *</label>
+                    <input type="text" id="regStudentCNIC" placeholder="42101-XXXXXXX-X" required class="w-full p-2.5 bg-slate-950/90 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
+                </div>
+                <div>
+                    <label class="block text-slate-300 mb-1 font-semibold">Batch No (Optional)</label>
+                    <input type="text" id="regStudentBatchNo" placeholder="Batch-001" class="w-full p-2.5 bg-slate-950/90 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-slate-300 mb-1 font-semibold">Bank Account Details (Title, IBAN, Bank)</label>
+                <input type="text" id="regStudentBank" placeholder="Meezan Bank - PK00 MEZN 0000 1234 5678" class="w-full p-2.5 bg-slate-950/90 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
+            </div>
+
+            <div>
+                <label class="block text-slate-300 mb-1 font-semibold">Password *</label>
+                <input type="password" id="regStudentPassword" placeholder="Minimum 6 characters" required class="w-full p-2.5 bg-slate-950/90 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
+            </div>
+
+            <!-- Mandatory Document Uploads -->
+            <div class="border-t border-slate-800 pt-2 space-y-2">
+                <p class="font-bold text-slate-400 text-[11px]">Verification Documents (PNG/JPG/PDF) *:</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-slate-400 text-[10px]">CNIC Front Image <span class="text-rose-500 font-bold">*</span></label>
+                        <input type="file" id="fileStudentCnicFront" accept="image/*,.pdf" required class="w-full text-slate-400 text-[10px] bg-slate-950 p-1.5 border border-slate-700 rounded">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 text-[10px]">CNIC Back Image <span class="text-rose-500 font-bold">*</span></label>
+                        <input type="file" id="fileStudentCnicBack" accept="image/*,.pdf" required class="w-full text-slate-400 text-[10px] bg-slate-950 p-1.5 border border-slate-700 rounded">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-slate-400 text-[10px]">Bank Cheque / Proof / Bank Account Details <span class="text-rose-500 font-bold">*</span></label>
+                    <input type="file" id="fileStudentBank" accept="image/*,.pdf" required class="w-full text-slate-400 text-[10px] bg-slate-950 p-1.5 border border-slate-700 rounded">
+                </div>
+            </div>
+
+            <button type="submit" id="regStudentSubmitBtn" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-lg text-xs tracking-wider uppercase shadow-lg transition mt-2">
+                Create Student Account
+            </button>
+        </form>
 
     </div>
 
+    <!-- Scripts -->
+    <script>
+        function toggleStudentPassword() {
+            const passwordInput = document.getElementById('studentLoginPassword');
+            const eyeIcon = document.getElementById('eyeIconStudent');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
+        }
+
+        function switchStudentTab(tabName) {
+            const loginForm = document.getElementById('studentLoginForm');
+            const registerForm = document.getElementById('studentRegisterForm');
+            const tabLogin = document.getElementById('tabStudentLogin');
+            const tabRegister = document.getElementById('tabStudentRegister');
+
+            if (tabName === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                tabLogin.className = "flex-1 py-2 text-center text-amber-400 border-b-2 border-amber-400 focus:outline-none transition uppercase tracking-wider font-bold";
+                tabRegister.className = "flex-1 py-2 text-center text-slate-400 hover:text-slate-200 focus:outline-none transition uppercase tracking-wider font-bold";
+            } else {
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                tabRegister.className = "flex-1 py-2 text-center text-amber-400 border-b-2 border-amber-400 focus:outline-none transition uppercase tracking-wider font-bold";
+                tabLogin.className = "flex-1 py-2 text-center text-slate-400 hover:text-slate-200 focus:outline-none transition uppercase tracking-wider font-bold";
+            }
+        }
+
+        async function handleStudentLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('studentLoginEmail').value.trim().toLowerCase();
+            const pass = document.getElementById('studentLoginPassword').value;
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, pass);
+                window.location.href = 'dashboard.html';
+            } catch (err) {
+                alert("Login Error: " + err.message);
+            }
+        }
+
+        function handleStudentRegister(e) {
+            e.preventDefault();
+            alert("Student Account Registration logic triggered.");
+        }
+
+        function handleForgotPassword() {
+            const email = document.getElementById('studentLoginEmail').value.trim();
+            if (!email) {
+                alert("Pehle email enter karein.");
+                return;
+            }
+            auth.sendPasswordResetEmail(email)
+                .then(() => { alert("Password reset email bhej di gayi hai!"); })
+                .catch(err => { alert("Error: " + err.message); });
+        }
+    </script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="dashboard.js?v=9.0"></script>
 </body>
 </html>
