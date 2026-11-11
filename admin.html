@@ -61,6 +61,9 @@
                     <button onclick="switchAdminTab('wholesellerOrdersView'); showAdminSection('wholeseller')" class="sidebar-link w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
                         <i class="fa-solid fa-store w-4 text-amber-500"></i> Wholeseller Orders
                     </button>
+                    <button onclick="switchAdminTab('ecommerceStudentsView')" class="sidebar-link w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
+    <i class="fa-solid fa-graduation-cap w-4 text-amber-400"></i> E-Commerce Student Portal
+</button>
                 </div>
 
                 <!-- OPERATIONS & LOGISTICS SETTINGS -->
@@ -797,3 +800,96 @@
     <script src="dashboard.js?v=25.0"></script>
 </body>
 </html>
+<!-- VIEW FOR E-COMMERCE STUDENTS VERIFICATION -->
+<div id="ecommerceStudentsView" class="admin-view-section hidden space-y-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <div class="p-4 border-b border-slate-800 font-bold text-sm text-white flex justify-between items-center">
+            <span class="flex items-center gap-2"><i class="fa-solid fa-user-check text-amber-400"></i> E-Commerce Student Account Verifications</span>
+            <button onclick="loadAdminStudentsList()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                <i class="fa-solid fa-rotate"></i> Refresh List
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+                    <tr>
+                        <th class="p-3">Student Name / Business</th>
+                        <th class="p-3">Email & Contact</th>
+                        <th class="p-3">CNIC & Batch</th>
+                        <th class="p-3">Bank Details</th>
+                        <th class="p-3">Status</th>
+                        <th class="p-3 text-center">Admin Controls</th>
+                    </tr>
+                </thead>
+                <tbody id="adminStudentsTableBody">
+                    <tr><td colspan="6" class="p-4 text-center text-slate-400">Loading student registration requests...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+// Fetch Students for Main Admin
+async function loadAdminStudentsList() {
+    const tbody = document.getElementById('adminStudentsTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Fetching student requests...</td></tr>';
+
+    try {
+        const snapshot = await db.collection('students').orderBy('createdAt', 'desc').get();
+        
+        if (snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">No student registrations found.</td></tr>';
+            return;
+        }
+
+        let html = '';
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const statusBadge = data.status === 'approved' 
+                ? '<span class="px-2 py-1 bg-emerald-950 text-emerald-400 border border-emerald-500/40 rounded text-[10px] font-bold uppercase">Approved</span>' 
+                : (data.status === 'rejected'
+                    ? '<span class="px-2 py-1 bg-rose-950 text-rose-400 border border-rose-500/40 rounded text-[10px] font-bold uppercase">Rejected</span>'
+                    : '<span class="px-2 py-1 bg-amber-950 text-amber-400 border border-amber-500/40 rounded text-[10px] font-bold uppercase">Pending Verification</span>');
+
+            html += `
+                <tr class="border-b border-slate-800 hover:bg-slate-850 transition">
+                    <td class="p-3">
+                        <p class="font-bold text-white">${data.fullName || 'N/A'}</p>
+                        <p class="text-amber-400 font-semibold">${data.businessName || 'N/A'}</p>
+                    </td>
+                    <td class="p-3">
+                        <p class="text-slate-300">${data.email || 'N/A'}</p>
+                        <p class="text-slate-400 text-[11px]">${data.phone || 'N/A'}</p>
+                    </td>
+                    <td class="p-3">
+                        <p class="text-slate-300">${data.cnic || 'N/A'}</p>
+                        <p class="text-purple-300 font-semibold text-[11px]">${data.batchNo || 'N/A'}</p>
+                    </td>
+                    <td class="p-3 text-slate-300">${data.bankDetails || 'N/A'}</td>
+                    <td class="p-3">${statusBadge}</td>
+                    <td class="p-3 text-center space-x-1">
+                        <button onclick="adminChangeStudentStatus('${doc.id}', 'approved')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[11px] transition shadow">Approve</button>
+                        <button onclick="adminChangeStudentStatus('${doc.id}', 'rejected')" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded text-[11px] transition shadow">Reject</button>
+                    </td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-rose-400">Error: ${err.message}</td></tr>`;
+    }
+}
+
+// Approve / Reject Action Execution
+async function adminChangeStudentStatus(docId, newStatus) {
+    try {
+        await db.collection('students').doc(docId).update({ 
+            status: newStatus,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        alert(`Student account successfully ${newStatus.toUpperCase()} kar diya gaya hai!`);
+        loadAdminStudentsList();
+    } catch (err) {
+        alert("Status update failed: " + err.message);
+    }
+}
