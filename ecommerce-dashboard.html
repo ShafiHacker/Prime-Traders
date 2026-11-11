@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student E-Commerce Dashboard | Prime Traders</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-800 border-b border-slate-700 p-4 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-500 text-slate-950 font-black text-2xl w-10 h-10 flex items-center justify-center rounded-lg shadow-md">P</div>
+                <div>
+                    <h1 class="text-base font-bold tracking-wider text-white uppercase">PRIME TRADERS</h1>
+                    <p class="text-[10px] text-amber-400 tracking-widest uppercase">E-Commerce Student Portal</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span id="userNameDisplay" class="text-xs font-bold text-slate-300 hidden md:inline-block">Loading...</span>
+                <button onclick="handleLogout()" class="bg-rose-600/20 text-rose-400 border border-rose-500/30 hover:bg-rose-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Wrapper Layout -->
+    <div class="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto p-4 md:p-6 gap-6">
+        
+        <!-- Left Sidebar Menu -->
+        <aside class="w-full md:w-64 bg-slate-800 border border-slate-700 rounded-2xl p-4 space-y-2 h-fit shadow-xl">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 pb-1">Navigation Menu</p>
+            
+            <button onclick="switchView('overview')" id="navOverview" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow">
+                <i class="fa-solid fa-chart-pie text-sm"></i> Dashboard Overview
+            </button>
+            
+            <button onclick="switchView('students')" id="navStudents" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition flex items-center gap-3">
+                <i class="fa-solid fa-users text-sm text-amber-400"></i> Student Details
+            </button>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 space-y-6">
+            
+            <!-- 1. OVERVIEW SECTION -->
+            <section id="viewOverview" class="space-y-6">
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow">
+                        <p class="text-xs text-amber-400 font-semibold">Total Registered Students</p>
+                        <h3 id="totalStudentsCount" class="text-3xl font-black text-white mt-1">0</h3>
+                    </div>
+                    <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow">
+                        <p class="text-xs text-blue-400 font-semibold">Portal Status</p>
+                        <h3 class="text-xl font-bold text-blue-300 mt-1">Active & Live</h3>
+                    </div>
+                    <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow">
+                        <p class="text-xs text-emerald-400 font-semibold">Account Role</p>
+                        <h3 id="userRoleDisplay" class="text-xl font-bold text-emerald-300 mt-1">Student / Admin</h3>
+                    </div>
+                </div>
+
+                <!-- Welcome Banner Card -->
+                <div class="bg-gradient-to-r from-slate-800 to-slate-800/80 border border-slate-700 p-6 rounded-2xl shadow-xl space-y-3">
+                    <h2 class="text-lg font-black text-white uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-graduation-cap text-amber-400"></i> Welcome to E-Commerce Student Hub
+                    </h2>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Yahan se aap apne e-commerce student operations ko manage kar sakte hain. Left menu se <b>"Student Details"</b> par click karke tamam registered students ki list aur unki verification details check ki ja sakti hain.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 2. STUDENT DETAILS SECTION -->
+            <section id="viewStudents" class="space-y-4 hidden">
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
+                    <div class="p-4 border-b border-slate-700 font-bold text-sm text-white flex justify-between items-center">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-id-card text-amber-400"></i> Registered Students Database List</span>
+                        <button onclick="loadStudentsList()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
+                            <i class="fa-solid fa-rotate"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900 text-slate-400 border-b border-slate-700">
+                                <tr>
+                                    <th class="p-3">Student Full Name</th>
+                                    <th class="p-3">Business / Name</th>
+                                    <th class="p-3">Email Address</th>
+                                    <th class="p-3">Mobile / WhatsApp</th>
+                                    <th class="p-3">CNIC No</th>
+                                    <th class="p-3">Batch No</th>
+                                    <th class="p-3">Bank Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentsTableBody">
+                                <tr><td colspan="7" class="p-4 text-center text-slate-400">Loading student records...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="dashboard.js?v=10.0"></script>
+
+    <script>
+        // Check Authentication on Page Load
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = 'ecommerce-login.html';
+                return;
+            }
+
+            document.getElementById('userNameDisplay').innerText = user.email;
+
+            // Load Total Students Count for Overview
+            try {
+                const snapshot = await db.collection('students').get();
+                document.getElementById('totalStudentsCount').innerText = snapshot.size;
+            } catch (err) {
+                console.log("Error loading student count:", err);
+            }
+        });
+
+        // View Switcher Function
+        function switchView(viewName) {
+            const viewOverview = document.getElementById('viewOverview');
+            const viewStudents = document.getElementById('viewStudents');
+            const navOverview = document.getElementById('navOverview');
+            const navStudents = document.getElementById('navStudents');
+
+            if (viewName === 'overview') {
+                viewOverview.classList.remove('hidden');
+                viewStudents.classList.add('hidden');
+                navOverview.className = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow";
+                navStudents.className = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition flex items-center gap-3";
+            } else {
+                viewOverview.classList.add('hidden');
+                viewStudents.classList.remove('hidden');
+                navStudents.className = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow";
+                navOverview.className = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition flex items-center gap-3";
+                loadStudentsList();
+            }
+        }
+
+        // Fetch and Render Students List
+        async function loadStudentsList() {
+            const tbody = document.getElementById('studentsTableBody');
+            tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Fetching student records...</td></tr>';
+
+            try {
+                const snapshot = await db.collection('students').orderBy('createdAt', 'desc').get();
+                
+                if (snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">No student accounts registered yet.</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    html += `
+                        <tr class="border-b border-slate-700 hover:bg-slate-750 transition">
+                            <td class="p-3 font-bold text-white">${data.fullName || 'N/A'}</td>
+                            <td class="p-3 text-amber-400 font-semibold">${data.businessName || 'N/A'}</td>
+                            <td class="p-3 text-slate-300">${data.email || 'N/A'}</td>
+                            <td class="p-3 text-slate-300">${data.phone || 'N/A'}</td>
+                            <td class="p-3 text-slate-300">${data.cnic || 'N/A'}</td>
+                            <td class="p-3 text-purple-300 font-semibold">${data.batchNo || 'N/A'}</td>
+                            <td class="p-3 text-slate-300">${data.bankDetails || 'N/A'}</td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = html;
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-rose-400">Error loading data: ${err.message}</td></tr>`;
+            }
+        }
+
+        // Logout Function
+        function handleLogout() {
+            auth.signOut().then(() => {
+                window.location.href = 'ecommerce-login.html';
+            }).catch(err => {
+                alert("Logout Error: " + err.message);
+            });
+        }
+    </script>
+</body>
+</html>
