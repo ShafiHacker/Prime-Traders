@@ -7,27 +7,21 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * {
-            box-sizing: border-box;
-        }
         html, body {
-            height: 100vh;
-            width: 100vw;
+            height: 100%;
             margin: 0;
             padding: 0;
             overflow-x: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        }
+        .bg-custom-fit {
             background-image: url('bg-login.png');
             background-size: 100% 100%;
             background-position: center center;
             background-repeat: no-repeat;
-            background-color: #0f172a;
         }
     </style>
 </head>
-<body>
+<body class="bg-custom-fit min-h-screen w-full flex items-center justify-center p-4 relative">
 
     <!-- Top Left Home Button -->
     <a href="index.html" class="absolute top-4 left-4 md:top-6 md:left-6 bg-slate-900/90 hover:bg-amber-500 text-slate-200 hover:text-slate-950 border border-slate-700/80 hover:border-amber-400 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xl backdrop-blur-md z-50">
@@ -35,7 +29,7 @@
     </a>
 
     <!-- Auth Container Box -->
-    <div class="bg-slate-900/95 border border-slate-700/80 p-6 md:p-8 rounded-2xl max-w-md w-full shadow-2xl space-y-5 text-slate-100 backdrop-blur-md relative z-10 mx-4">
+    <div class="bg-slate-900/95 border border-slate-700/80 p-6 md:p-8 rounded-2xl max-w-md w-full shadow-2xl space-y-5 text-slate-100 backdrop-blur-md my-auto">
         
         <!-- Logo Header -->
         <div class="text-center space-y-2">
@@ -48,13 +42,9 @@
         <div id="authMsg" class="hidden p-3 bg-rose-950/80 border border-rose-500/50 text-rose-300 text-xs rounded-lg text-center font-medium"></div>
 
         <!-- Navigation Tabs -->
-        <div class="flex border-b border-slate-700 text-xs font-bold">
-            <button id="tabStudentLogin" onclick="switchStudentTab('login')" class="flex-1 py-2 text-center text-amber-400 border-b-2 border-amber-400 focus:outline-none transition uppercase tracking-wider">
-                Student Login
-            </button>
-            <button id="tabStudentRegister" onclick="switchStudentTab('register')" class="flex-1 py-2 text-center text-slate-400 hover:text-slate-200 focus:outline-none transition uppercase tracking-wider">
-                Account Register for Student
-            </button>
+        <div class="flex border-b border-slate-700 text-sm font-bold">
+            <button id="tabStudentLogin" onclick="switchStudentTab('login')" class="flex-1 py-2 text-center text-amber-400 border-b-2 border-amber-400 focus:outline-none transition">Student Login</button>
+            <button id="tabStudentRegister" onclick="switchStudentTab('register')" class="flex-1 py-2 text-center text-slate-400 hover:text-slate-200 focus:outline-none transition">Register Student</button>
         </div>
 
         <!-- 1. STUDENT LOGIN FORM -->
@@ -75,6 +65,7 @@
                         <i id="eyeIconStudent" class="fa-solid fa-eye"></i>
                     </button>
                 </div>
+                <!-- Forgot Password Link -->
                 <div class="text-right mt-1.5">
                     <button type="button" onclick="handleForgotPassword()" class="text-amber-400 hover:underline font-semibold text-[11px]">Forgot Password?</button>
                 </div>
@@ -85,9 +76,9 @@
         </form>
 
         <!-- 2. STUDENT REGISTER FORM -->
-        <form id="studentRegisterForm" onsubmit="handleStudentRegister(event)" class="space-y-3 text-xs hidden max-h-[50vh] overflow-y-auto pr-1">
+        <form id="studentRegisterForm" onsubmit="handleStudentRegister(event)" class="space-y-3 text-xs hidden max-h-[60vh] overflow-y-auto pr-1">
             
-            <div class="w-full py-2 bg-amber-400 text-slate-900 rounded-lg font-bold flex flex-col items-center justify-center text-center">
+            <div class="w-full py-2 bg-amber-400 text-slate-900 rounded-lg font-bold flex flex-col items-center justify-center text-center mb-2">
                 <span class="flex items-center gap-1"><i class="fa-solid fa-user-graduate"></i> Yousaf Ansari</span>
                 <span class="text-[10px] text-slate-800 font-semibold">(Student Program)</span>
             </div>
@@ -134,21 +125,22 @@
                 <input type="password" id="regStudentPassword" placeholder="Minimum 6 characters" required class="w-full p-2.5 bg-slate-950/90 border border-slate-700 rounded-lg text-white outline-none focus:border-amber-400">
             </div>
 
+            <!-- File Uploads -->
             <div class="border-t border-slate-800 pt-2 space-y-2">
-                <p class="font-bold text-slate-400 text-[11px]">Verification Documents (PNG/JPG/PDF) *:</p>
+                <p class="font-bold text-slate-400 text-[11px]">Verification Documents (PNG/JPG/PDF):</p>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-slate-400 text-[10px]">CNIC Front Image <span class="text-rose-500 font-bold">*</span></label>
-                        <input type="file" id="fileStudentCnicFront" accept="image/*,.pdf" required class="w-full text-slate-400 text-[10px] bg-slate-950 p-1.5 border border-slate-700 rounded">
+                        <label class="block text-slate-400 text-[10px]">CNIC Front Image</label>
+                        <input type="file" id="fileStudentCnicFront" accept="image/*,.pdf" class="w-full text-slate-400 text-[10px] bg-slate-950 p-1.5 border border-slate-700 rounded">
                     </div>
                     <div>
-                        <label class="block text-slate-400 text-[10px]">CNIC Back Image <span class="text-rose-500 font-bold">*</span></label>
-                        <input type="file" id="fileStudentCnicBack" accept="image/*,.pdf" required class="w-full text-slate-400 text-[10px] bg-slate-950 p-1.5 border border-slate-700 rounded">
+                        <label class="block text-slate-400 text-[10px]">CNIC Back Image</label>
+                        <input type="file" id="fileStudentCnicBack" accept="image/*,.pdf" class="w-full text-slate-400 text-[10px] bg-slate-950 p-1.5 border border-slate-700 rounded">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-slate-400 text-[10px]">Bank Cheque / Proof / Bank Account Details <span class="text-rose-500 font-bold">*</span></label>
-                    <input type="file" id="fileStudentBank" accept="image/*,.pdf" required class="w-full text-slate-400 text-[10px] bg-slate-950 p-1.5 border border-slate-700 rounded">
+                    <label class="block text-slate-400 text-[10px]">Bank Cheque / Proof / Account Details</label>
+                    <input type="file" id="fileStudentBank" accept="image/*,.pdf" class="w-full text-slate-400 text-[10px] bg-slate-950 p-1.5 border border-slate-700 rounded">
                 </div>
             </div>
 
@@ -175,6 +167,7 @@
             }
         }
 
+        // Tab Switcher Function
         function switchStudentTab(tabName) {
             const loginForm = document.getElementById('studentLoginForm');
             const registerForm = document.getElementById('studentRegisterForm');
@@ -184,22 +177,24 @@
             if (tabName === 'login') {
                 loginForm.classList.remove('hidden');
                 registerForm.classList.add('hidden');
-                tabLogin.className = "flex-1 py-2 text-center text-amber-400 border-b-2 border-amber-400 focus:outline-none transition uppercase tracking-wider font-bold";
-                tabRegister.className = "flex-1 py-2 text-center text-slate-400 hover:text-slate-200 focus:outline-none transition uppercase tracking-wider font-bold";
+                tabLogin.className = "flex-1 py-2 text-center text-amber-400 border-b-2 border-amber-400 focus:outline-none transition";
+                tabRegister.className = "flex-1 py-2 text-center text-slate-400 hover:text-slate-200 focus:outline-none transition";
             } else {
                 loginForm.classList.add('hidden');
                 registerForm.classList.remove('hidden');
-                tabRegister.className = "flex-1 py-2 text-center text-amber-400 border-b-2 border-amber-400 focus:outline-none transition uppercase tracking-wider font-bold";
-                tabLogin.className = "flex-1 py-2 text-center text-slate-400 hover:text-slate-200 focus:outline-none transition uppercase tracking-wider font-bold";
+                tabRegister.className = "flex-1 py-2 text-center text-amber-400 border-b-2 border-amber-400 focus:outline-none transition";
+                tabLogin.className = "flex-1 py-2 text-center text-slate-400 hover:text-slate-200 focus:outline-none transition";
             }
         }
 
+        // Student Login Logic with Approval Verification Check
         async function handleStudentLogin(e) {
             e.preventDefault();
             const email = document.getElementById('studentLoginEmail').value.trim().toLowerCase();
             const pass = document.getElementById('studentLoginPassword').value;
 
             try {
+                // Admin / Yousaf Ansari direct login check
                 if (email === 'yousafansari@primetraders.com') {
                     await auth.signInWithEmailAndPassword(email, pass);
                     window.location.href = 'ecommerce-dashboard.html';
@@ -209,6 +204,7 @@
                 const userCredential = await auth.signInWithEmailAndPassword(email, pass);
                 const user = userCredential.user;
 
+                // Check Firestore approval status
                 const userDoc = await db.collection('students').doc(user.uid).get();
                 if (userDoc.exists) {
                     const data = userDoc.data();
@@ -225,6 +221,7 @@
             }
         }
 
+        // Student Registration Logic
         async function handleStudentRegister(e) {
             e.preventDefault();
             const email = document.getElementById('regStudentEmail').value.trim().toLowerCase();
@@ -240,6 +237,7 @@
                 const userCred = await auth.createUserWithEmailAndPassword(email, password);
                 const uid = userCred.user.uid;
 
+                // Save to Firestore 'students' collection with 'pending' status
                 await db.collection('students').doc(uid).set({
                     uid: uid,
                     fullName: fullName,
@@ -276,6 +274,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="dashboard.js?v=13.0"></script>
+    <script src="dashboard.js?v=14.0"></script>
 </body>
 </html>
