@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Portal | Prime Traders</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        .bg-custom-fit {
+            background-image: url('bg-login.png');
+            background-size: 100% 100%;
+            background-position: center center;
+            background-repeat: no-repeat;
+        }
+    </style>
+</head>
+<body class="bg-custom-fit min-h-screen w-full flex items-center justify-center p-4 relative">
+
+    <!-- Top Left Home Button -->
+    <a href="index.html" class="absolute top-4 left-4 md:top-6 md:left-6 bg-slate-900/90 hover:bg-amber-500 text-slate-200 hover:text-slate-950 border border-slate-700/80 hover:border-amber-400 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-xl backdrop-blur-md z-50">
+        <i class="fa-solid fa-house"></i> Home
+    </a>
+
+    <!-- Container Box -->
+    <div class="bg-slate-900/95 border border-slate-700/80 p-6 md:p-8 rounded-2xl max-w-md w-full shadow-2xl space-y-6 text-slate-100 backdrop-blur-md text-center my-auto">
+        
+        <!-- Logo Header -->
+        <div class="space-y-2">
+            <div class="inline-flex bg-amber-500 text-slate-950 font-black text-2xl w-12 h-12 items-center justify-center rounded-xl shadow-lg mb-1">P</div>
+            <h1 class="text-xl font-black tracking-wider text-white uppercase">PRIME TRADERS</h1>
+            <p class="text-[11px] text-amber-400 tracking-widest font-semibold uppercase">E-Commerce Student Portal</p>
+        </div>
+
+        <p class="text-xs text-slate-300">Please choose an option below to proceed with your student e-commerce account access or registration.</p>
+
+        <!-- Action Buttons -->
+        <div class="space-y-3 pt-2">
+            <!-- Student Login Button -->
+            <a href="login.html" class="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-xs tracking-wider uppercase shadow-lg transition flex items-center justify-center gap-2 transform active:scale-95">
+                <i class="fa-solid fa-user-graduate text-sm"></i> Student Login
+            </a>
+
+            <!-- Account Register for Student Button -->
+            <a href="login.html" class="w-full py-3.5 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/40 hover:border-amber-400 font-bold rounded-xl text-xs tracking-wider uppercase shadow-md transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-user-plus text-sm"></i> Account Register for Student
+            </a>
+        </div>
+
+    </div>
+
+</body>
+</html>
