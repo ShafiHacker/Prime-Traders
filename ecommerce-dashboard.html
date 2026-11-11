@@ -41,7 +41,7 @@
             </button>
             
             <button onclick="switchView('students')" id="navStudents" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition flex items-center gap-3">
-                <i class="fa-solid fa-users text-sm text-amber-400"></i> Student Details
+                <i class="fa-solid fa-users text-sm text-amber-400"></i> E-Commerce Student Portal
             </button>
         </aside>
 
@@ -50,38 +50,36 @@
             
             <!-- 1. OVERVIEW SECTION -->
             <section id="viewOverview" class="space-y-6">
-                <!-- Stats Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow">
                         <p class="text-xs text-amber-400 font-semibold">Total Registered Students</p>
                         <h3 id="totalStudentsCount" class="text-3xl font-black text-white mt-1">0</h3>
                     </div>
                     <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow">
-                        <p class="text-xs text-blue-400 font-semibold">Portal Status</p>
-                        <h3 class="text-xl font-bold text-blue-300 mt-1">Active & Live</h3>
+                        <p class="text-xs text-emerald-400 font-semibold">Approved Students</p>
+                        <h3 id="approvedStudentsCount" class="text-3xl font-black text-emerald-400 mt-1">0</h3>
                     </div>
                     <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow">
-                        <p class="text-xs text-emerald-400 font-semibold">Account Role</p>
-                        <h3 id="userRoleDisplay" class="text-xl font-bold text-emerald-300 mt-1">Student / Admin</h3>
+                        <p class="text-xs text-rose-400 font-semibold">Pending Verification</p>
+                        <h3 id="pendingStudentsCount" class="text-3xl font-black text-rose-400 mt-1">0</h3>
                     </div>
                 </div>
 
-                <!-- Welcome Banner Card -->
                 <div class="bg-gradient-to-r from-slate-800 to-slate-800/80 border border-slate-700 p-6 rounded-2xl shadow-xl space-y-3">
                     <h2 class="text-lg font-black text-white uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-graduation-cap text-amber-400"></i> Welcome to E-Commerce Student Hub
+                        <i class="fa-solid fa-graduation-cap text-amber-400"></i> Admin Student Verification Portal
                     </h2>
                     <p class="text-xs text-slate-300 leading-relaxed">
-                        Yahan se aap apne e-commerce student operations ko manage kar sakte hain. Left menu se <b>"Student Details"</b> par click karke tamam registered students ki list aur unki verification details check ki ja sakti hain.
+                        Yousaf Ansari Admin Panel: Left menu mein <b>"E-Commerce Student Portal"</b> par click karke naye register hone wale students ki verification details check karein aur unke accounts ko <b>Approve</b> ya <b>Reject</b> karein.
                     </p>
                 </div>
             </section>
 
-            <!-- 2. STUDENT DETAILS SECTION -->
+            <!-- 2. STUDENT DETAILS & APPROVAL SECTION -->
             <section id="viewStudents" class="space-y-4 hidden">
                 <div class="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden shadow-xl">
                     <div class="p-4 border-b border-slate-700 font-bold text-sm text-white flex justify-between items-center">
-                        <span class="flex items-center gap-2"><i class="fa-solid fa-id-card text-amber-400"></i> Registered Students Database List</span>
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-id-card text-amber-400"></i> Student Registration & Verification Approvals</span>
                         <button onclick="loadStudentsList()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
                             <i class="fa-solid fa-rotate"></i> Refresh
                         </button>
@@ -90,17 +88,16 @@
                         <table class="w-full text-left text-xs">
                             <thead class="bg-slate-900 text-slate-400 border-b border-slate-700">
                                 <tr>
-                                    <th class="p-3">Student Full Name</th>
-                                    <th class="p-3">Business / Name</th>
-                                    <th class="p-3">Email Address</th>
-                                    <th class="p-3">Mobile / WhatsApp</th>
-                                    <th class="p-3">CNIC No</th>
-                                    <th class="p-3">Batch No</th>
+                                    <th class="p-3">Student / Business</th>
+                                    <th class="p-3">Contact Email & Phone</th>
+                                    <th class="p-3">CNIC & Batch</th>
                                     <th class="p-3">Bank Details</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 text-center">Action Controls</th>
                                 </tr>
                             </thead>
                             <tbody id="studentsTableBody">
-                                <tr><td colspan="7" class="p-4 text-center text-slate-400">Loading student records...</td></tr>
+                                <tr><td colspan="6" class="p-4 text-center text-slate-400">Loading student records...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -114,10 +111,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="dashboard.js?v=10.0"></script>
+    <script src="dashboard.js?v=11.0"></script>
 
     <script>
-        // Check Authentication on Page Load
         auth.onAuthStateChanged(async (user) => {
             if (!user) {
                 window.location.href = 'ecommerce-login.html';
@@ -126,16 +122,26 @@
 
             document.getElementById('userNameDisplay').innerText = user.email;
 
-            // Load Total Students Count for Overview
+            // Load Stats Counts
             try {
                 const snapshot = await db.collection('students').get();
-                document.getElementById('totalStudentsCount').innerText = snapshot.size;
+                let total = snapshot.size;
+                let approved = 0;
+                let pending = 0;
+
+                snapshot.forEach(doc => {
+                    if (doc.data().status === 'approved') approved++;
+                    else pending++;
+                });
+
+                document.getElementById('totalStudentsCount').innerText = total;
+                document.getElementById('approvedStudentsCount').innerText = approved;
+                document.getElementById('pendingStudentsCount').innerText = pending;
             } catch (err) {
-                console.log("Error loading student count:", err);
+                console.log("Error loading stats:", err);
             }
         });
 
-        // View Switcher Function
         function switchView(viewName) {
             const viewOverview = document.getElementById('viewOverview');
             const viewStudents = document.getElementById('viewStudents');
@@ -156,41 +162,64 @@
             }
         }
 
-        // Fetch and Render Students List
         async function loadStudentsList() {
             const tbody = document.getElementById('studentsTableBody');
-            tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Fetching student records...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Fetching student records...</td></tr>';
 
             try {
                 const snapshot = await db.collection('students').orderBy('createdAt', 'desc').get();
                 
                 if (snapshot.empty) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">No student accounts registered yet.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">No student accounts registered yet.</td></tr>';
                     return;
                 }
 
                 let html = '';
                 snapshot.forEach(doc => {
                     const data = doc.data();
+                    const statusBadge = data.status === 'approved' 
+                        ? '<span class="px-2 py-1 bg-emerald-950 text-emerald-400 border border-emerald-500/40 rounded text-[10px] font-bold uppercase">Approved</span>' 
+                        : '<span class="px-2 py-1 bg-amber-950 text-amber-400 border border-amber-500/40 rounded text-[10px] font-bold uppercase">Pending Verification</span>';
+
                     html += `
                         <tr class="border-b border-slate-700 hover:bg-slate-750 transition">
-                            <td class="p-3 font-bold text-white">${data.fullName || 'N/A'}</td>
-                            <td class="p-3 text-amber-400 font-semibold">${data.businessName || 'N/A'}</td>
-                            <td class="p-3 text-slate-300">${data.email || 'N/A'}</td>
-                            <td class="p-3 text-slate-300">${data.phone || 'N/A'}</td>
-                            <td class="p-3 text-slate-300">${data.cnic || 'N/A'}</td>
-                            <td class="p-3 text-purple-300 font-semibold">${data.batchNo || 'N/A'}</td>
+                            <td class="p-3">
+                                <p class="font-bold text-white">${data.fullName || 'N/A'}</p>
+                                <p class="text-amber-400 font-semibold">${data.businessName || 'N/A'}</p>
+                            </td>
+                            <td class="p-3">
+                                <p class="text-slate-300">${data.email || 'N/A'}</p>
+                                <p class="text-slate-400 text-[11px]">${data.phone || 'N/A'}</p>
+                            </td>
+                            <td class="p-3">
+                                <p class="text-slate-300">${data.cnic || 'N/A'}</p>
+                                <p class="text-purple-300 font-semibold text-[11px]">${data.batchNo || 'N/A'}</p>
+                            </td>
                             <td class="p-3 text-slate-300">${data.bankDetails || 'N/A'}</td>
+                            <td class="p-3">${statusBadge}</td>
+                            <td class="p-3 text-center space-x-1">
+                                <button onclick="updateStudentStatus('${doc.id}', 'approved')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[11px] transition shadow">Approve</button>
+                                <button onclick="updateStudentStatus('${doc.id}', 'rejected')" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded text-[11px] transition shadow">Reject</button>
+                            </td>
                         </tr>
                     `;
                 });
                 tbody.innerHTML = html;
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-rose-400">Error loading data: ${err.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-rose-400">Error loading data: ${err.message}</td></tr>`;
             }
         }
 
-        // Logout Function
+        async function updateStudentStatus(docId, newStatus) {
+            try {
+                await db.collection('students').doc(docId).update({ status: newStatus });
+                alert(`Student account successfully ${newStatus} ho gaya hai!`);
+                loadStudentsList();
+            } catch (err) {
+                alert("Error updating status: " + err.message);
+            }
+        }
+
         function handleLogout() {
             auth.signOut().then(() => {
                 window.location.href = 'ecommerce-login.html';
