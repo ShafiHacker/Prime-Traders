@@ -828,7 +828,6 @@
         </div>
     </div>
 </div>
-// Fetch Students for Main Admin
 async function loadAdminStudentsList() {
     const tbody = document.getElementById('adminStudentsTableBody');
     if (!tbody) return;
@@ -893,3 +892,70 @@ async function adminChangeStudentStatus(docId, newStatus) {
         alert("Status update failed: " + err.message);
     }
 }
+<script>
+    // Fetch Students for Main Admin
+    async function loadAdminStudentsList() {
+        const tbody = document.getElementById('adminStudentsTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Fetching student requests...</td></tr>';
+
+        try {
+            const snapshot = await db.collection('students').orderBy('createdAt', 'desc').get();
+            
+            if (snapshot.empty) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">No student registrations found.</td></tr>';
+                return;
+            }
+
+            let html = '';
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const statusBadge = data.status === 'approved' 
+                    ? '<span class="px-2 py-1 bg-emerald-950 text-emerald-400 border border-emerald-500/40 rounded text-[10px] font-bold uppercase">Approved</span>' 
+                    : (data.status === 'rejected'
+                        ? '<span class="px-2 py-1 bg-rose-950 text-rose-400 border border-rose-500/40 rounded text-[10px] font-bold uppercase">Rejected</span>'
+                        : '<span class="px-2 py-1 bg-amber-950 text-amber-400 border border-amber-500/40 rounded text-[10px] font-bold uppercase">Pending Verification</span>');
+
+                html += `
+                    <tr class="border-b border-slate-800 hover:bg-slate-850 transition">
+                        <td class="p-3">
+                            <p class="font-bold text-white">${data.fullName || 'N/A'}</p>
+                            <p class="text-amber-400 font-semibold">${data.businessName || 'N/A'}</p>
+                        </td>
+                        <td class="p-3">
+                            <p class="text-slate-300">${data.email || 'N/A'}</p>
+                            <p class="text-slate-400 text-[11px]">${data.phone || 'N/A'}</p>
+                        </td>
+                        <td class="p-3">
+                            <p class="text-slate-300">${data.cnic || 'N/A'}</p>
+                            <p class="text-purple-300 font-semibold text-[11px]">${data.batchNo || 'N/A'}</p>
+                        </td>
+                        <td class="p-3 text-slate-300">${data.bankDetails || 'N/A'}</td>
+                        <td class="p-3">${statusBadge}</td>
+                        <td class="p-3 text-center space-x-1">
+                            <button onclick="adminChangeStudentStatus('${doc.id}', 'approved')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[11px] transition shadow">Approve</button>
+                            <button onclick="adminChangeStudentStatus('${doc.id}', 'rejected')" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded text-[11px] transition shadow">Reject</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-rose-400">Error: ${err.message}</td></tr>`;
+        }
+    }
+
+    // Approve / Reject Action Execution
+    async function adminChangeStudentStatus(docId, newStatus) {
+        try {
+            await db.collection('students').doc(docId).update({ 
+                status: newStatus,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert(`Student account successfully ${newStatus.toUpperCase()} kar diya gaya hai!`);
+            loadAdminStudentsList();
+        } catch (err) {
+            alert("Status update failed: " + err.message);
+        }
+    }
+</script>
