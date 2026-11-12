@@ -801,16 +801,16 @@
 </body>
 </html>
 <!-- VIEW FOR E-COMMERCE STUDENTS VERIFICATION -->
-<div id="ecommerceStudentsView" class="admin-view-section hidden space-y-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+<div id="ecommerceStudentsView" class="admin-view-section hidden space-y-4 px-2 md:px-0">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl w-full">
         <div class="p-4 border-b border-slate-800 font-bold text-sm text-white flex justify-between items-center">
             <span class="flex items-center gap-2"><i class="fa-solid fa-user-check text-amber-400"></i> E-Commerce Student Account Verifications</span>
             <button onclick="loadAdminStudentsList()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
                 <i class="fa-solid fa-rotate"></i> Refresh List
             </button>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
+        <div class="overflow-x-auto w-full">
+            <table class="w-full text-left text-xs whitespace-nowrap">
                 <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
                     <tr>
                         <th class="p-3">Student Name / Business</th>
@@ -836,10 +836,11 @@
         tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Fetching student requests...</td></tr>';
 
         try {
-            const snapshot = await db.collection('students').orderBy('createdAt', 'desc').get();
+            // Baghair orderBy ke query chalayenge taaki index missing ka error na aaye
+            const snapshot = await db.collection('students').get();
             
             if (snapshot.empty) {
-                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">No student registrations found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">No student registrations found in database.</td></tr>';
                 return;
             }
 
@@ -850,13 +851,13 @@
                     ? '<span class="px-2 py-1 bg-emerald-950 text-emerald-400 border border-emerald-500/40 rounded text-[10px] font-bold uppercase">Approved</span>' 
                     : (data.status === 'rejected'
                         ? '<span class="px-2 py-1 bg-rose-950 text-rose-400 border border-rose-500/40 rounded text-[10px] font-bold uppercase">Rejected</span>'
-                        : '<span class="px-2 py-1 bg-amber-950 text-amber-400 border border-amber-500/40 rounded text-[10px] font-bold uppercase">Pending Verification</span>');
+                        : '<span class="px-2 py-1 bg-amber-950 text-amber-400 border border-amber-500/40 rounded text-[10px] font-bold uppercase">Pending</span>');
 
                 html += `
-                    <tr class="border-b border-slate-800 hover:bg-slate-850 transition">
+                    <tr class="border-b border-slate-800 hover:bg-slate-850/50 transition">
                         <td class="p-3">
                             <p class="font-bold text-white">${data.fullName || 'N/A'}</p>
-                            <p class="text-amber-400 font-semibold">${data.businessName || 'N/A'}</p>
+                            <p class="text-amber-400 font-semibold text-[11px]">${data.businessName || 'N/A'}</p>
                         </td>
                         <td class="p-3">
                             <p class="text-slate-300">${data.email || 'N/A'}</p>
@@ -877,7 +878,7 @@
             });
             tbody.innerHTML = html;
         } catch (err) {
-            tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-rose-400">Error: ${err.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-rose-400">Error loading data: ${err.message}</td></tr>`;
         }
     }
 
