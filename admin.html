@@ -1087,15 +1087,18 @@
         }
     }
 
+   <script>
     window.updateStudentStatus = async function(docId, newStatus) {
         try {
+            // Sirf status update karein taake koi invalid object error na aaye
             await db.collection('students').doc(docId).update({
                 status: newStatus
             });
             alert("Student status updated successfully!");
-            loadAdminStudentRequests();
+            loadAdminStudentRequests(); // Table refresh karein
         } catch (err) {
-            alert("Error updating status: " + err.message);
+            console.error("Update error:", err);
+            alert("Status update failed: " + err.message);
         }
     };
 </script>
