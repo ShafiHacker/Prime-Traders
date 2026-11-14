@@ -1336,16 +1336,10 @@
 </script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        // Operations Dashboard header text ko properly clean ya hide karna
         const headerSub = document.querySelector('header .hidden.md\\:block');
         if (headerSub) {
-            headerSub.style.display = 'none';
-        }
-
-        // Table container aur view section ki width ko poori screen par fit karne ke liye
-        const studentViewSection = document.getElementById('ecommerceStudentsView');
-        if (studentViewSection) {
-            studentViewSection.className = "admin-view-section space-y-6 w-full";
-            studentViewSection.style.maxWidth = "100%";
+            headerSub.innerHTML = '<h2 class="text-sm font-black text-white uppercase tracking-wider">E-Commerce Student Portal</h2><p class="text-[10px] text-slate-400">Manage student registrations and document verifications.</p>';
         }
 
         // Clean text formatting
@@ -1390,12 +1384,12 @@
                 let cnicImg = data.cnicImage || data.cnicFrontUrl || data.cnicPic || data.cnicURL || '';
                 let bankImg = data.bankImage || data.bankReceiptUrl || data.bankSlip || data.bankURL || '';
 
-                let docsButtons = `<div class="flex items-center gap-2 mt-1">`;
+                let docsButtons = `<div class="flex items-center gap-2 mt-1.5">`;
                 if (cnicImg) {
-                    docsButtons += `<a href="${cnicImg}" target="_blank" class="bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-id-card"></i> CNIC Doc</a>`;
+                    docsButtons += `<a href="${cnicImg}" target="_blank" class="bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-id-card"></i> CNIC Doc</a>`;
                 }
                 if (bankImg) {
-                    docsButtons += `<a href="${bankImg}" target="_blank" class="bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-receipt"></i> Bank Slip</a>`;
+                    docsButtons += `<a href="${bankImg}" target="_blank" class="bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-receipt"></i> Bank Slip</a>`;
                 }
                 if (!cnicImg && !bankImg) {
                     docsButtons += `<span class="text-slate-500 text-[10px]">No Documents</span>`;
