@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -11,13 +11,8 @@ const firebaseConfig = {
     measurementId: "G-6CGVKBZFJK"
 };
 
-let db;
-try {
-    const app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-} catch (e) {
-    db = getFirestore();
-}
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const db = getFirestore(app);
 
 const tableBody = document.getElementById('dropshipAdminTableBody');
 const totalProductsEl = document.getElementById('adminTotalProducts');
@@ -44,7 +39,10 @@ async function loadCentralProductsForDropship() {
     tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#94a3b8;">Loading Central Products...</td></tr>';
 
     try {
+        console.log("Fetching products from Firestore...");
         const querySnapshot = await getDocs(collection(db, "products"));
+        console.log("Total docs fetched:", querySnapshot.size);
+        
         let html = '';
         let count = 0;
 
@@ -103,7 +101,7 @@ async function loadCentralProductsForDropship() {
 
     } catch (error) {
         console.error("Error loading central products:", error);
-        tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#ef4444; padding:20px;">Database connection error!</td></tr>';
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444; padding:20px;">Error: ${error.message}</td></tr>`;
     }
 }
 
