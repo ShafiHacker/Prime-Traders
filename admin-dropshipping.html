@@ -32,7 +32,7 @@
             min-height: 100vh;
         }
 
-        /* Sidebar Styling (Matching Admin Dashboard) */
+        /* Sidebar Styling (Exact match with admin.html) */
         aside {
             width: 260px;
             background-color: var(--sidebar-bg);
@@ -230,21 +230,6 @@
             background: rgba(255, 255, 255, 0.01);
         }
 
-        .product-info-cell {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .product-thumb {
-            width: 48px;
-            height: 48px;
-            object-fit: cover;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            background: #1e293b;
-        }
-
         .price-input {
             width: 120px;
             padding: 8px 12px;
@@ -280,7 +265,7 @@
 </head>
 <body>
 
-    <!-- Left Sidebar Menu -->
+    <!-- Left Sidebar Menu (Matching Admin Dashboard) -->
     <aside>
         <div class="sidebar-brand">
             <div class="brand-icon">P</div>
@@ -310,7 +295,6 @@
 
     <!-- Main Content -->
     <main>
-        <!-- Top Header -->
         <div class="top-header-bar">
             <div>
                 <h1>Dropshipping Management Hub</h1>
@@ -321,7 +305,6 @@
             </a>
         </div>
 
-        <!-- Central Products & Pricing Table Section -->
         <div class="pricing-section-card">
             <div class="section-title-row">
                 <h3><i class="fas fa-tags"></i> CENTRAL PRODUCTS & DROPSHIP PRICING</h3>
@@ -351,7 +334,6 @@
         </div>
     </main>
 
-    <!-- Connect JS file -->
     <script type="module" src="js/dropship-admin.js"></script>
 </body>
 </html>
