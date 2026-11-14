@@ -37,12 +37,13 @@
             <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 pb-1">Navigation Menu</p>
             
             <button onclick="switchView('overview')" id="navOverview" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow">
-                <i class="fa-solid fa-chart-pie text-sm"></i> Dashboard Overview
-            </button>
-            
-            <button onclick="switchView('students')" id="navStudents" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">
-                <i class="fa-solid fa-users text-sm text-amber-400"></i> Student Details
-            </button>
+    <i class="fa-solid fa-chart-pie text-sm"></i> Dashboard Overview
+</button>
+
+<!-- Yeh wala naya Payment Details button add kar dein -->
+<button onclick="switchView('payment')" id="navPayment" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">
+    <i class="fa-solid fa-credit-card text-sm text-amber-400"></i> Payment Details
+</button>
         </aside>
 
         <!-- Main Content Area -->
@@ -78,13 +79,17 @@
             </section>
 
             <!-- 2. READ-ONLY STUDENT DETAILS SECTION -->
-            <section id="viewStudents" class="space-y-4 hidden">
-                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-                    <div class="p-4 border-b border-slate-800 font-bold text-sm text-white flex justify-between items-center">
-                        <span class="flex items-center gap-2"><i class="fa-solid fa-id-card text-amber-400"></i> Registered Student Details</span>
-                        <button onclick="loadStudentsList()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
-                            <i class="fa-solid fa-rotate"></i> Refresh
-                        </button>
+            <!-- PAYMENT DETAILS SECTION -->
+<section id="viewPayment" class="space-y-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
+        <h2 class="text-sm font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-credit-card text-amber-400"></i> Student Payment Details
+        </h2>
+        <p class="text-xs text-slate-300">
+            Aapki payment aur fee verification ki details yahan show hongi.
+        </p>
+    </div>
+</section>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs">
@@ -145,26 +150,24 @@
         });
 
         function switchView(viewName) {
-            const viewOverview = document.getElementById('viewOverview');
-            const viewStudents = document.getElementById('viewStudents');
-            const navOverview = document.getElementById('navOverview');
-            const navStudents = document.getElementById('navStudents');
+    const viewOverview = document.getElementById('viewOverview');
+    const viewPayment = document.getElementById('viewPayment');
+    const navOverview = document.getElementById('navOverview');
+    const navPayment = document.getElementById('navPayment');
 
-            if (viewName === 'overview') {
-                viewOverview.classList.remove('hidden');
-                viewStudents.classList.add('hidden');
-                navOverview.className = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow";
-                navStudents.className = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3";
-            } else {
-                viewOverview.classList.add('hidden');
-                viewStudents.classList.remove('hidden');
-                navStudents.className = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow";
-                navOverview.className = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3";
-                loadStudentsList();
-            }
-        }
-
-        async function loadStudentsList() {
+    if (viewName === 'overview') {
+        if (viewOverview) viewOverview.classList.remove('hidden');
+        if (viewPayment) viewPayment.classList.add('hidden');
+        if (navOverview) navOverview.className = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow";
+        if (navPayment) navPayment.className = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3";
+    } else {
+        if (viewOverview) viewOverview.classList.add('hidden');
+        if (viewPayment) viewPayment.classList.remove('hidden');
+        if (navPayment) navPayment.className = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow";
+        if (navOverview) navOverview.className = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3";
+    }
+}
+async function loadStudentsList() {
             const tbody = document.getElementById('studentsTableBody');
             tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">Fetching student records...</td></tr>';
 
