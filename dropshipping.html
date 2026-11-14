@@ -439,5 +439,58 @@
     </div>
 
     <script type="module" src="js/dropshipping.js"></script>
+    <!-- Checkout Modal Popup -->
+<div id="dropshipCheckoutModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 99999; justify-content: center; align-items: center; font-family: sans-serif;">
+    <div style="background: #0b132b; border: 1px solid #1e293b; width: 450px; max-width: 90%; border-radius: 12px; padding: 24px; position: relative; color: #f8fafc; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
+        
+        <!-- Close Button -->
+        <button onclick="closeCheckoutModal()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">×</button>
+        
+        <h3 id="modalProductTitle" style="font-size: 16px; font-weight: 700; margin-bottom: 15px; color: #f59e0b; padding-right: 20px;">Product Title</h3>
+        
+        <form id="dropshipOrderForm" onsubmit="submitDropshipOrder(event)">
+            <div style="margin-bottom: 12px;">
+                <label style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 4px;">Full Name *</label>
+                <input type="text" id="modalCustName" required placeholder="e.g. Ali Khan" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 13px;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div>
+                    <label style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 4px;">Phone / Mobile (11 Digits) *</label>
+                    <input type="text" id="modalCustPhone" required placeholder="e.g. 03001234567" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 13px;">
+                </div>
+                <div>
+                    <label style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 4px;">Destination City *</label>
+                    <input type="text" id="modalCustCity" required placeholder="e.g. Karachi" style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 13px;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 4px;">Complete Delivery Address & Area *</label>
+                <textarea id="modalCustAddress" required rows="2" placeholder="House #, Street, Area..." style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 13px; resize: none;"></textarea>
+            </div>
+
+            <!-- Price Breakdown Box -->
+            <div style="background: #1e293b; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 12px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #cbd5e1;">
+                    <span>Product Subtotal:</span>
+                    <strong id="modalSubtotalText">PKR 0</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #cbd5e1;">
+                    <span>Delivery Charges (DC):</span>
+                    <strong id="modalDeliveryText">PKR 200</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-top: 1px solid #334155; padding-top: 6px; color: #f59e0b; font-size: 14px; font-weight: 700;">
+                    <span>TOTAL COD AMOUNT:</span>
+                    <strong id="modalTotalText">PKR 0</strong>
+                </div>
+            </div>
+
+            <button type="submit" id="modalSubmitBtn" style="width: 100%; background: #f59e0b; color: #0b132b; border: none; padding: 12px; border-radius: 6px; font-weight: 700; font-size: 14px; cursor: pointer;">
+                <i class="fas fa-bolt"></i> SUBMIT ORDER TO MAIN DASHBOARD
+            </button>
+        </form>
+    </div>
+</div>
 </body>
 </html>
