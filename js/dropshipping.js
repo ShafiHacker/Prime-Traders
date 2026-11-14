@@ -80,7 +80,7 @@ function renderProducts(productsArray) {
                     </div>
                     <div class="product-title">${item.title || 'Untitled'}</div>
                     
-                    <!-- Platform Rates Display -->
+                    <!-- 3 Platform Rates Box -->
                     <div style="background: #0f172a; padding: 8px; border-radius: 8px; margin: 8px 0; border: 1px solid #1e293b; font-size: 11px;">
                         <div style="display: flex; justify-content: space-between; color: #94a3b8; padding: 2px 0;">
                             <span>HHC Dropshipping:</span> <strong style="color: #f59e0b;">PKR ${hhcVal}</strong>
@@ -92,13 +92,19 @@ function renderProducts(productsArray) {
                             <span>Markaz Dropshipping:</span> <strong style="color: #10b981;">PKR ${markazVal}</strong>
                         </div>
                     </div>
+
+                    <!-- Our Main Rate Box (Placed right below the 3 dropship box) -->
+                    <div style="background: #1e1b4b; padding: 8px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #312e81; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+                        <span style="color: #c7d2fe; font-weight: 700;">Our Main Rate:</span>
+                        <strong style="color: #818cf8; font-size: 13px;">PKR ${mainRate}</strong>
+                    </div>
                     
                     <div class="product-footer">
                         <div class="card-buttons" style="width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                            <button class="btn-cart-sm" onclick="addToDropshipCart('${item.id}', '${safeTitle}', ${hhcVal})">
+                            <button class="btn-cart-sm" onclick="addToDropshipCart('${item.id}', '${safeTitle}', ${mainRate})">
                                 <i class="fas fa-shopping-cart"></i> Cart
                             </button>
-                            <button class="btn-buynow-sm" onclick="buyNowDropship('${item.id}', '${safeTitle}', ${hhcVal})">
+                            <button class="btn-buynow-sm" onclick="buyNowDropship('${item.id}', '${safeTitle}', ${mainRate})">
                                 <i class="fas fa-bolt"></i> Buy Now
                             </button>
                         </div>
@@ -153,7 +159,7 @@ window.addToDropshipCart = function(id, title, price) {
 };
 
 window.buyNowDropship = function(id, title, price) {
-    alert(`Direct Order: ${title}`);
+    alert(`Direct Order: ${title} - Rate: PKR ${price}`);
 };
 
 document.addEventListener('DOMContentLoaded', fetchDropshipCatalog);
