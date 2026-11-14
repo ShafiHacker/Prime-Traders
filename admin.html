@@ -994,20 +994,17 @@
 <script src="dashboard.js?v=16.0"></script>
 
 <script>
-    // Page load hote hi data fetch karein
     document.addEventListener("DOMContentLoaded", function() {
-        // Text cleanup
+        // Clean text formatting
         const descEls = document.querySelectorAll('p');
         descEls.forEach(el => {
             if (el.innerHTML.includes('[cite:')) {
                 el.innerHTML = el.innerHTML.replace(/\[cite:[^\]]*\]/g, '');
             }
         });
-        
         loadAdminStudentRequests();
     });
 
-    // Firebase se student requests load karne ka function
     async function loadAdminStudentRequests() {
         const tableBody = document.getElementById('adminStudentsTableBody');
         if (!tableBody) return;
@@ -1051,6 +1048,7 @@
 
                 html += `
                     <tr class="border-b border-slate-800 hover:bg-slate-900/50 transition">
+                        <tr class="border-b border-slate-800 hover:bg-slate-900/50 transition">
                         <td class="p-3">
                             <p class="font-bold text-white">${data.fullName || 'N/A'}</p>
                             <p class="text-[11px] text-purple-400">${data.businessName || 'N/A'}</p>
@@ -1087,17 +1085,16 @@
         }
     }
 
-   <script>
+    // Ye naya function .set() aur merge use karega taake koi purana format conflict na kare
     window.updateStudentStatus = async function(docId, newStatus) {
         try {
-            // Firestore mein status ke sath valid date object bhejein taake conflict na ho
             await db.collection('students').doc(docId).set({
                 status: newStatus,
-                updatedAt: new Date()
+                updatedAt: new Date().toISOString()
             }, { merge: true });
 
             alert("Student status updated successfully!");
-            loadAdminStudentRequests(); // Table refresh karein
+            loadAdminStudentRequests();
         } catch (err) {
             console.error("Update error:", err);
             alert("Status update failed: " + err.message);
