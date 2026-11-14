@@ -994,18 +994,20 @@
 <script src="dashboard.js?v=16.0"></script>
 
 <script>
-    // Header text clean karne ke liye (jahan likha aa raha tha)
+    // Page load hote hi data fetch karein
     document.addEventListener("DOMContentLoaded", function() {
+        // Text cleanup
         const descEls = document.querySelectorAll('p');
         descEls.forEach(el => {
             if (el.innerHTML.includes('[cite:')) {
                 el.innerHTML = el.innerHTML.replace(/\[cite:[^\]]*\]/g, '');
             }
         });
+        
         loadAdminStudentRequests();
     });
 
-    // Firebase se student requests load karne ka function (with Images/Docs support)
+    // Firebase se student requests load karne ka function
     async function loadAdminStudentRequests() {
         const tableBody = document.getElementById('adminStudentsTableBody');
         if (!tableBody) return;
@@ -1034,7 +1036,6 @@
                     statusBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-full text-xs font-bold">PENDING</span>`;
                 }
 
-                // CNIC & Bank Images/Files links check
                 let cnicImgLink = data.cnicImage || data.cnicFrontUrl || data.cnicPic || '';
                 let bankImgLink = data.bankImage || data.bankReceiptUrl || data.bankSlip || '';
 
