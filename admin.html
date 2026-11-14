@@ -1821,6 +1821,7 @@
             }
         }
     };
+    <script>
 </script>
 <!-- DROPSHIPPING HUB VIEW SECTION -->
 <section id="viewDropshipping" class="space-y-6 hidden">
@@ -1836,7 +1837,8 @@
             <i class="fa-solid fa-external-link-alt"></i> Link to Dropshipping Web
         </a>
     </div>
-
+<script>
+    <script>
     <!-- Products Management / Details Area -->
     <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
         <div class="flex justify-between items-center border-b border-slate-800 pb-4">
@@ -1859,40 +1861,40 @@
             </div>
         </div>
     </div>
-</section>
-function switchView(viewName) {
-    const viewOverview = document.getElementById('viewOverview');
-    const viewStudents = document.getElementById('viewStudents');
-    const viewDropshipping = document.getElementById('viewDropshipping');
-    
-    const navOverview = document.getElementById('navOverview');
-    const navStudents = document.getElementById('navStudents');
-    const navDropshipping = document.getElementById('navDropshipping');
+<script>
+    function switchView(viewName) {
+        const viewOverview = document.getElementById('viewOverview');
+        const viewStudents = document.getElementById('viewStudents');
+        const viewDropshipping = document.getElementById('viewDropshipping');
+        
+        const navOverview = document.getElementById('navOverview');
+        const navStudents = document.getElementById('navStudents');
+        const navDropshipping = document.getElementById('navDropshipping');
 
-    // Sabhi views ko hide karein
-    if (viewOverview) viewOverview.classList.add('hidden');
-    if (viewStudents) viewStudents.classList.add('hidden');
-    if (viewDropshipping) viewDropshipping.classList.add('hidden');
+        // Sabhi views ko hide karein
+        if (viewOverview) viewOverview.classList.add('hidden');
+        if (viewStudents) viewStudents.classList.add('hidden');
+        if (viewDropshipping) viewDropshipping.classList.add('hidden');
 
-    // Sabhi nav buttons ki active class khatam karein (normal banayein)
-    const normalClass = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3";
-    const activeClass = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow";
+        // Sabhi nav buttons ki active class khatam karein
+        const normalClass = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3";
+        const activeClass = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow";
 
-    if (navOverview) navOverview.className = normalClass;
-    if (navStudents) navStudents.className = normalClass;
-    if (navDropshipping) navDropshipping.className = normalClass;
+        if (navOverview) navOverview.className = normalClass;
+        if (navStudents) navStudents.className = normalClass;
+        if (navDropshipping) navDropshipping.className = normalClass;
 
-    // Jo view select kiya hai usko show karein
-    if (viewName === 'overview') {
-        if (viewOverview) viewOverview.classList.remove('hidden');
-        if (navOverview) navOverview.className = activeClass;
-    } else if (viewName === 'students') {
-        if (viewStudents) viewStudents.classList.remove('hidden');
-        if (navStudents) navStudents.className = activeClass;
-        if (typeof loadAdminStudentRequests === 'function') loadAdminStudentRequests();
-    } else if (viewName === 'dropshipping') {
-        if (viewDropshipping) viewDropshipping.classList.remove('hidden');
-        if (navDropshipping) navDropshipping.className = activeClass;
+        // Jo view select kiya hai usko show karein
+        if (viewName === 'overview') {
+            if (viewOverview) viewOverview.classList.remove('hidden');
+            if (navOverview) navOverview.className = activeClass;
+        } else if (viewName === 'students') {
+            if (viewStudents) viewStudents.classList.remove('hidden');
+            if (navStudents) navStudents.className = activeClass;
+            if (typeof loadAdminStudentRequests === 'function') loadAdminStudentRequests();
+        } else if (viewName === 'dropshipping') {
+            if (viewDropshipping) viewDropshipping.classList.remove('hidden');
+            if (navDropshipping) navDropshipping.className = activeClass;
+        }
     }
-}
 </script>
