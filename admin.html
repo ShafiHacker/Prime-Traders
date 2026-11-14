@@ -1101,3 +1101,121 @@
         }
     };
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. Operations Dashboard heading aur subtext ko hide/clean karne ke liye
+        const headerSub = document.querySelector('header .hidden.md\\:block');
+        if (headerSub) {
+            headerSub.style.display = 'none'; // Isko poora hide kar dete hain taake clean look aaye
+        }
+
+        // Clean text formatting
+        const descEls = document.querySelectorAll('p');
+        descEls.forEach(el => {
+            if (el.innerHTML.includes('[cite:')) {
+                el.innerHTML = el.innerHTML.replace(/\[cite:[^\]]*\]/g, '');
+            }
+        });
+
+        loadAdminStudentRequests();
+    });
+
+    async function loadAdminStudentRequests() {
+        const tableBody = document.getElementById('adminStudentsTableBody');
+        if (!tableBody) return;
+
+        tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">Fetching student registrations from Firebase...</td></tr>`;
+
+        try {
+            const snapshot = await db.collection('students').orderBy('createdAt', 'desc').get();
+
+            if (snapshot.empty) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">No student registration requests found in database.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const docId = doc.id;
+
+                let statusBadge = '';
+                if (data.status === 'approved') {
+                    statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full text-xs font-bold">APPROVED</span>`;
+                } else if (data.status === 'rejected') {
+                    statusBadge = `<span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-2.5 py-1 rounded-full text-xs font-bold">REJECTED</span>`;
+                } else {
+                    statusBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-full text-xs font-bold">PENDING</span>`;
+                }
+
+                // Saare possible field names check kar rahe hain taake pictures ka link zaroor mil jaye
+                let cnicImgLink = data.cnicImage || data.cnicFrontUrl || data.cnicPic || data.cnicURL || data.cnicDocument || '';
+                let bankImgLink = data.bankImage || data.bankReceiptUrl || data.bankSlip || data.bankURL || data.bankDocument || '';
+
+                let cnicDisplay = `<p class="text-white">${data.cnic || 'N/A'}</p>`;
+                if (cnicImgLink) {
+                    cnicDisplay += `<a href="${cnicImgLink}" target="_blank" class="text-amber-400 hover:underline text-[11px] font-bold block mt-1"><i class="fa-solid fa-image"></i> View CNIC Pic</a>`;
+                } else {
+                    cnicDisplay += `<span class="text-[10px] text-slate-500 block">No CNIC Pic</span>`;
+                }
+
+                let bankDisplay = `<p class="text-slate-300">${data.bankDetails || 'N/A'}</p>`;
+                if (bankImgLink) {
+                    bankDisplay += `<a href="${bankImgLink}" target="_blank" class="text-amber-400 hover:underline text-[11px] font-bold block mt-1"><i class="fa-solid fa-receipt"></i> View Account Pic</a>`;
+                } else {
+                    bankDisplay += `<span class="text-[10px] text-slate-500 block">No Account Pic</span>`;
+                }
+
+                html += `
+                    <tr class="border-b border-slate-800 hover:bg-slate-900/50 transition">
+                        <td class="p-3">
+                            <p class="font-bold text-white">${data.fullName || 'N/A'}</p>
+                            <p class="text-[11px] text-purple-400">${data.businessName || 'N/A'}</p>
+                        </td>
+                        <td class="p-3">
+                            <p class="text-white">${data.email || 'N/A'}</p>
+                            <p class="text-[11px] text-slate-400">${data.phone || 'N/A'}</p>
+                        </td>
+                        <td class="p-3">
+                            ${cnicDisplay}
+                            <p class="text-[11px] text-slate-400 mt-0.5">Batch: ${data.batchNo || 'N/A'}</p>
+                        </td>
+                        <td class="p-3">
+                            ${bankDisplay}
+                        </td>
+                        <td class="p-3">
+                            ${statusBadge}
+                        </td>
+                        <td class="p-3 text-center space-x-2">
+                            <button onclick="updateStudentStatus('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
+                                <i class="fa-solid fa-check mr-1"></i> Approve
+                            </button>
+                            <button onclick="updateStudentStatus('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
+                                <i class="fa-solid fa-xmark mr-1"></i> Reject
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tableBody.innerHTML = html;
+        } catch (err) {
+            console.error("Error loading students:", err);
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400 font-semibold">Error loading data: ${err.message}</td></tr>`;
+        }
+    }
+
+    window.updateStudentStatus = async function(docId, newStatus) {
+        try {
+            await db.collection('students').doc(docId).set({
+                status: newStatus,
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+
+            alert("Student status updated successfully!");
+            loadAdminStudentRequests();
+        } catch (err) {
+            console.error("Update error:", err);
+            alert("Status update failed: " + err.message);
+        }
+    };
+</script>
