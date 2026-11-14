@@ -2,12 +2,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyD-Placeholder",
+    apiKey: "AIzaSyCRkKoE48FjYIjYfUNFEYzcxNueKUm6YOM",
     authDomain: "prime-traders-f3eec.firebaseapp.com",
     projectId: "prime-traders-f3eec",
-    storageBucket: "prime-traders-f3eec.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456:web:abcdef"
+    storageBucket: "prime-traders-f3eec.firebasestorage.app",
+    messagingSenderId: "499740236001",
+    appId: "1:499740236001:web:e623dfe11f6f96df22ffa0",
+    measurementId: "G-6CGVKBZFJK"
 };
 
 let db;
