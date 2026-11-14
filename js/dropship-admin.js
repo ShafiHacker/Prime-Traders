@@ -1,10 +1,8 @@
-// Import Firebase from CDN just like admin.html uses
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Firebase Configuration (Matching Prime Traders Setup)
 const firebaseConfig = {
-    apiKey: "AIzaSyD-YourAPIKeyHere-Placeholder", // Agar aapke paas config alag file mein hai toh wohi use karein
+    apiKey: "AIzaSyD-Placeholder",
     authDomain: "prime-traders.firebaseapp.com",
     projectId: "prime-traders",
     storageBucket: "prime-traders.appspot.com",
@@ -12,20 +10,17 @@ const firebaseConfig = {
     appId: "1:123456:web:abcdef"
 };
 
-// Initialize Firebase safely
 let db;
 try {
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
 } catch (e) {
-    // Fallback if app is already initialized
     db = getFirestore();
 }
 
 const tableBody = document.getElementById('dropshipAdminTableBody');
 const totalProductsEl = document.getElementById('adminTotalProducts');
 
-// Central Products Load Karne Ka Function
 async function loadCentralProductsForDropship() {
     if (!tableBody) return;
     tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">Loading Central Products...</td></tr>';
@@ -78,11 +73,10 @@ async function loadCentralProductsForDropship() {
 
     } catch (error) {
         console.error("Error loading central products:", error);
-        tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ef4444; padding:20px;">Database connection error! Console check karein.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ef4444; padding:20px;">Database connection error!</td></tr>';
     }
 }
 
-// Dropship Price Update Karne Ka Function
 window.updateDropshipRate = async function(productId) {
     const inputEl = document.getElementById(`rate-input-${productId}`);
     const btnEl = document.getElementById(`btn-save-${productId}`);
