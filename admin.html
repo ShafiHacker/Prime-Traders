@@ -1861,20 +1861,38 @@
     </div>
 </section>
 function switchView(viewName) {
-    // Purane saare views aur buttons ko hide/reset karne ka logic
-    const views = ['Overview', 'Students', 'Dropshipping']; // Jo bhi views hon
-    
-    // Agar aapka already switchView function likha hai toh bas 'dropshipping' case handle kar lein:
+    const viewOverview = document.getElementById('viewOverview');
+    const viewStudents = document.getElementById('viewStudents');
     const viewDropshipping = document.getElementById('viewDropshipping');
-    const navDropshipping = document.getElementById('navDropshipping');
     
-    // Baki views ki tarah isko bhi toggle kar dein:
-    if (viewName === 'dropshipping') {
-        if(document.getElementById('viewOverview')) document.getElementById('viewOverview').classList.add('hidden');
-        if(document.getElementById('viewStudents')) document.getElementById('viewStudents').classList.add('hidden');
-        if(viewDropshipping) viewDropshipping.classList.remove('hidden');
-        
-        if(navDropshipping) navDropshipping.className = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow";
-        // Baki nav buttons ko normal class de dein
+    const navOverview = document.getElementById('navOverview');
+    const navStudents = document.getElementById('navStudents');
+    const navDropshipping = document.getElementById('navDropshipping');
+
+    // Sabhi views ko hide karein
+    if (viewOverview) viewOverview.classList.add('hidden');
+    if (viewStudents) viewStudents.classList.add('hidden');
+    if (viewDropshipping) viewDropshipping.classList.add('hidden');
+
+    // Sabhi nav buttons ki active class khatam karein (normal banayein)
+    const normalClass = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3";
+    const activeClass = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow";
+
+    if (navOverview) navOverview.className = normalClass;
+    if (navStudents) navStudents.className = normalClass;
+    if (navDropshipping) navDropshipping.className = normalClass;
+
+    // Jo view select kiya hai usko show karein
+    if (viewName === 'overview') {
+        if (viewOverview) viewOverview.classList.remove('hidden');
+        if (navOverview) navOverview.className = activeClass;
+    } else if (viewName === 'students') {
+        if (viewStudents) viewStudents.classList.remove('hidden');
+        if (navStudents) navStudents.className = activeClass;
+        if (typeof loadAdminStudentRequests === 'function') loadAdminStudentRequests();
+    } else if (viewName === 'dropshipping') {
+        if (viewDropshipping) viewDropshipping.classList.remove('hidden');
+        if (navDropshipping) navDropshipping.className = activeClass;
     }
 }
+</script>
