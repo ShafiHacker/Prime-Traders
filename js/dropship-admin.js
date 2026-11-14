@@ -23,7 +23,7 @@ const totalProductsEl = document.getElementById('adminTotalProducts');
 
 async function loadCentralProductsForDropship() {
     if (!tableBody) return;
-    tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">Loading Central Products...</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#94a3b8;">Loading Central Products...</td></tr>';
 
     try {
         const querySnapshot = await getDocs(collection(db, "products"));
@@ -36,7 +36,9 @@ async function loadCentralProductsForDropship() {
             const id = docSnap.id;
 
             const mainRate = data.price || data.wholesaleRate || data.wholesalePrice || 0;
-            const currentDropshipRate = data.dropshipPrice !== undefined ? data.dropshipPrice : mainRate;
+            const hhcVal = data.hhcPrice !== undefined ? data.hhcPrice : mainRate;
+            const oshiVal = data.oshiPrice !== undefined ? data.oshiPrice : mainRate;
+            const markazVal = data.markazPrice !== undefined ? data.markazPrice : mainRate;
             const imgUrl = (data.images && data.images.length > 0) ? data.images[0] : (data.image || 'logo.png');
 
             html += `
@@ -52,38 +54,48 @@ async function loadCentralProductsForDropship() {
                         PKR ${mainRate}
                     </td>
                     <td style="padding: 12px;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="color: #f59e0b; font-weight: 700;">PKR</span>
-                            <input type="number" id="rate-input-${id}" value="${currentDropshipRate}" 
-                                style="width: 110px; padding: 7px 10px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #ffffff; font-weight: 700;">
-                        </div>
+                        <input type="number" id="hhc-input-${id}" value="${hhcVal}" 
+                            style="width: 90px; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #ffffff; font-weight: 700;">
                     </td>
                     <td style="padding: 12px;">
-                        <button onclick="updateDropshipRate('${id}')" id="btn-save-${id}"
+                        <input type="number" id="oshi-input-${id}" value="${oshiVal}" 
+                            style="width: 90px; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #ffffff; font-weight: 700;">
+                    </td>
+                    <td style="padding: 12px;">
+                        <input type="number" id="markaz-input-${id}" value="${markazVal}" 
+                            style="width: 90px; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #ffffff; font-weight: 700;">
+                    </td>
+                    <td style="padding: 12px;">
+                        <button onclick="updateDropshipRates('${id}')" id="btn-save-${id}"
                             style="background: #f59e0b; color: #0b132b; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; cursor: pointer;">
-                            Save Rate
+                            Save Rates
                         </button>
                     </td>
                 </tr>
             `;
         });
 
-        tableBody.innerHTML = html || '<tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">No products found in Central Database.</td></tr>';
+        tableBody.innerHTML = html || '<tr><td colspan="7" style="text-align:center; padding:20px; color:#94a3b8;">No products found in Central Database.</td></tr>';
         if (totalProductsEl) totalProductsEl.innerText = `Total Products: ${count}`;
 
     } catch (error) {
         console.error("Error loading central products:", error);
-        tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ef4444; padding:20px;">Database connection error!</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">Database connection error!</td></tr>';
     }
 }
 
-window.updateDropshipRate = async function(productId) {
-    const inputEl = document.getElementById(`rate-input-${productId}`);
+window.updateDropshipRates = async function(productId) {
+    const hhcInput = document.getElementById(`hhc-input-${productId}`);
+    const oshiInput = document.getElementById(`oshi-input-${productId}`);
+    const markazInput = document.getElementById(`markaz-input-${productId}`);
     const btnEl = document.getElementById(`btn-save-${productId}`);
-    const newRate = Number(inputEl.value);
 
-    if (isNaN(newRate) || newRate < 0) {
-        alert("Please enter a valid amount!");
+    const hhcPrice = Number(hhcInput.value);
+    const oshiPrice = Number(oshiInput.value);
+    const markazPrice = Number(markazInput.value);
+
+    if (isNaN(hhcPrice) || isNaN(oshiPrice) || isNaN(markazPrice)) {
+        alert("Please enter valid amounts for all rates!");
         return;
     }
 
@@ -93,7 +105,9 @@ window.updateDropshipRate = async function(productId) {
     try {
         const productRef = doc(db, "products", productId);
         await updateDoc(productRef, {
-            dropshipPrice: newRate
+            hhcPrice: hhcPrice,
+            oshiPrice: oshiPrice,
+            markazPrice: markazPrice
         });
 
         btnEl.innerText = "Saved ✓";
@@ -101,16 +115,16 @@ window.updateDropshipRate = async function(productId) {
         btnEl.style.color = "#ffffff";
 
         setTimeout(() => {
-            btnEl.innerText = "Save Rate";
+            btnEl.innerText = "Save Rates";
             btnEl.style.background = "#f59e0b";
             btnEl.style.color = "#0b132b";
             btnEl.disabled = false;
         }, 2000);
 
     } catch (error) {
-        console.error("Error updating dropship rate:", error);
-        alert("Rate update karne mein masla aaya!");
-        btnEl.innerText = "Save Rate";
+        console.error("Error updating dropship rates:", error);
+        alert("Rates update karne mein masla aaya!");
+        btnEl.innerText = "Save Rates";
         btnEl.disabled = false;
     }
 };
