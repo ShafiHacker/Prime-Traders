@@ -1,5 +1,23 @@
-import { db } from './firebase-config.js';
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// Import Firebase from CDN
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyD-YourAPIKeyHere-Placeholder",
+    authDomain: "prime-traders.firebaseapp.com",
+    projectId: "prime-traders",
+    storageBucket: "prime-traders.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456:web:abcdef"
+};
+
+let db;
+try {
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+} catch (e) {
+    db = getFirestore();
+}
 
 const productsGrid = document.getElementById('dropshipProductsGrid');
 const totalItemsBadge = document.getElementById('totalItemsBadge');
@@ -7,7 +25,6 @@ const categoryList = document.getElementById('categoryList');
 
 let allProducts = [];
 
-// Public Dropship Products Load Karna
 async function fetchDropshipCatalog() {
     if (!productsGrid) return;
     productsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding: 40px; color:#64748b;">Loading Dropship Catalog...</p>';
@@ -18,7 +35,6 @@ async function fetchDropshipCatalog() {
 
         querySnapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            // Sirf Active products dikhayein
             if (data.status !== 'Inactive') {
                 allProducts.push({ id: docSnap.id, ...data });
             }
@@ -33,35 +49,34 @@ async function fetchDropshipCatalog() {
     }
 }
 
-// Products ko Grid mein Render Karna
 function renderProducts(productsArray) {
     if (totalItemsBadge) {
         totalItemsBadge.innerText = `Total: ${productsArray.length} Items`;
     }
 
     if (productsArray.length === 0) {
-        productsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding: 40px; color:#64748b;">No products available in this category.</p>';
+        productsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding: 40px; color:#64748b;">No products available.</p>';
         return;
     }
 
     let cardsHTML = '';
     productsArray.forEach(item => {
-        // Yahan Dropship Rate priority par uthaya ja raha hai
-        const finalPrice = item.dropshipPrice !== undefined ? item.dropshipPrice : (item.price || item.wholesalePrice || 0);
+        const finalPrice = item.dropshipPrice !== undefined ? item.dropshipPrice : (item.price || item.wholesaleRate || item.wholesalePrice || 0);
         const imgUrl = (item.images && item.images.length > 0) ? item.images[0] : (item.image || 'logo.png');
+        const safeTitle = (item.title || 'Product').replace(/'/g, "\\'");
 
         cardsHTML += `
             <div class="product-card">
                 <div class="product-img-box">
-                    <span class="badge-tag">Dropship Rate</span>
+                    <span class="badge-tag">Wholesale</span>
                     <img src="${imgUrl}" alt="${item.title}" onerror="this.src='logo.png'">
                 </div>
                 <div class="product-info">
                     <div style="font-size:10px; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:3px;">
                         ${item.category || 'General'}
                     </div>
-                    <div class="product-title">${item.title}</div>
-                    <div class="product-desc">${item.description ? item.description.substring(0, 60) + '...' : 'Available for immediate dropshipping.'}</div>
+                    <div class="product-title">${item.title || 'Untitled'}</div>
+                    <div class="product-desc">${item.description ? item.description.substring(0, 50) + '...' : 'Available for dropshipping.'}</div>
                     
                     <div class="product-footer">
                         <div class="price-row">
@@ -71,10 +86,10 @@ function renderProducts(productsArray) {
                             </div>
                         </div>
                         <div class="card-buttons">
-                            <button class="btn-cart-sm" onclick="addToDropshipCart('${item.id}', '${item.title.replace(/'/g, "\\'")}', ${finalPrice})">
+                            <button class="btn-cart-sm" onclick="addToDropshipCart('${item.id}', '${safeTitle}', ${finalPrice})">
                                 <i class="fas fa-shopping-cart"></i> Cart
                             </button>
-                            <button class="btn-buynow-sm" onclick="buyNowDropship('${item.id}', '${item.title.replace(/'/g, "\\'")}', ${finalPrice})">
+                            <button class="btn-buynow-sm" onclick="buyNowDropship('${item.id}', '${safeTitle}', ${finalPrice})">
                                 <i class="fas fa-bolt"></i> Buy Now
                             </button>
                         </div>
@@ -87,7 +102,6 @@ function renderProducts(productsArray) {
     productsGrid.innerHTML = cardsHTML;
 }
 
-// Dynamic Category Counts Update Karna
 function updateCategoryCounts(products) {
     const countAllEl = document.getElementById('count-all');
     if (countAllEl) countAllEl.innerText = products.length;
@@ -103,7 +117,6 @@ function updateCategoryCounts(products) {
     });
 }
 
-// Category Filter Click Listener
 if (categoryList) {
     categoryList.addEventListener('click', (e) => {
         const item = e.target.closest('.category-item');
@@ -122,7 +135,6 @@ if (categoryList) {
     });
 }
 
-// Cart & Buy Now Functions (Aap inhein apne order system se link kar sakte hain)
 let cartCount = 0;
 window.addToDropshipCart = function(id, title, price) {
     cartCount++;
@@ -133,7 +145,6 @@ window.addToDropshipCart = function(id, title, price) {
 
 window.buyNowDropship = function(id, title, price) {
     alert(`Direct Order: ${title} - Rate: PKR ${price}`);
-    // Yahan checkout modal ya WhatsApp order link open karwa sakte hain
 };
 
 document.addEventListener('DOMContentLoaded', fetchDropshipCatalog);
