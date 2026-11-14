@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { initializeFirestore, experimentalForceLongPolling, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCRkKoE48FjYIjYfUNFEYzcxNueKUm6YOM",
@@ -12,7 +12,7 @@ const firebaseConfig = {
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const db = getFirestore(app);
+const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 
 const tableBody = document.getElementById('dropshipAdminTableBody');
 const totalProductsEl = document.getElementById('adminTotalProducts');
@@ -39,10 +39,7 @@ async function loadCentralProductsForDropship() {
     tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#94a3b8;">Loading Central Products...</td></tr>';
 
     try {
-        console.log("Fetching products from Firestore...");
         const querySnapshot = await getDocs(collection(db, "products"));
-        console.log("Total docs fetched:", querySnapshot.size);
-        
         let html = '';
         let count = 0;
 
