@@ -3,156 +3,355 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dropshipping Management Hub | Admin Panel</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Dropshipping Management Hub | Prime Traders</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-body: #0b132b;
+            --sidebar-bg: #0f172a;
+            --card-bg: #111827;
+            --border-color: #1f2937;
+            --accent-orange: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styling (Matching Admin Dashboard) */
+        aside {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            background: var(--accent-orange);
+            color: #0b132b;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+        }
+
+        .brand-title h2 {
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .brand-title p {
+            font-size: 10px;
+            color: var(--accent-orange);
+            font-weight: 700;
+        }
+
+        .menu-section {
+            padding: 15px 15px 5px 15px;
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #64748b;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .menu-list {
+            list-style: none;
+            padding: 0 10px;
+        }
+
+        .menu-item a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: 0.2s;
+            margin-bottom: 4px;
+        }
+
+        .menu-item a:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+        }
+
+        .menu-item.active a {
+            background: var(--accent-orange);
+            color: #0b132b;
+            font-weight: 700;
+        }
+
+        /* Main Content Area */
+        main {
+            margin-left: 260px;
+            flex: 1;
+            padding: 30px;
+        }
+
+        .top-header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 20px 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .top-header-bar h1 {
+            font-size: 20px;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .top-header-bar p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        .btn-live-web {
+            background: var(--accent-orange);
+            color: #0b132b;
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-live-web:hover {
+            background: #d97706;
+        }
+
+        /* Central Products Pricing Section */
+        .pricing-section-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        .section-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-title-row h3 {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--accent-orange);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .total-badge {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Table Styling */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background: #0f172a;
+            color: var(--text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 12px 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        td {
+            padding: 14px 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .product-info-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .product-thumb {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: #1e293b;
+        }
+
+        .price-input {
+            width: 120px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .price-input:focus {
+            border-color: var(--accent-orange);
+            outline: none;
+        }
+
+        .btn-save-rate {
+            background: var(--accent-orange);
+            color: #0b132b;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-save-rate:hover {
+            background: #d97706;
+        }
+    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex">
+<body>
 
     <!-- Left Sidebar Menu -->
-    <aside class="w-64 bg-slate-900 border-r border-slate-800 p-4 flex flex-col justify-between hidden md:flex shrink-0 min-h-screen sticky top-0">
-        <div class="space-y-6">
-            <!-- Brand Logo -->
-            <div class="flex items-center gap-3 px-2">
-                <div class="bg-amber-500 text-slate-950 font-black text-xl w-9 h-9 flex items-center justify-center rounded-xl shadow-lg">P</div>
-                <div>
-                    <h1 class="text-xs font-bold tracking-wider text-white uppercase">PRIME TRADERS</h1>
-                    <p class="text-[9px] text-amber-400 tracking-widest uppercase">Admin Panel</p>
-                </div>
-            </div>
-
-            <!-- Main Navigation Links -->
-            <div class="space-y-1">
-                <p class="text-[10px] font-bold text-slate-500 uppercase px-3 pb-1 tracking-wider">Main Menu</p>
-                
-                <a href="admin.html" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">
-                    <i class="fa-solid fa-chart-pie text-sm"></i> Dashboard Overview
-                </a>
-                <a href="admin.html" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">
-                    <i class="fa-solid fa-truck-fast text-sm"></i> Shipments & Tracking
-                </a>
-                <a href="admin.html" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">
-                    <i class="fa-solid fa-users text-sm"></i> Active Users
-                </a>
-                <a href="admin.html" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">
-                    <i class="fa-solid fa-trash-can text-sm"></i> Deleted Archive
-                </a>
-                <a href="admin.html" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">
-                    <i class="fa-solid fa-box-archive text-sm"></i> Wholesaler Orders
-                </a>
-                <a href="ecommerce-dashboard.html" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">
-                    <i class="fa-solid fa-graduation-cap text-sm"></i> E-Commerce Student Portal
-                </a>
-                <!-- Active Dropshipping Hub Link -->
-                <a href="admin-dropshipping.html" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow">
-                    <i class="fa-solid fa-store text-sm"></i> Dropshipping Hub
-                </a>
-            </div>
-
-            <!-- Operations & Logistics -->
-            <div class="space-y-1 pt-2 border-t border-slate-800">
-                <p class="text-[10px] font-bold text-slate-500 uppercase px-3 pb-1 tracking-wider">Operations & Logistics</p>
-                <a href="admin.html" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition flex items-center gap-2.5">
-                    <i class="fa-solid fa-gas-pump text-xs"></i> Daily Petrol Rate
-                </a>
-                <a href="admin.html" class="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition flex items-center gap-2.5">
-                    <i class="fa-solid fa-map-location-dot text-xs"></i> DC KM Settings
-                </a>
+    <aside>
+        <div class="sidebar-brand">
+            <div class="brand-icon">P</div>
+            <div class="brand-title">
+                <h2>PRIME TRADERS</h2>
+                <p>ADMIN PANEL</p>
             </div>
         </div>
 
-        <!-- Admin Profile Footer -->
-        <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-                <div class="w-7 h-7 bg-amber-500 text-slate-950 font-bold rounded-lg flex items-center justify-center text-xs">A</div>
-                <div>
-                    <p class="text-xs font-bold text-white">Admin</p>
-                    <p class="text-[10px] text-slate-400">Operations Manager</p>
-                </div>
-            </div>
-        </div>
+        <div class="menu-section">Main Menu</div>
+        <ul class="menu-list">
+            <li class="menu-item"><a href="admin.html"><i class="fas fa-home"></i> Dashboard Overview</a></li>
+            <li class="menu-item"><a href="admin.html"><i class="fas fa-shipping-fast"></i> Shipments & Tracking</a></li>
+            <li class="menu-item"><a href="admin.html"><i class="fas fa-users"></i> Active Users</a></li>
+            <li class="menu-item"><a href="admin.html"><i class="fas fa-trash-alt"></i> Deleted Archive</a></li>
+            <li class="menu-item"><a href="admin.html"><i class="fas fa-box-open"></i> Wholesaler Orders</a></li>
+            <li class="menu-item"><a href="admin.html"><i class="fas fa-graduation-cap"></i> E-Commerce Student Portal</a></li>
+            <li class="menu-item active"><a href="admin-dropshipping.html"><i class="fas fa-store"></i> Dropshipping Hub</a></li>
+        </ul>
+
+        <div class="menu-section" style="margin-top: 15px;">Operations & Logistics</div>
+        <ul class="menu-list">
+            <li class="menu-item"><a href="admin.html"><i class="fas fa-gas-pump"></i> Daily Petrol Rate</a></li>
+            <li class="menu-item"><a href="admin.html"><i class="fas fa-route"></i> DC KM Settings</a></li>
+        </ul>
     </aside>
 
-    <!-- Right Main Content Area -->
-    <div class="flex-1 flex flex-col min-h-screen">
-        
-        <!-- Top Header Bar -->
-        <header class="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-40 flex justify-between items-center">
+    <!-- Main Content -->
+    <main>
+        <!-- Top Header -->
+        <div class="top-header-bar">
             <div>
-                <h1 class="text-sm font-bold text-white uppercase tracking-wider">Dropshipping Management Hub</h1>
-                <p class="text-[10px] text-slate-400">Manage wholesale dropship products and inventory.</p>
+                <h1>Dropshipping Management Hub</h1>
+                <p>Manage central wholesale products and customize individual dropshipping rates.</p>
             </div>
-            <div class="flex items-center gap-3">
-                <a href="dropshipping.html" target="_blank" class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow">
-                    <i class="fa-solid fa-external-link-alt"></i> Link to Dropshipping Web
-                </a>
-            </div>
-        </header>
-
-        <!-- Main Body Content -->
-        <main class="p-6 space-y-6 flex-1 bg-slate-950">
-            <!-- Top Summary Card -->
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex justify-between items-center">
-                <div>
-                    <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-store text-amber-400"></i> Active Inventory Catalog
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-1">Review and control products listed on the public dropshipping hub.</p>
-                </div>
-                <div class="bg-slate-950 text-amber-400 px-4 py-2 rounded-xl border border-slate-800 text-xs font-bold">
-                    Total Products: 27
-                </div>
-            </div>
-
-            <!-- Products List Area -->
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
-                <h3 class="text-xs font-bold text-white uppercase tracking-wider border-b border-slate-800 pb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-boxes-stacked text-amber-400"></i> Sample Dropship Products
-                </h3>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2">
-                        <div class="flex justify-between items-start">
-                            <span class="text-xs font-bold text-white">Sample Dropship Product</span>
-                            <span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded font-bold">Active</span>
-                        </div>
-                        <p class="text-[11px] text-slate-400">Wholesale price for online sellers & dropshippers.</p>
-                        <div class="pt-2 flex justify-between items-center text-xs border-t border-slate-800">
-                            <span class="text-amber-400 font-bold">Rs. 1,500</span>
-                            <span class="text-slate-500">Stock: Available</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-<!-- Admin Dropshipping Central Sync Table -->
-<div style="background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; margin-top: 20px; overflow-x: auto;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <div>
-            <h3 style="color: #f59e0b; font-size: 16px; margin: 0;">CENTRAL PRODUCTS & DROPSHIP PRICING</h3>
-            <p style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Products automatically sync from main store. Set custom rates for dropshippers below.</p>
+            <a href="dropshipping.html" target="_blank" class="btn-live-web">
+                <i class="fas fa-external-link-alt"></i> Link to Dropshipping Web
+            </a>
         </div>
-        <span id="adminTotalProducts" style="background: #1e293b; color: #f8fafc; padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 700;">Total Products: 0</span>
-    </div>
 
-    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
-        <thead>
-            <tr style="border-bottom: 2px solid #334155; color: #94a3b8; font-size: 12px; text-transform: uppercase;">
-                <th style="padding: 12px;">Image</th>
-                <th style="padding: 12px;">Product Title & Category</th>
-                <th style="padding: 12px;">Main Site Rate</th>
-                <th style="padding: 12px;">Set Dropship Rate</th>
-                <th style="padding: 12px;">Action</th>
-            </tr>
-        </thead>
-        <tbody id="dropshipAdminTableBody">
-            <!-- JS se data yahan load hoga -->
-        </tbody>
-    </table>
-</div>
+        <!-- Central Products & Pricing Table Section -->
+        <div class="pricing-section-card">
+            <div class="section-title-row">
+                <h3><i class="fas fa-tags"></i> CENTRAL PRODUCTS & DROPSHIP PRICING</h3>
+                <span id="adminTotalProducts" class="total-badge">Total Products: 0</span>
+            </div>
 
-<!-- File ke bilkul aakhir mein yeh script tag lagayein -->
-<script type="module" src="js/dropshipping.js"></script>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Product Title & Category</th>
+                            <th>Main Site Rate</th>
+                            <th>Set Dropship Rate</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dropshipAdminTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 30px; color: #94a3b8;">
+                                Loading Central Products from Database...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Connect JS file -->
+    <script type="module" src="js/dropship-admin.js"></script>
 </body>
 </html>
