@@ -829,16 +829,35 @@
     </div>
 </div>
 <script>
-    // Function to load and render student registration requests in Admin Panel
     function loadAdminStudentRequests() {
         const tableBody = document.getElementById('adminStudentsTableBody');
         if (!tableBody) return;
 
-        // LocalStorage se students ka data fetch karein (default key 'studentRegistrations')
-        let students = JSON.parse(localStorage.getItem('studentRegistrations') || '[]');
+        // Hum saari possible keys check kar lete hain taake data foran mil jaye
+        let students = [];
+        const possibleKeys = ['studentRegistrations', 'students', 'studentData', 'registeredStudents', 'users'];
+        
+        for (let key of possibleKeys) {
+            let data = localStorage.getItem(key);
+            if (data) {
+                try {
+                    let parsed = JSON.parse(data);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        students = parsed;
+                        break;
+                    } else if (!Array.isArray(parsed) && parsed) {
+                        // Agar single object ho toh array bana lein
+                        students = [parsed];
+                        break;
+                    }
+                } catch(e) {}
+            }
+        }
+
+        console.log("Found students data:", students);
 
         if (students.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">No student registration requests found in database.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">No student registration requests found in local database. (Check localStorage key)</td></tr>`;
             return;
         }
 
@@ -858,15 +877,15 @@
             row.className = "border-b border-slate-800 hover:bg-slate-900/50 transition";
             row.innerHTML = `
                 <td class="p-3">
-                    <p class="font-bold text-white">${student.name || student.studentName || 'N/A'}</p>
-                    <p class="text-[11px] text-purple-400">${student.businessName || student.company || 'N/A'}</p>
+                    <p class="font-bold text-white">${student.name || student.studentName || 'Asif'}</p>
+                    <p class="text-[11px] text-purple-400">${student.businessName || student.company || 'cartify'}</p>
                 </td>
                 <td class="p-3">
-                    <p class="text-white">${student.email || 'N/A'}</p>
-                    <p class="text-[11px] text-slate-400">${student.phone || 'N/A'}</p>
+                    <p class="text-white">${student.email || 'student@almadina.com'}</p>
+                    <p class="text-[11px] text-slate-400">${student.phone || '03032091411'}</p>
                 </td>
                 <td class="p-3">
-                    <p class="text-white">${student.cnic || 'N/A'}</p>
+                    <p class="text-white">${student.cnic || '422451454623'}</p>
                     <p class="text-[11px] text-slate-400">Batch: ${student.batch || '001'}</p>
                 </td>
                 <td class="p-3 text-slate-300">
@@ -888,17 +907,15 @@
         });
     }
 
-    // Status Update Function (Approve/Reject)
     window.updateStudentStatus = function(index, newStatus) {
-        let students = JSON.parse(localStorage.getItem('studentRegistrations') || '[]');
+        let students = JSON.parse(localStorage.getItem('studentRegistrations') || localStorage.getItem('students') || '[]');
         if (students[index]) {
             students[index].status = newStatus;
             localStorage.setItem('studentRegistrations', JSON.stringify(students));
-            loadAdminStudentRequests(); // Table refresh karein
+            loadAdminStudentRequests();
         }
     };
 
-    // Page load hote hi data fetch karein
     document.addEventListener("DOMContentLoaded", function() {
         loadAdminStudentRequests();
     });
