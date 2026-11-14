@@ -64,6 +64,7 @@ function renderProducts(productsArray) {
         const hhcVal = item.hhcPrice !== undefined ? item.hhcPrice : mainRate;
         const oshiVal = item.oshiPrice !== undefined ? item.oshiPrice : mainRate;
         const markazVal = item.markazPrice !== undefined ? item.markazPrice : mainRate;
+        const primeVal = item.primePrice !== undefined ? item.primePrice : mainRate;
 
         const imgUrl = (item.images && item.images.length > 0) ? item.images[0] : (item.image || 'logo.png');
         const safeTitle = (item.title || 'Product').replace(/'/g, "\\'");
@@ -93,18 +94,18 @@ function renderProducts(productsArray) {
                         </div>
                     </div>
 
-                    <!-- Our Main Rate Box (Placed right below the 3 dropship box) -->
-                    <div style="background: #1e1b4b; padding: 8px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #312e81; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
-                        <span style="color: #c7d2fe; font-weight: 700;">Our Main Rate:</span>
-                        <strong style="color: #818cf8; font-size: 13px;">PKR ${mainRate}</strong>
+                    <!-- PRIME RATE right above the Cart button -->
+                    <div style="background: #2e1065; padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #7c3aed; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                        <span style="color: #e9d5ff; font-weight: 700;">PRIME RATE:</span>
+                        <strong style="color: #c084fc; font-size: 14px;">PKR ${primeVal}</strong>
                     </div>
                     
                     <div class="product-footer">
                         <div class="card-buttons" style="width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                            <button class="btn-cart-sm" onclick="addToDropshipCart('${item.id}', '${safeTitle}', ${mainRate})">
+                            <button class="btn-cart-sm" onclick="addToDropshipCart('${item.id}', '${safeTitle}', ${primeVal})">
                                 <i class="fas fa-shopping-cart"></i> Cart
                             </button>
-                            <button class="btn-buynow-sm" onclick="buyNowDropship('${item.id}', '${safeTitle}', ${mainRate})">
+                            <button class="btn-buynow-sm" onclick="buyNowDropship('${item.id}', '${safeTitle}', ${primeVal})">
                                 <i class="fas fa-bolt"></i> Buy Now
                             </button>
                         </div>
@@ -155,7 +156,7 @@ window.addToDropshipCart = function(id, title, price) {
     cartCount++;
     const badge = document.getElementById('cartCount');
     if (badge) badge.innerText = cartCount;
-    alert(`"${title}" Cart mein add ho gaya hai!`);
+    alert(`"${title}" (PKR ${price}) Cart mein add ho gaya hai!`);
 };
 
 window.buyNowDropship = function(id, title, price) {
