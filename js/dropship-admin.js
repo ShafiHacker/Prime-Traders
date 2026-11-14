@@ -3,9 +3,9 @@ import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.g
 
 const firebaseConfig = {
     apiKey: "AIzaSyD-Placeholder",
-    authDomain: "prime-traders.firebaseapp.com",
-    projectId: "prime-traders",
-    storageBucket: "prime-traders.appspot.com",
+    authDomain: "prime-traders-f3eec.firebaseapp.com",
+    projectId: "prime-traders-f3eec",
+    storageBucket: "prime-traders-f3eec.appspot.com",
     messagingSenderId: "123456789",
     appId: "1:123456:web:abcdef"
 };
