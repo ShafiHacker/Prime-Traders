@@ -1,11 +1,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyD-YourAPIKeyHere-Placeholder",
-    authDomain: "prime-traders.firebaseapp.com",
-    projectId: "prime-traders",
-    storageBucket: "prime-traders.appspot.com",
+    apiKey: "AIzaSyD-Placeholder",
+    authDomain: "prime-traders-f3eec.firebaseapp.com",
+    projectId: "prime-traders-f3eec",
+    storageBucket: "prime-traders-f3eec.appspot.com",
     messagingSenderId: "123456789",
     appId: "1:123456:web:abcdef"
 };
