@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -11,13 +11,8 @@ const firebaseConfig = {
     measurementId: "G-6CGVKBZFJK"
 };
 
-let db;
-try {
-    const app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-} catch (e) {
-    db = getFirestore();
-}
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const db = getFirestore(app);
 
 const productsGrid = document.getElementById('dropshipProductsGrid');
 const totalItemsBadge = document.getElementById('totalItemsBadge');
@@ -30,7 +25,10 @@ async function fetchDropshipCatalog() {
     productsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding: 40px; color:#64748b;">Loading Dropship Catalog...</p>';
 
     try {
+        console.log("Fetching catalog from Firestore...");
         const querySnapshot = await getDocs(collection(db, "products"));
+        console.log("Catalog docs fetched:", querySnapshot.size);
+        
         allProducts = [];
 
         querySnapshot.forEach((docSnap) => {
@@ -45,7 +43,7 @@ async function fetchDropshipCatalog() {
 
     } catch (error) {
         console.error("Error fetching dropship products:", error);
-        productsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#ef4444;">Failed to load products.</p>';
+        productsGrid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color:#ef4444;">Error: ${error.message}</p>`;
     }
 }
 
