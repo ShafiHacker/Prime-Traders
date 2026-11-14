@@ -19,7 +19,7 @@
             --text-muted: #64748b;
             --accent-orange: #f59e0b;
             --accent-orange-hover: #d97706;
-            --accent-blue: #1d4ed8;
+            --accent-blue: #0b132b;
             --border-color: #e2e8f0;
         }
 
@@ -35,13 +35,13 @@
             color: var(--text-dark);
         }
 
-        /* Top Announcement Strip */
+        /* Top Announcement Strip (Exact match with main site) */
         .top-strip {
             background-color: var(--bg-top-bar);
             color: #0b132b;
             font-size: 12px;
             font-weight: 700;
-            padding: 6px 4%;
+            padding: 8px 4%;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -56,7 +56,7 @@
             margin-right: 5px;
         }
 
-        /* Main Dark Header (Same as primewholesale.shop) */
+        /* Main Dark Header */
         header {
             background-color: var(--bg-header);
             color: #ffffff;
@@ -165,7 +165,7 @@
             align-items: start;
         }
 
-        /* Left Sidebar: Categories (Light Theme) */
+        /* Left Sidebar: Categories */
         .sidebar-card {
             background: var(--bg-card);
             border-radius: 14px;
@@ -215,7 +215,7 @@
 
         .category-item.active {
             background: #eff6ff;
-            color: var(--accent-blue);
+            color: #1d4ed8;
             font-weight: 700;
         }
 
@@ -229,11 +229,11 @@
         }
 
         .category-item.active .cat-count {
-            background: var(--accent-blue);
+            background: #1d4ed8;
             color: #ffffff;
         }
 
-        /* Right Content Area: Products (No Banners) */
+        /* Right Content Area */
         .content-header {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -346,10 +346,16 @@
         .product-footer {
             margin-top: auto;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 10px;
             padding-top: 10px;
             border-top: 1px solid #f1f5f9;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .price-label {
@@ -365,21 +371,51 @@
             color: var(--text-dark);
         }
 
-        .btn-order {
-            background: var(--accent-orange);
-            color: #0b132b;
-            border: none;
-            padding: 8px 14px;
+        /* Dual Buttons style matching 1st image */
+        .card-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .btn-cart-sm {
+            background: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fcd34d;
+            padding: 8px 6px;
             border-radius: 8px;
             font-size: 12px;
             font-weight: 700;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
             transition: 0.2s;
         }
 
-        .btn-order:hover {
-            background: var(--accent-orange-hover);
+        .btn-cart-sm:hover {
+            background: #fde68a;
+        }
+
+        .btn-buynow-sm {
+            background: var(--bg-header);
             color: #ffffff;
+            border: none;
+            padding: 8px 6px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: 0.2s;
+        }
+
+        .btn-buynow-sm:hover {
+            background: #1e293b;
         }
 
         /* Responsive */
@@ -397,14 +433,15 @@
 </head>
 <body>
 
-    <!-- Top Yellow Strip -->
+    <!-- Top Yellow Strip (Exact Match with primewholesale.shop) -->
     <div class="top-strip">
         <div class="top-strip-left">
-            <span><i class="fas fa-bolt"></i> Prime Traders Dropshipping & Wholesale Portal</span>
-            <span><i class="fas fa-truck"></i> Fast Delivery Across Pakistan</span>
+            <span><i class="fas fa-bolt"></i> Azadi Offer - DC Free on Maximum Products</span>
+            <span><i class="fas fa-truck"></i> Free Delivery</span>
+            <span><i class="fas fa-money-bill-wave"></i> Cash on Delivery</span>
         </div>
         <div>
-            <span><i class="fas fa-phone-alt"></i> 0331-3534676</span>
+            <span><i class="fas fa-shield-alt"></i> Secure Shopping   |   <i class="fas fa-phone-alt"></i> 0331-3534676</span>
         </div>
     </div>
 
@@ -414,7 +451,7 @@
             <div class="brand-logo">P</div>
             <div class="brand-text">
                 <h1>PRIME TRADERS</h1>
-                <p>DROPSHIPPING HUB</p>
+                <p>WHOLESALE & DROPSHIP HUB</p>
             </div>
         </a>
 
@@ -425,7 +462,7 @@
         </div>
     </header>
 
-    <!-- Main Body (Light Theme, No Banners) -->
+    <!-- Main Body -->
     <div class="main-container">
         
         <!-- Left Categories Sidebar -->
@@ -462,15 +499,15 @@
             <div class="content-header">
                 <div>
                     <h2><i class="fas fa-fire" style="color:#f97316;"></i> AVAILABLE DROPSHIP PRODUCTS</h2>
-                    <p>Browse trending dropshipping items at wholesale rates without banners.</p>
+                    <p>Browse trending dropshipping items at wholesale rates.</p>
                 </div>
                 <div class="total-pill" id="totalItemsBadge">Total: 27 Items</div>
             </div>
 
-            <!-- Products Grid Container (Apne Firebase script ko is ID se connect rakhein) -->
+            <!-- Products Grid Container -->
             <div class="products-grid" id="dropshipProductsGrid">
                 
-                <!-- Sample Product Card (Firebase load hone par yeh replace ho jayega) -->
+                <!-- Sample Product Card with dual Cart & Buy Now buttons -->
                 <div class="product-card">
                     <div class="product-img-box">
                         <span class="badge-tag">Wholesale</span>
@@ -480,11 +517,16 @@
                         <div class="product-title">Sample Dropship Product</div>
                         <div class="product-desc">Wholesale price for online sellers & dropshippers.</div>
                         <div class="product-footer">
-                            <div>
-                                <span class="price-label">Wholesale Price</span>
-                                <span class="price-val">Rs. 1,500</span>
+                            <div class="price-row">
+                                <div>
+                                    <span class="price-label">Wholesale Price</span>
+                                    <span class="price-val">Rs. 1,500</span>
+                                </div>
                             </div>
-                            <button class="btn-order">Add to Order</button>
+                            <div class="card-buttons">
+                                <button class="btn-cart-sm"><i class="fas fa-shopping-cart"></i> Cart</button>
+                                <button class="btn-buynow-sm"><i class="fas fa-bolt"></i> Buy Now</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -493,9 +535,6 @@
         </main>
 
     </div>
-
-    <!-- Apni purani Firebase JS files ke script tags yahan neeche paste karein -->
-    <!-- Example: <script type="module" src="js/dropshipping.js"></script> -->
 
 </body>
 </html>
