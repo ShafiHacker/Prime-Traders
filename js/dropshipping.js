@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, getFirestore, collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCRkKoE48FjYIjYfUNFEYzcxNueKUm6YOM",
@@ -27,6 +27,26 @@ const totalItemsBadge = document.getElementById('totalItemsBadge');
 const categoryList = document.getElementById('categoryList');
 
 let allProducts = [];
+let selectedOrderProduct = null;
+
+function showToast(message) {
+    let existingToast = document.getElementById('customToastNotification');
+    if (existingToast) existingToast.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'customToastNotification';
+    toast.innerText = message;
+    toast.style.cssText = `
+        position: fixed; bottom: 30px; right: 30px; background: #10b981; color: #ffffff;
+        padding: 12px 20px; border-radius: 8px; font-weight: 700; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+        z-index: 99999; font-family: sans-serif; font-size: 13px; transition: opacity 0.3s ease;
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 2500);
+}
 
 async function fetchDropshipCatalog() {
     if (!productsGrid) return;
@@ -85,7 +105,6 @@ function renderProducts(productsArray) {
                     </div>
                     <div class="product-title">${item.title || 'Untitled'}</div>
                     
-                    <!-- 3 Platform Rates Box -->
                     <div style="background: #0f172a; padding: 8px; border-radius: 8px; margin: 8px 0; border: 1px solid #1e293b; font-size: 11px;">
                         <div style="display: flex; justify-content: space-between; color: #94a3b8; padding: 2px 0;">
                             <span>HHC Dropshipping:</span> <strong style="color: #f59e0b;">PKR ${hhcVal}</strong>
@@ -98,7 +117,6 @@ function renderProducts(productsArray) {
                         </div>
                     </div>
 
-                    <!-- PRIME RATE right above the Cart button -->
                     <div style="background: #2e1065; padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid #7c3aed; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
                         <span style="color: #e9d5ff; font-weight: 700;">PRIME RATE:</span>
                         <strong style="color: #c084fc; font-size: 14px;">PKR ${primeVal}</strong>
@@ -109,7 +127,7 @@ function renderProducts(productsArray) {
                             <button class="btn-cart-sm" onclick="addToDropshipCart('${item.id}', '${safeTitle}', ${primeVal})">
                                 <i class="fas fa-shopping-cart"></i> Cart
                             </button>
-                            <button class="btn-buynow-sm" onclick="buyNowDropship('${item.id}', '${safeTitle}', ${primeVal})">
+                            <button class="btn-buynow-sm" onclick="openCheckoutModal('${safeTitle}', ${primeVal})">
                                 <i class="fas fa-bolt"></i> Buy Now
                             </button>
                         </div>
@@ -121,6 +139,76 @@ function renderProducts(productsArray) {
 
     productsGrid.innerHTML = cardsHTML;
 }
+
+// Open Checkout Modal
+window.openCheckoutModal = function(title, price) {
+    selectedOrderProduct = { title, price };
+    
+    document.getElementById('modalProductTitle').innerText = title;
+    document.getElementById('modalSubtotalText').innerText = 'PKR ' + price.toLocaleString();
+    document.getElementById('modalDeliveryText').innerText = 'PKR 200';
+    document.getElementById('modalTotalText').innerText = 'PKR ' + (price + 200).toLocaleString();
+    
+    // Clear inputs
+    document.getElementById('modalCustName').value = '';
+    document.getElementById('modalCustPhone').value = '';
+    document.getElementById('modalCustCity').value = '';
+    document.getElementById('modalCustAddress').value = '';
+
+    document.getElementById('dropshipCheckoutModal').style.display = 'flex';
+};
+
+window.closeCheckoutModal = function() {
+    document.getElementById('dropshipCheckoutModal').style.display = 'none';
+};
+
+// Submit Order to Firestore
+window.submitDropshipOrder = async function(e) {
+    e.preventDefault();
+    if (!selectedOrderProduct) return;
+
+    const name = document.getElementById('modalCustName').value.trim();
+    const phone = document.getElementById('modalCustPhone').value.trim();
+    const city = document.getElementById('modalCustCity').value.trim();
+    const address = document.getElementById('modalCustAddress').value.trim();
+    
+    const deliveryCharges = 200;
+    const totalAmount = selectedOrderProduct.price + deliveryCharges;
+    const trackingId = 'PT-' + Math.floor(1000 + Math.random() * 9000);
+
+    const submitBtn = document.getElementById('modalSubmitBtn');
+    submitBtn.innerText = "Placing Order...";
+    submitBtn.disabled = true;
+
+    try {
+        await addDoc(collection(db, "orders"), {
+            customTrackId: trackingId,
+            custName: name,
+            custPhone: phone,
+            custCity: city,
+            custAddress: address,
+            prodDesc: selectedOrderProduct.title,
+            parcelWeight: "0.5",
+            prodAmount: selectedOrderProduct.price,
+            delCharges: deliveryCharges,
+            totalAmount: totalAmount,
+            status: "Pending",
+            source: "Dropshipping Hub",
+            createdAt: serverTimestamp()
+        });
+
+        showToast(`Order Placed! Tracking ID: ${trackingId}`);
+        alert(`Order successfully placed!\nTracking ID: ${trackingId}\nAdmin dashboard ke Shipments mein order add ho gaya hai.`);
+        closeCheckoutModal();
+
+    } catch (error) {
+        console.error("Error submitting order:", error);
+        alert("Order submit karne mein masla aaya. Dobara koshish karein!");
+    } finally {
+        submitBtn.innerText = "SUBMIT ORDER TO MAIN DASHBOARD";
+        submitBtn.disabled = false;
+    }
+};
 
 function updateCategoryCounts(products) {
     const countAllEl = document.getElementById('count-all');
@@ -160,11 +248,7 @@ window.addToDropshipCart = function(id, title, price) {
     cartCount++;
     const badge = document.getElementById('cartCount');
     if (badge) badge.innerText = cartCount;
-    alert(`"${title}" (PKR ${price}) Cart mein add ho gaya hai!`);
-};
-
-window.buyNowDropship = function(id, title, price) {
-    alert(`Direct Order: ${title} - Rate: PKR ${price}`);
+    showToast(`"${title}" (PKR ${price}) Cart mein add ho gaya hai!`);
 };
 
 document.addEventListener('DOMContentLoaded', fetchDropshipCatalog);
