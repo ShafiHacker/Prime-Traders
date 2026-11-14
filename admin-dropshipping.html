@@ -126,6 +126,33 @@
             </div>
         </main>
     </div>
+<!-- Admin Dropshipping Central Sync Table -->
+<div style="background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; margin-top: 20px; overflow-x: auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div>
+            <h3 style="color: #f59e0b; font-size: 16px; margin: 0;">CENTRAL PRODUCTS & DROPSHIP PRICING</h3>
+            <p style="color: #94a3b8; font-size: 12px; margin-top: 4px;">Products automatically sync from main store. Set custom rates for dropshippers below.</p>
+        </div>
+        <span id="adminTotalProducts" style="background: #1e293b; color: #f8fafc; padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 700;">Total Products: 0</span>
+    </div>
 
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+        <thead>
+            <tr style="border-bottom: 2px solid #334155; color: #94a3b8; font-size: 12px; text-transform: uppercase;">
+                <th style="padding: 12px;">Image</th>
+                <th style="padding: 12px;">Product Title & Category</th>
+                <th style="padding: 12px;">Main Site Rate</th>
+                <th style="padding: 12px;">Set Dropship Rate</th>
+                <th style="padding: 12px;">Action</th>
+            </tr>
+        </thead>
+        <tbody id="dropshipAdminTableBody">
+            <!-- JS se data yahan load hoga -->
+        </tbody>
+    </table>
+</div>
+
+<!-- File ke bilkul aakhir mein yeh script tag lagayein -->
+<script type="module" src="js/dropship-admin.js"></script>
 </body>
 </html>
