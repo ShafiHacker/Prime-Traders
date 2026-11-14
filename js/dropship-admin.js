@@ -1,4 +1,4 @@
-import { db } from './firebase-config.js'; // Apni firebase config file ka sahi path check kar lein
+import { db } from './firebase-config.js';
 import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const tableBody = document.getElementById('dropshipAdminTableBody');
