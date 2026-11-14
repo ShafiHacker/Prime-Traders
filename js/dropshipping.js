@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { initializeFirestore, experimentalForceLongPolling, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCRkKoE48FjYIjYfUNFEYzcxNueKUm6YOM",
@@ -12,7 +12,7 @@ const firebaseConfig = {
 };
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const db = getFirestore(app);
+const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 
 const productsGrid = document.getElementById('dropshipProductsGrid');
 const totalItemsBadge = document.getElementById('totalItemsBadge');
@@ -25,10 +25,7 @@ async function fetchDropshipCatalog() {
     productsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding: 40px; color:#64748b;">Loading Dropship Catalog...</p>';
 
     try {
-        console.log("Fetching catalog from Firestore...");
         const querySnapshot = await getDocs(collection(db, "products"));
-        console.log("Catalog docs fetched:", querySnapshot.size);
-        
         allProducts = [];
 
         querySnapshot.forEach((docSnap) => {
