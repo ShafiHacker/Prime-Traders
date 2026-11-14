@@ -21,7 +21,6 @@ try {
 const tableBody = document.getElementById('dropshipAdminTableBody');
 const totalProductsEl = document.getElementById('adminTotalProducts');
 
-// Table Header ko bhi dynamically update kar dete hain taaki headers saaf nazar aayein
 function setupTableHeader() {
     const tableHead = document.querySelector('table thead tr');
     if (tableHead) {
@@ -32,6 +31,7 @@ function setupTableHeader() {
             <th style="padding: 12px; text-align: left; color: #f59e0b;">HHC RATE</th>
             <th style="padding: 12px; text-align: left; color: #38bdf8;">OSHI RATE</th>
             <th style="padding: 12px; text-align: left; color: #10b981;">MARKAZ RATE</th>
+            <th style="padding: 12px; text-align: left; color: #c084fc;">PRIME RATE</th>
             <th style="padding: 12px; text-align: left;">ACTION</th>
         `;
     }
@@ -40,7 +40,7 @@ function setupTableHeader() {
 async function loadCentralProductsForDropship() {
     if (!tableBody) return;
     setupTableHeader();
-    tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#94a3b8;">Loading Central Products...</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#94a3b8;">Loading Central Products...</td></tr>';
 
     try {
         const querySnapshot = await getDocs(collection(db, "products"));
@@ -56,6 +56,7 @@ async function loadCentralProductsForDropship() {
             const hhcVal = data.hhcPrice !== undefined ? data.hhcPrice : mainRate;
             const oshiVal = data.oshiPrice !== undefined ? data.oshiPrice : mainRate;
             const markazVal = data.markazPrice !== undefined ? data.markazPrice : mainRate;
+            const primeVal = data.primePrice !== undefined ? data.primePrice : mainRate;
             const imgUrl = (data.images && data.images.length > 0) ? data.images[0] : (data.image || 'logo.png');
 
             html += `
@@ -72,19 +73,23 @@ async function loadCentralProductsForDropship() {
                     </td>
                     <td style="padding: 12px;">
                         <input type="number" id="hhc-input-${id}" value="${hhcVal}" 
-                            style="width: 90px; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #f59e0b; font-weight: 700;">
+                            style="width: 75px; padding: 6px 6px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #f59e0b; font-weight: 700;">
                     </td>
                     <td style="padding: 12px;">
                         <input type="number" id="oshi-input-${id}" value="${oshiVal}" 
-                            style="width: 90px; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #38bdf8; font-weight: 700;">
+                            style="width: 75px; padding: 6px 6px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #38bdf8; font-weight: 700;">
                     </td>
                     <td style="padding: 12px;">
                         <input type="number" id="markaz-input-${id}" value="${markazVal}" 
-                            style="width: 90px; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #10b981; font-weight: 700;">
+                            style="width: 75px; padding: 6px 6px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #10b981; font-weight: 700;">
+                    </td>
+                    <td style="padding: 12px;">
+                        <input type="number" id="prime-input-${id}" value="${primeVal}" 
+                            style="width: 75px; padding: 6px 6px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #c084fc; font-weight: 700;">
                     </td>
                     <td style="padding: 12px;">
                         <button onclick="updateDropshipRates('${id}')" id="btn-save-${id}"
-                            style="background: #f59e0b; color: #0b132b; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 700; cursor: pointer;">
+                            style="background: #f59e0b; color: #0b132b; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 700; cursor: pointer;">
                             Save Rates
                         </button>
                     </td>
@@ -92,12 +97,12 @@ async function loadCentralProductsForDropship() {
             `;
         });
 
-        tableBody.innerHTML = html || '<tr><td colspan="7" style="text-align:center; padding:20px; color:#94a3b8;">No products found in Central Database.</td></tr>';
+        tableBody.innerHTML = html || '<tr><td colspan="8" style="text-align:center; padding:20px; color:#94a3b8;">No products found in Central Database.</td></tr>';
         if (totalProductsEl) totalProductsEl.innerText = `Total Products: ${count}`;
 
     } catch (error) {
         console.error("Error loading central products:", error);
-        tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#ef4444; padding:20px;">Database connection error!</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#ef4444; padding:20px;">Database connection error!</td></tr>';
     }
 }
 
@@ -105,13 +110,15 @@ window.updateDropshipRates = async function(productId) {
     const hhcInput = document.getElementById(`hhc-input-${productId}`);
     const oshiInput = document.getElementById(`oshi-input-${productId}`);
     const markazInput = document.getElementById(`markaz-input-${productId}`);
+    const primeInput = document.getElementById(`prime-input-${productId}`);
     const btnEl = document.getElementById(`btn-save-${productId}`);
 
     const hhcPrice = Number(hhcInput.value);
     const oshiPrice = Number(oshiInput.value);
     const markazPrice = Number(markazInput.value);
+    const primePrice = Number(primeInput.value);
 
-    if (isNaN(hhcPrice) || isNaN(oshiPrice) || isNaN(markazPrice)) {
+    if (isNaN(hhcPrice) || isNaN(oshiPrice) || isNaN(markazPrice) || isNaN(primePrice)) {
         alert("Please enter valid amounts for all rates!");
         return;
     }
@@ -124,7 +131,8 @@ window.updateDropshipRates = async function(productId) {
         await updateDoc(productRef, {
             hhcPrice: hhcPrice,
             oshiPrice: oshiPrice,
-            markazPrice: markazPrice
+            markazPrice: markazPrice,
+            primePrice: primePrice
         });
 
         btnEl.innerText = "Saved ✓";
