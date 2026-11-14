@@ -1577,3 +1577,127 @@
         }
     };
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Operations Dashboard header text clean karna
+        const headerSub = document.querySelector('header .hidden.md\\:block');
+        if (headerSub) {
+            headerSub.innerHTML = '<h2 class="text-sm font-black text-white uppercase tracking-wider">E-Commerce Student Portal</h2><p class="text-[10px] text-amber-400">Manage student verifications and documents.</p>';
+        }
+
+        // Clean text formatting
+        const descEls = document.querySelectorAll('p');
+        descEls.forEach(el => {
+            if (el.innerHTML.includes('[cite:')) {
+                el.innerHTML = el.innerHTML.replace(/\[cite:[^\]]*\]/g, '');
+            }
+        });
+
+        loadAdminStudentRequests();
+    });
+
+    async function loadAdminStudentRequests() {
+        const tableBody = document.getElementById('adminStudentsTableBody');
+        if (!tableBody) return;
+
+        tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400 font-semibold">Fetching student registrations from Firebase...</td></tr>`;
+
+        try {
+            const snapshot = await db.collection('students').orderBy('createdAt', 'desc').get();
+
+            if (snapshot.empty) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400 font-semibold">No student registration requests found in database.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const docId = doc.id;
+
+                let statusBadge = '';
+                if (data.status === 'approved') {
+                    statusBadge = `<span class="px-2.5 py-1 bg-emerald-950 text-emerald-400 border border-emerald-500/40 rounded-full text-[10px] font-bold uppercase">Approved</span>`;
+                } else if (data.status === 'rejected') {
+                    statusBadge = `<span class="px-2.5 py-1 bg-rose-950 text-rose-400 border border-rose-500/40 rounded-full text-[10px] font-bold uppercase">Rejected</span>`;
+                } else {
+                    statusBadge = `<span class="px-2.5 py-1 bg-amber-950 text-amber-400 border border-amber-500/40 rounded-full text-[10px] font-bold uppercase">Pending</span>`;
+                }
+
+                let cnicImg = data.cnicImage || data.cnicFrontUrl || data.cnicPic || data.cnicURL || '';
+                let bankImg = data.bankImage || data.bankReceiptUrl || data.bankSlip || data.bankURL || '';
+
+                let docsButtons = `<div class="flex items-center gap-2 mt-1.5">`;
+                if (cnicImg) {
+                    docsButtons += `<a href="${cnicImg}" target="_blank" class="bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-id-card"></i> CNIC Doc</a>`;
+                }
+                if (bankImg) {
+                    docsButtons += `<a href="${bankImg}" target="_blank" class="bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-receipt"></i> Bank Slip</a>`;
+                }
+                if (!cnicImg && !bankImg) {
+                    docsButtons += `<span class="text-slate-500 text-[10px]">No Documents</span>`;
+                }
+                docsButtons += `</div>`;
+
+                html += `
+                    <tr class="border-b border-slate-800 hover:bg-slate-900/50 transition">
+                        <td class="p-3">
+                            <p class="font-bold text-white">${data.fullName || 'N/A'}</p>
+                            <p class="text-amber-400 font-semibold text-xs">${data.businessName || 'N/A'}</p>
+                        </td>
+                        <td class="p-3">
+                            <p class="text-slate-300">${data.email || 'N/A'}</p>
+                            <p class="text-slate-400 text-[11px]">${data.phone || 'N/A'}</p>
+                        </td>
+                        <td class="p-3">
+                            <p class="text-slate-300">${data.cnic || 'N/A'}</p>
+                            <p class="text-purple-300 font-semibold text-[11px]">Batch: ${data.batchNo || 'N/A'}</p>
+                        </td>
+                        <td class="p-3">
+                            <p class="text-slate-300">${data.bankDetails || 'N/A'}</p>
+                            ${docsButtons}
+                        </td>
+                        <td class="p-3">
+                            ${statusBadge}
+                        </td>
+                        <td class="p-3 text-center space-x-2">
+                            <button onclick="adminVerifyStudent('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition">
+                                <i class="fa-solid fa-check mr-1"></i> Approve
+                            </button>
+                            <button onclick="adminVerifyStudent('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition">
+                                <i class="fa-solid fa-xmark mr-1"></i> Reject
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            tableBody.innerHTML = html;
+        } catch (err) {
+            console.error("Error loading students:", err);
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-rose-400 font-semibold">Error loading data: ${err.message}</td></tr>`;
+        }
+    }
+
+    window.adminVerifyStudent = async function(docId, newStatus) {
+        try {
+            const studentRef = db.collection('students').doc(docId);
+            await studentRef.update({
+                status: newStatus
+            });
+
+            alert("Student status updated successfully!");
+            loadAdminStudentRequests();
+        } catch (err) {
+            console.error("Update error:", err);
+            try {
+                await db.collection('students').doc(docId).set({
+                    status: newStatus
+                }, { merge: true });
+                alert("Student status updated successfully!");
+                loadAdminStudentRequests();
+            } catch (innerErr) {
+                alert("Status update failed: " + innerErr.message);
+            }
+        }
+    };
+</script>
