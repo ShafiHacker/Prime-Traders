@@ -1,5 +1,26 @@
-import { db } from './firebase-config.js';
-import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// Import Firebase from CDN just like admin.html uses
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// Firebase Configuration (Matching Prime Traders Setup)
+const firebaseConfig = {
+    apiKey: "AIzaSyD-YourAPIKeyHere-Placeholder", // Agar aapke paas config alag file mein hai toh wohi use karein
+    authDomain: "prime-traders.firebaseapp.com",
+    projectId: "prime-traders",
+    storageBucket: "prime-traders.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456:web:abcdef"
+};
+
+// Initialize Firebase safely
+let db;
+try {
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+} catch (e) {
+    // Fallback if app is already initialized
+    db = getFirestore();
+}
 
 const tableBody = document.getElementById('dropshipAdminTableBody');
 const totalProductsEl = document.getElementById('adminTotalProducts');
@@ -7,10 +28,9 @@ const totalProductsEl = document.getElementById('adminTotalProducts');
 // Central Products Load Karne Ka Function
 async function loadCentralProductsForDropship() {
     if (!tableBody) return;
-    tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Loading Central Products...</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">Loading Central Products...</td></tr>';
 
     try {
-        // 'products' collection se saara central data uthana
         const querySnapshot = await getDocs(collection(db, "products"));
         let html = '';
         let count = 0;
@@ -20,16 +40,14 @@ async function loadCentralProductsForDropship() {
             const data = docSnap.data();
             const id = docSnap.id;
 
-            // Central/Main wholesale rate
-            const mainRate = data.price || data.wholesalePrice || 0;
-            // Agar dropshipRate pehle se set hai toh wo dikhaye, warna mainRate dikhaye
+            const mainRate = data.price || data.wholesaleRate || data.wholesalePrice || 0;
             const currentDropshipRate = data.dropshipPrice !== undefined ? data.dropshipPrice : mainRate;
             const imgUrl = (data.images && data.images.length > 0) ? data.images[0] : (data.image || 'logo.png');
 
             html += `
-                <tr style="border-bottom: 1px solid #1e293b;">
+                <tr style="border-bottom: 1px solid #1f2937;">
                     <td style="padding: 12px;">
-                        <img src="${imgUrl}" alt="product" style="width: 45px; height: 45px; object-fit: cover; border-radius: 8px;">
+                        <img src="${imgUrl}" alt="product" style="width: 45px; height: 45px; object-fit: cover; border-radius: 8px; border: 1px solid #374151;">
                     </td>
                     <td style="padding: 12px;">
                         <div style="font-weight: 700; color: #f8fafc;">${data.title || 'Untitled Product'}</div>
@@ -55,7 +73,7 @@ async function loadCentralProductsForDropship() {
             `;
         });
 
-        tableBody.innerHTML = html || '<tr><td colspan="5" style="text-align:center; padding:20px;">No products found in Central Database.</td></tr>';
+        tableBody.innerHTML = html || '<tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">No products found in Central Database.</td></tr>';
         if (totalProductsEl) totalProductsEl.innerText = `Total Products: ${count}`;
 
     } catch (error) {
@@ -80,7 +98,6 @@ window.updateDropshipRate = async function(productId) {
 
     try {
         const productRef = doc(db, "products", productId);
-        // Sirf dropshipPrice field update hoga, main website ki price nahi badlegi
         await updateDoc(productRef, {
             dropshipPrice: newRate
         });
@@ -104,5 +121,4 @@ window.updateDropshipRate = async function(productId) {
     }
 };
 
-// Page load hote hi products load karein
 document.addEventListener('DOMContentLoaded', loadCentralProductsForDropship);
