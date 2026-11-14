@@ -21,8 +21,25 @@ try {
 const tableBody = document.getElementById('dropshipAdminTableBody');
 const totalProductsEl = document.getElementById('adminTotalProducts');
 
+// Table Header ko bhi dynamically update kar dete hain taaki headers saaf nazar aayein
+function setupTableHeader() {
+    const tableHead = document.querySelector('table thead tr');
+    if (tableHead) {
+        tableHead.innerHTML = `
+            <th style="padding: 12px; text-align: left;">IMAGE</th>
+            <th style="padding: 12px; text-align: left;">PRODUCT TITLE & CATEGORY</th>
+            <th style="padding: 12px; text-align: left;">MAIN RATE</th>
+            <th style="padding: 12px; text-align: left; color: #f59e0b;">HHC RATE</th>
+            <th style="padding: 12px; text-align: left; color: #38bdf8;">OSHI RATE</th>
+            <th style="padding: 12px; text-align: left; color: #10b981;">MARKAZ RATE</th>
+            <th style="padding: 12px; text-align: left;">ACTION</th>
+        `;
+    }
+}
+
 async function loadCentralProductsForDropship() {
     if (!tableBody) return;
+    setupTableHeader();
     tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#94a3b8;">Loading Central Products...</td></tr>';
 
     try {
@@ -55,15 +72,15 @@ async function loadCentralProductsForDropship() {
                     </td>
                     <td style="padding: 12px;">
                         <input type="number" id="hhc-input-${id}" value="${hhcVal}" 
-                            style="width: 90px; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #ffffff; font-weight: 700;">
+                            style="width: 90px; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #f59e0b; font-weight: 700;">
                     </td>
                     <td style="padding: 12px;">
                         <input type="number" id="oshi-input-${id}" value="${oshiVal}" 
-                            style="width: 90px; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #ffffff; font-weight: 700;">
+                            style="width: 90px; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #38bdf8; font-weight: 700;">
                     </td>
                     <td style="padding: 12px;">
                         <input type="number" id="markaz-input-${id}" value="${markazVal}" 
-                            style="width: 90px; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #ffffff; font-weight: 700;">
+                            style="width: 90px; padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #10b981; font-weight: 700;">
                     </td>
                     <td style="padding: 12px;">
                         <button onclick="updateDropshipRates('${id}')" id="btn-save-${id}"
