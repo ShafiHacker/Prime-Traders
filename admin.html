@@ -1090,10 +1090,12 @@
    <script>
     window.updateStudentStatus = async function(docId, newStatus) {
         try {
-            // Sirf status update karein taake koi invalid object error na aaye
-            await db.collection('students').doc(docId).update({
-                status: newStatus
-            });
+            // Firestore mein status ke sath valid date object bhejein taake conflict na ho
+            await db.collection('students').doc(docId).set({
+                status: newStatus,
+                updatedAt: new Date()
+            }, { merge: true });
+
             alert("Student status updated successfully!");
             loadAdminStudentRequests(); // Table refresh karein
         } catch (err) {
