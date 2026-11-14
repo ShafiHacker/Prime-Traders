@@ -60,7 +60,11 @@ function renderProducts(productsArray) {
 
     let cardsHTML = '';
     productsArray.forEach(item => {
-        const finalPrice = item.dropshipPrice !== undefined ? item.dropshipPrice : (item.price || item.wholesaleRate || item.wholesalePrice || 0);
+        const mainRate = item.price || item.wholesaleRate || item.wholesalePrice || 0;
+        const hhcVal = item.hhcPrice !== undefined ? item.hhcPrice : mainRate;
+        const oshiVal = item.oshiPrice !== undefined ? item.oshiPrice : mainRate;
+        const markazVal = item.markazPrice !== undefined ? item.markazPrice : mainRate;
+
         const imgUrl = (item.images && item.images.length > 0) ? item.images[0] : (item.image || 'logo.png');
         const safeTitle = (item.title || 'Product').replace(/'/g, "\\'");
 
@@ -75,20 +79,26 @@ function renderProducts(productsArray) {
                         ${item.category || 'General'}
                     </div>
                     <div class="product-title">${item.title || 'Untitled'}</div>
-                    <div class="product-desc">${item.description ? item.description.substring(0, 50) + '...' : 'Available for dropshipping.'}</div>
+                    
+                    <!-- Platform Rates Display -->
+                    <div style="background: #0f172a; padding: 8px; border-radius: 8px; margin: 8px 0; border: 1px solid #1e293b; font-size: 11px;">
+                        <div style="display: flex; justify-content: space-between; color: #94a3b8; padding: 2px 0;">
+                            <span>HHC Dropshipping:</span> <strong style="color: #f59e0b;">PKR ${hhcVal}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; color: #94a3b8; padding: 2px 0;">
+                            <span>Oshi Dropshipping:</span> <strong style="color: #38bdf8;">PKR ${oshiVal}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; color: #94a3b8; padding: 2px 0;">
+                            <span>Markaz Dropshipping:</span> <strong style="color: #10b981;">PKR ${markazVal}</strong>
+                        </div>
+                    </div>
                     
                     <div class="product-footer">
-                        <div class="price-row">
-                            <div>
-                                <span class="price-label">Dropship Price</span>
-                                <span class="price-val">PKR ${finalPrice}</span>
-                            </div>
-                        </div>
-                        <div class="card-buttons">
-                            <button class="btn-cart-sm" onclick="addToDropshipCart('${item.id}', '${safeTitle}', ${finalPrice})">
+                        <div class="card-buttons" style="width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                            <button class="btn-cart-sm" onclick="addToDropshipCart('${item.id}', '${safeTitle}', ${hhcVal})">
                                 <i class="fas fa-shopping-cart"></i> Cart
                             </button>
-                            <button class="btn-buynow-sm" onclick="buyNowDropship('${item.id}', '${safeTitle}', ${finalPrice})">
+                            <button class="btn-buynow-sm" onclick="buyNowDropship('${item.id}', '${safeTitle}', ${hhcVal})">
                                 <i class="fas fa-bolt"></i> Buy Now
                             </button>
                         </div>
@@ -139,11 +149,11 @@ window.addToDropshipCart = function(id, title, price) {
     cartCount++;
     const badge = document.getElementById('cartCount');
     if (badge) badge.innerText = cartCount;
-    alert(`"${title}" (PKR ${price}) Cart mein add ho gaya hai!`);
+    alert(`"${title}" Cart mein add ho gaya hai!`);
 };
 
 window.buyNowDropship = function(id, title, price) {
-    alert(`Direct Order: ${title} - Rate: PKR ${price}`);
+    alert(`Direct Order: ${title}`);
 };
 
 document.addEventListener('DOMContentLoaded', fetchDropshipCatalog);
