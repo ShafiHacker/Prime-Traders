@@ -829,6 +829,81 @@
     </div>
 </div>
 <script>
+    // Function to load and render student registration requests in Admin Panel
+    function loadAdminStudentRequests() {
+        const tableBody = document.getElementById('adminStudentsTableBody');
+        if (!tableBody) return;
+
+        // LocalStorage se students ka data fetch karein (default key 'studentRegistrations')
+        let students = JSON.parse(localStorage.getItem('studentRegistrations') || '[]');
+
+        if (students.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">No student registration requests found in database.</td></tr>`;
+            return;
+        }
+
+        tableBody.innerHTML = '';
+
+        students.forEach((student, index) => {
+            let statusBadge = '';
+            if (student.status === 'APPROVED') {
+                statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full text-xs font-bold">APPROVED</span>`;
+            } else if (student.status === 'REJECTED') {
+                statusBadge = `<span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-2.5 py-1 rounded-full text-xs font-bold">REJECTED</span>`;
+            } else {
+                statusBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-full text-xs font-bold">PENDING VERIFICATION</span>`;
+            }
+
+            const row = document.createElement('tr');
+            row.className = "border-b border-slate-800 hover:bg-slate-900/50 transition";
+            row.innerHTML = `
+                <td class="p-3">
+                    <p class="font-bold text-white">${student.name || student.studentName || 'N/A'}</p>
+                    <p class="text-[11px] text-purple-400">${student.businessName || student.company || 'N/A'}</p>
+                </td>
+                <td class="p-3">
+                    <p class="text-white">${student.email || 'N/A'}</p>
+                    <p class="text-[11px] text-slate-400">${student.phone || 'N/A'}</p>
+                </td>
+                <td class="p-3">
+                    <p class="text-white">${student.cnic || 'N/A'}</p>
+                    <p class="text-[11px] text-slate-400">Batch: ${student.batch || '001'}</p>
+                </td>
+                <td class="p-3 text-slate-300">
+                    ${student.bankDetails || student.bank || 'N/A'}
+                </td>
+                <td class="p-3">
+                    ${statusBadge}
+                </td>
+                <td class="p-3 text-center space-x-2">
+                    <button onclick="updateStudentStatus(${index}, 'APPROVED')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
+                        <i class="fa-solid fa-check mr-1"></i> Approve
+                    </button>
+                    <button onclick="updateStudentStatus(${index}, 'REJECTED')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
+                        <i class="fa-solid fa-xmark mr-1"></i> Reject
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    // Status Update Function (Approve/Reject)
+    window.updateStudentStatus = function(index, newStatus) {
+        let students = JSON.parse(localStorage.getItem('studentRegistrations') || '[]');
+        if (students[index]) {
+            students[index].status = newStatus;
+            localStorage.setItem('studentRegistrations', JSON.stringify(students));
+            loadAdminStudentRequests(); // Table refresh karein
+        }
+    };
+
+    // Page load hote hi data fetch karein
+    document.addEventListener("DOMContentLoaded", function() {
+        loadAdminStudentRequests();
+    });
+</script>
+<script>
     // Fetch Students for Main Admin
     async function loadAdminStudentsList() {
         const tbody = document.getElementById('adminStudentsTableBody');
