@@ -573,7 +573,7 @@ async function loadAdminStats() {
 }
 
 function handleLogout() {
-  auth.signOut().then(() => window.location.href = "login.html");
+  auth.signOut().then(() => window.location.href = "dropshipping.html");
 }
 
 function openAddCodModal() {
