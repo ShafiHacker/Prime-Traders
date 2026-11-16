@@ -665,17 +665,7 @@
             const userCredential = await auth.signInWithEmailAndPassword(email, pass);
             const user = userCredential.user;
 
-            const userDoc = await db.collection('students').doc(user.uid).get();
-            if (userDoc.exists) {
-                const data = userDoc.data();
-                if (data.status !== 'approved') {
-                    await auth.signOut();
-                    alert("Aapka data verification par hai. Approval ke baad aapko WhatsApp ya Email par inform kar diya jayega.");
-                    return;
-                }
-            }
-
-            window.location.href = 'ecommerce-dashboard.html';
+           window.location.href = 'ecommerce-dashboard.html';
         } catch (err) {
             alert("Login Error: " + err.message);
         }
@@ -705,12 +695,11 @@
                 cnic: cnic,
                 batchNo: batchNo || 'N/A',
                 bankDetails: bank,
-                status: 'pending',
+                status: 'approved',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            alert("Student account successfully register ho gaya hai! Verification ke baad approval mil jayegi.");
-            switchStudentTab('login');
+            window.location.href = 'ecommerce-dashboard.html';
         } catch (err) {
             alert("Registration Error: " + err.message);
         }
