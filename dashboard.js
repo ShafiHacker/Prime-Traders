@@ -87,7 +87,7 @@ auth.onAuthStateChanged(async (user) => {
   } else {
     const path = window.location.pathname;
     if (path.includes('dashboard.html') || path.includes('admin.html') || path.includes('rider.html')) {
-      window.location.href = 'login.html';
+      window.location.href = 'dropshipping.html';
     }
   }
 });
