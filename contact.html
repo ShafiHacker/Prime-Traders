@@ -8,10 +8,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDKs for Saving Support Tickets to Database -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="dashboard.js"></script> <!-- Ensure firebase config is linked -->
+    <script src="dashboard.js"></script>
 
     <style>
         :root {
@@ -213,7 +213,7 @@
         <!-- Information Cards Grid -->
         <div class="grid-section">
             
-            <!-- 1. Head Office Information -->
+            <!-- 1. Head Office Main -->
             <div class="card">
                 <h3><i class="fas fa-building"></i> Head Office</h3>
                 <ul class="info-list">
@@ -225,7 +225,31 @@
                 </ul>
             </div>
 
-            <!-- 2. Customer Support - Desk 01 (Shafi Ul Haq) -->
+            <!-- 2. Head Office - Johar Location -->
+            <div class="card">
+                <h3><i class="fas fa-map-marker-alt"></i> Head Office - Johar</h3>
+                <ul class="info-list">
+                    <li><span>Branch Name:</span> <strong>Johar Branch Hub</strong></li>
+                    <li><span>Address:</span> <strong>Gulistan-e-Johar, Karachi</strong></li>
+                    <li><span>City & Postal:</span> <strong>Karachi, 75290</strong></li>
+                    <li><span>Google Maps:</span> <a href="#" target="_blank">View Location <i class="fas fa-external-link-alt"></i></a></li>
+                    <li><span>Working Hours:</span> <strong>Mon - Sat (10 AM - 7 PM)</strong></li>
+                </ul>
+            </div>
+
+            <!-- 3. Head Office - Crossing Details -->
+            <div class="card">
+                <h3><i class="fas fa-map-pin"></i> Head Office - Crossing</h3>
+                <ul class="info-list">
+                    <li><span>Branch Name:</span> <strong>Crossing Logistics Hub</strong></li>
+                    <li><span>Address:</span> <strong>Main Highway Crossing, Karachi</strong></li>
+                    <li><span>City & Postal:</span> <strong>Karachi, 75300</strong></li>
+                    <li><span>Google Maps:</span> <a href="#" target="_blank">View Location <i class="fas fa-external-link-alt"></i></a></li>
+                    <li><span>Working Hours:</span> <strong>Mon - Sat (10 AM - 7 PM)</strong></li>
+                </ul>
+            </div>
+
+            <!-- 4. Customer Support - Desk 01 (Shafi Ul Haq) -->
             <div class="card">
                 <h3><i class="fas fa-headset"></i> Customer Support 01</h3>
                 <ul class="info-list">
@@ -233,11 +257,11 @@
                     <li><span>Representative:</span> <strong>Support Desk 01</strong></li>
                     <li><span>Direct Call:</span> <a href="tel:03313534676">0331-3534676</a></li>
                     <li><span>WhatsApp:</span> <a href="https://wa.me/923313534676" target="_blank">0331-3534676</a></li>
-                    <li><span>Email:</span> <a href="mailto:primetraders.express@gmail.com" style="font-size: 12px;">primetraders.express@gmail.com</a></li>
+                    <li><span>Email:</span> <a href="mailto:primetraders.express@gmail.com" style="font-size: 11px;">primetraders.express@gmail.com</a></li>
                 </ul>
             </div>
 
-            <!-- 3. Customer Support - Desk 02 (Abu Bakar Sarfaraz) -->
+            <!-- 5. Customer Support - Desk 02 (Abu Bakar Sarfaraz) -->
             <div class="card">
                 <h3><i class="fas fa-headset"></i> Customer Support 02</h3>
                 <ul class="info-list">
@@ -245,11 +269,11 @@
                     <li><span>Representative:</span> <strong>Support Desk 02</strong></li>
                     <li><span>Direct Call:</span> <a href="tel:03150570090">0315-0570090</a></li>
                     <li><span>WhatsApp:</span> <a href="https://wa.me/923150570090" target="_blank">0315-0570090</a></li>
-                    <li><span>Email:</span> <a href="mailto:primetraders.express@gmail.com" style="font-size: 12px;">primetraders.express@gmail.com</a></li>
+                    <li><span>Email:</span> <a href="mailto:primetraders.express@gmail.com" style="font-size: 11px;">primetraders.express@gmail.com</a></li>
                 </ul>
             </div>
 
-            <!-- 4. Business & Wholesale Department -->
+            <!-- 6. Business & Wholesale Department -->
             <div class="card">
                 <h3><i class="fas fa-handshake"></i> Wholesale & Business</h3>
                 <ul class="info-list">
@@ -261,12 +285,24 @@
                 </ul>
             </div>
 
+            <!-- 7. Technical Support Box -->
+            <div class="card">
+                <h3><i class="fas fa-tools"></i> Technical Support</h3>
+                <ul class="info-list">
+                    <li><span>Login & Access:</span> <strong>Active</strong></li>
+                    <li><span>Password Reset:</span> <strong>Instant Automation</strong></li>
+                    <li><span>Product Uploads:</span> <strong>Live Support</strong></li>
+                    <li><span>Order Tracking:</span> <strong>Active Dashboard</strong></li>
+                    <li><span>Wallet & Payments:</span> <strong>Secure Gateway</strong></li>
+                </ul>
+            </div>
+
         </div>
 
-        <!-- Technical Support & Dashboard Ticket Form (Saves to Firebase Firestore) -->
+        <!-- Technical Support & Dashboard Ticket Form -->
         <div class="support-form-box">
             <h2><i class="fas fa-ticket-alt" style="color: var(--accent-orange);"></i> Need Help With Your Dashboard or Orders?</h2>
-            <p>If you are facing any problem while using your account, submit your complaint to our technical support team. It will appear directly in your admin dashboard.</p>
+            <p>If you are facing any problem while using your account, submit your complaint to our technical support team.</p>
             
             <form id="supportTicketForm" onsubmit="handleSupportSubmit(event)">
                 <div class="form-group">
@@ -312,7 +348,6 @@
             const ticketId = 'PT-' + Math.floor(100000 + Math.random() * 900000);
 
             try {
-                // Save ticket directly to Firebase Firestore so it shows in Admin Dashboard
                 if (typeof db !== 'undefined') {
                     await db.collection('support_tickets').add({
                         ticketId: ticketId,
@@ -323,7 +358,7 @@
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }
-                alert(`Support Request Submitted Successfully!\nYour Ticket ID: ${ticketId}\nThis has been sent to the Admin Dashboard.`);
+                alert(`Support Request Submitted Successfully!\nYour Ticket ID: ${ticketId}`);
                 document.getElementById('supportTicketForm').reset();
             } catch (err) {
                 alert("Error submitting ticket: " + err.message);
