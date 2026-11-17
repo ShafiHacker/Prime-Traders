@@ -547,29 +547,33 @@
             }
         }
 
-        // 100% ACCURATE CATEGORY & SEARCH FILTER FUNCTION
+        // 100% DYNAMIC & AUTO-UPDATING CATEGORY & SEARCH FILTER
         function filterDropshipCatalog() {
             const searchVal = document.getElementById('headerSearchInput').value.toLowerCase().trim();
-            const catVal = document.getElementById('headerCategorySelect').value.toLowerCase().trim();
+            const selectElement = document.getElementById('headerCategorySelect');
+            const catVal = selectElement ? selectElement.value.toLowerCase().trim() : 'all';
 
             const productCards = document.querySelectorAll('.product-card');
             
             productCards.forEach(card => {
-                // Card ke andar category text aur title text alag-alag nikalna
-                const allTexts = card.innerText.split('\n').map(t => t.trim().toLowerCase());
-                // Aam taur par 'Wholesale' badge ke baad pehli line category hoti hai
-                const cardCategory = allTexts.find(t => 
-                    t === 'accessories' || 
-                    t === 'fashion & apparel' || 
-                    t === 'electronics & gadgets' || 
-                    t === 'home & kitchen'
-                ) || '';
-
+                // Card ka poora text ya content nikal kar check karna
+                const cardText = card.innerText.toLowerCase();
+                
+                // Title element find karna
                 const titleElement = card.querySelector('.product-title') || card.querySelector('h3') || card.querySelector('h4');
-                const titleText = titleElement ? titleElement.innerText.toLowerCase() : card.innerText.toLowerCase();
+                const titleText = titleElement ? titleElement.innerText.toLowerCase() : '';
 
-                const matchesSearch = (searchVal === '' || titleText.includes(searchVal));
-                const matchesCategory = (catVal === 'all' || cardCategory === catVal);
+                // Automatic category detection from card content (case-insensitive)
+                // Yeh code khud card ke andar se category dhoond lega chahe list kitni bhi barh jaye
+                let detectedCategory = '';
+                if (cardText.includes('accessories')) detectedCategory = 'accessories';
+                else if (cardText.includes('fashion') || cardText.includes('apparel')) detectedCategory = 'fashion & apparel';
+                else if (cardText.includes('electronics') || cardText.includes('gadgets')) detectedCategory = 'electronics & gadgets';
+                else if (cardText.includes('home') || cardText.includes('kitchen')) detectedCategory = 'home & kitchen';
+
+                // Agar koi nayi category bhi future mein aaye toh usay bhi automatically match kar lena
+                const matchesSearch = (searchVal === '' || titleText.includes(searchVal) || cardText.includes(searchVal));
+                const matchesCategory = (catVal === 'all' || detectedCategory === catVal || cardText.includes(catVal));
 
                 if (matchesSearch && matchesCategory) {
                     card.style.display = 'flex';
