@@ -547,16 +547,30 @@
             }
         }
 
+        // FIXED DROPDOWN & SEARCH FILTER FUNCTION
         function filterDropshipCatalog() {
             const searchVal = document.getElementById('headerSearchInput').value.toLowerCase();
             const catVal = document.getElementById('headerCategorySelect').value;
 
-            const filtered = allProducts.filter(item => {
-                const matchesCat = (catVal === 'all' || item.category === catVal);
-                const matchesSearch = (item.title && item.title.toLowerCase().includes(searchVal));
-                return matchesCat && matchesSearch;
+            // Target all product cards rendered on the page
+            const productCards = document.querySelectorAll('.product-card');
+
+            productCards.forEach(card => {
+                const titleElement = card.querySelector('.product-title');
+                const titleText = titleElement ? titleElement.innerText.toLowerCase() : '';
+                
+                // Read category from card dataset or text if stored
+                const cardCategory = card.getAttribute('data-category') || '';
+
+                const matchesSearch = titleText.includes(searchVal);
+                const matchesCategory = (catVal === 'all' || cardCategory.toLowerCase() === catVal.toLowerCase());
+
+                if (matchesSearch && matchesCategory) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
             });
-            renderProducts(filtered);
         }
 
         async function handleStudentLogin(e) {
