@@ -6,6 +6,7 @@
     <title>Dropshipping Hub | Prime Traders</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="popup-kit.css">
     
     <style>
         :root {
@@ -647,5 +648,23 @@
                 .catch(err => { alert("Error: " + err.message); });
         }
     </script>
+    <script>
+    window.DS_POPUP_CONFIG = {
+        enabled: ['welcome', 'shipping', 'coupon', 'cart', 'countdown', 'viewers', 'recent-order', 'stock', 'flash', 'whatsapp', 'order-status'],
+        interval: 7000,
+        firstDelay: 2000,
+        whatsappNumber: '923313534676',
+        supportUrl: 'contact.html',
+        productUrl: 'dropshipping.html',
+        couponCode: 'AZADI10',
+        offerEndsAt: '2026-12-31T23:59:00+05:00',
+        viewerCount: 14,
+        recentOrder: { customer: 'Ahmad Ali', city: 'Lahore', product: 'Ring Light with Tripod Stand', minutesAgo: 3 },
+        stockLeft: 5,
+        shippingThreshold: 3000,
+        cartValue: 2400
+    };
+</script>
+<script src="popup-kit.js"></script>
 </body>
 </html>
