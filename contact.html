@@ -7,6 +7,12 @@
     <!-- FontAwesome & Google Fonts -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs for Saving Support Tickets to Database -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="dashboard.js"></script> <!-- Ensure firebase config is linked -->
+
     <style>
         :root {
             --bg-body: #f4f6f9;
@@ -49,7 +55,6 @@
             color: #94a3b8;
             font-size: 14px;
         }
-        /* Home Button Style */
         .btn-home {
             background-color: var(--accent-orange);
             color: white;
@@ -205,7 +210,7 @@
 
     <div class="container">
         
-        <!-- 4 Main Information Cards Grid -->
+        <!-- Information Cards Grid -->
         <div class="grid-section">
             
             <!-- 1. Head Office Information -->
@@ -220,27 +225,27 @@
                 </ul>
             </div>
 
-            <!-- 2. Customer Support Department -->
+            <!-- 2. Customer Support - Desk 01 (Shafi Ul Haq) -->
             <div class="card">
-                <h3><i class="fas fa-headset"></i> Customer Support</h3>
+                <h3><i class="fas fa-headset"></i> Customer Support 01</h3>
                 <ul class="info-list">
-                    <li><span>Support Manager:</span> <strong>Ali Khan</strong></li>
+                    <li><span>Support Manager:</span> <strong>Shafi Ul Haq</strong></li>
                     <li><span>Representative:</span> <strong>Support Desk 01</strong></li>
                     <li><span>Direct Call:</span> <a href="tel:03313534676">0331-3534676</a></li>
                     <li><span>WhatsApp:</span> <a href="https://wa.me/923313534676" target="_blank">0331-3534676</a></li>
-                    <li><span>Email:</span> <a href="mailto:support@primetraders.shop">support@primetraders.shop</a></li>
+                    <li><span>Email:</span> <a href="mailto:primetraders.express@gmail.com" style="font-size: 12px;">primetraders.express@gmail.com</a></li>
                 </ul>
             </div>
 
-            <!-- 3. Technical Support Highlights -->
+            <!-- 3. Customer Support - Desk 02 (Abu Bakar Sarfaraz) -->
             <div class="card">
-                <h3><i class="fas fa-tools"></i> Technical Support</h3>
+                <h3><i class="fas fa-headset"></i> Customer Support 02</h3>
                 <ul class="info-list">
-                    <li><span>Login & Access:</span> <strong>Active</strong></li>
-                    <li><span>Password Reset:</span> <strong>Instant Automation</strong></li>
-                    <li><span>Product Uploads:</span> <strong>Live Support</strong></li>
-                    <li><span>Order Tracking:</span> <strong>Active Dashboard</strong></li>
-                    <li><span>Wallet & Payments:</span> <strong>Secure Gateway</strong></li>
+                    <li><span>Support Manager:</span> <strong>Abu Bakar Sarfaraz</strong></li>
+                    <li><span>Representative:</span> <strong>Support Desk 02</strong></li>
+                    <li><span>Direct Call:</span> <a href="tel:03150570090">0315-0570090</a></li>
+                    <li><span>WhatsApp:</span> <a href="https://wa.me/923150570090" target="_blank">0315-0570090</a></li>
+                    <li><span>Email:</span> <a href="mailto:primetraders.express@gmail.com" style="font-size: 12px;">primetraders.express@gmail.com</a></li>
                 </ul>
             </div>
 
@@ -252,16 +257,16 @@
                     <li><span>Dropshipping Reg:</span> <a href="ecommerce-login.html">Register Now</a></li>
                     <li><span>Product Pricing:</span> <strong>Wholesale Rates</strong></li>
                     <li><span>Reseller Account:</span> <strong>Instant Approval</strong></li>
-                    <li><span>Partnership:</span> <a href="mailto:wholesale@primetraders.shop">Contact Team</a></li>
+                    <li><span>Partnership:</span> <a href="mailto:primetraders.express@gmail.com">Contact Team</a></li>
                 </ul>
             </div>
 
         </div>
 
-        <!-- Interactive Technical Support & Dashboard Ticket Form -->
+        <!-- Technical Support & Dashboard Ticket Form (Saves to Firebase Firestore) -->
         <div class="support-form-box">
             <h2><i class="fas fa-ticket-alt" style="color: var(--accent-orange);"></i> Need Help With Your Dashboard or Orders?</h2>
-            <p>If you are facing any problem while using your account, submit your complaint to our technical support team.</p>
+            <p>If you are facing any problem while using your account, submit your complaint to our technical support team. It will appear directly in your admin dashboard.</p>
             
             <form id="supportTicketForm" onsubmit="handleSupportSubmit(event)">
                 <div class="form-group">
@@ -299,11 +304,30 @@
     </div>
 
     <script>
-        function handleSupportSubmit(e) {
+        async function handleSupportSubmit(e) {
             e.preventDefault();
+            const category = document.getElementById('issueCategory').value;
+            const contactInfo = document.getElementById('userEmail').value;
+            const description = document.getElementById('issueDescription').value;
             const ticketId = 'PT-' + Math.floor(100000 + Math.random() * 900000);
-            alert(`Support Request Submitted Successfully!\nYour Ticket ID: ${ticketId}\nOur team will review your issue and contact you shortly.`);
-            document.getElementById('supportTicketForm').reset();
+
+            try {
+                // Save ticket directly to Firebase Firestore so it shows in Admin Dashboard
+                if (typeof db !== 'undefined') {
+                    await db.collection('support_tickets').add({
+                        ticketId: ticketId,
+                        category: category,
+                        contactInfo: contactInfo,
+                        description: description,
+                        status: 'Pending',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                alert(`Support Request Submitted Successfully!\nYour Ticket ID: ${ticketId}\nThis has been sent to the Admin Dashboard.`);
+                document.getElementById('supportTicketForm').reset();
+            } catch (err) {
+                alert("Error submitting ticket: " + err.message);
+            }
         }
     </script>
 </body>
