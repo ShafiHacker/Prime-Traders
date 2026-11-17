@@ -547,34 +547,29 @@
             }
         }
 
-        // 100% WORKING CATEGORY & SEARCH FILTER FUNCTION
+        // 100% ACCURATE CATEGORY & SEARCH FILTER FUNCTION
         function filterDropshipCatalog() {
-            const searchVal = document.getElementById('headerSearchInput').value.toLowerCase();
-            const catVal = document.getElementById('headerCategorySelect').value;
+            const searchVal = document.getElementById('headerSearchInput').value.toLowerCase().trim();
+            const catVal = document.getElementById('headerCategorySelect').value.toLowerCase().trim();
 
-            // Agar global 'allProducts' array mojood hai (jo dropshipping.js se aata hai)
-            if (typeof allProducts !== 'undefined' && Array.isArray(allProducts)) {
-                const filtered = allProducts.filter(item => {
-                    const matchesCat = (catVal === 'all' || (item.category && item.category.toLowerCase() === catVal.toLowerCase()));
-                    const matchesSearch = (item.title && item.title.toLowerCase().includes(searchVal)) || 
-                                          (item.desc && item.desc.toLowerCase().includes(searchVal));
-                    return matchesCat && matchesSearch;
-                });
-                if (typeof renderProducts === 'function') {
-                    renderProducts(filtered);
-                    return;
-                }
-            }
-
-            // Fallback DOM filtering agar array direct access na ho
             const productCards = document.querySelectorAll('.product-card');
+            
             productCards.forEach(card => {
-                const titleText = card.querySelector('.product-title') ? card.querySelector('.product-title').innerText.toLowerCase() : '';
-                const descText = card.querySelector('.product-desc') ? card.querySelector('.product-desc').innerText.toLowerCase() : '';
-                
-                const matchesSearch = titleText.includes(searchVal) || descText.includes(searchVal);
-                // Agar 'all' select hai ya card ke andar category match ho rahi hai
-                const matchesCategory = (catVal === 'all' || card.innerHTML.toLowerCase().includes(catVal.toLowerCase()));
+                // Card ke andar category text aur title text alag-alag nikalna
+                const allTexts = card.innerText.split('\n').map(t => t.trim().toLowerCase());
+                // Aam taur par 'Wholesale' badge ke baad pehli line category hoti hai
+                const cardCategory = allTexts.find(t => 
+                    t === 'accessories' || 
+                    t === 'fashion & apparel' || 
+                    t === 'electronics & gadgets' || 
+                    t === 'home & kitchen'
+                ) || '';
+
+                const titleElement = card.querySelector('.product-title') || card.querySelector('h3') || card.querySelector('h4');
+                const titleText = titleElement ? titleElement.innerText.toLowerCase() : card.innerText.toLowerCase();
+
+                const matchesSearch = (searchVal === '' || titleText.includes(searchVal));
+                const matchesCategory = (catVal === 'all' || cardCategory === catVal);
 
                 if (matchesSearch && matchesCategory) {
                     card.style.display = 'flex';
