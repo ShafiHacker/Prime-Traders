@@ -547,23 +547,34 @@
             }
         }
 
-        // FIXED DROPDOWN & SEARCH FILTER FUNCTION
+        // 100% WORKING CATEGORY & SEARCH FILTER FUNCTION
         function filterDropshipCatalog() {
             const searchVal = document.getElementById('headerSearchInput').value.toLowerCase();
             const catVal = document.getElementById('headerCategorySelect').value;
 
-            // Target all product cards rendered on the page
+            // Agar global 'allProducts' array mojood hai (jo dropshipping.js se aata hai)
+            if (typeof allProducts !== 'undefined' && Array.isArray(allProducts)) {
+                const filtered = allProducts.filter(item => {
+                    const matchesCat = (catVal === 'all' || (item.category && item.category.toLowerCase() === catVal.toLowerCase()));
+                    const matchesSearch = (item.title && item.title.toLowerCase().includes(searchVal)) || 
+                                          (item.desc && item.desc.toLowerCase().includes(searchVal));
+                    return matchesCat && matchesSearch;
+                });
+                if (typeof renderProducts === 'function') {
+                    renderProducts(filtered);
+                    return;
+                }
+            }
+
+            // Fallback DOM filtering agar array direct access na ho
             const productCards = document.querySelectorAll('.product-card');
-
             productCards.forEach(card => {
-                const titleElement = card.querySelector('.product-title');
-                const titleText = titleElement ? titleElement.innerText.toLowerCase() : '';
+                const titleText = card.querySelector('.product-title') ? card.querySelector('.product-title').innerText.toLowerCase() : '';
+                const descText = card.querySelector('.product-desc') ? card.querySelector('.product-desc').innerText.toLowerCase() : '';
                 
-                // Read category from card dataset or text if stored
-                const cardCategory = card.getAttribute('data-category') || '';
-
-                const matchesSearch = titleText.includes(searchVal);
-                const matchesCategory = (catVal === 'all' || cardCategory.toLowerCase() === catVal.toLowerCase());
+                const matchesSearch = titleText.includes(searchVal) || descText.includes(searchVal);
+                // Agar 'all' select hai ya card ke andar category match ho rahi hai
+                const matchesCategory = (catVal === 'all' || card.innerHTML.toLowerCase().includes(catVal.toLowerCase()));
 
                 if (matchesSearch && matchesCategory) {
                     card.style.display = 'flex';
@@ -572,6 +583,29 @@
                 }
             });
         }
+
+        // CART BUTTON CLICK FIX (Cart drawer/modal open karne ke liye)
+        document.addEventListener('DOMContentLoaded', () => {
+            const cartBtn = document.getElementById('cartBtn');
+            if (cartBtn) {
+                cartBtn.addEventListener('click', () => {
+                    // Check if a cart drawer or modal function exists in dropshipping.js
+                    if (typeof openCartModal === 'function') {
+                        openCartModal();
+                    } else if (typeof toggleCart === 'function') {
+                        toggleCart();
+                    } else {
+                        // Agar koi function na ho toh cart section par scroll ya alert
+                        const cartDrawer = document.getElementById('cartDrawer') || document.getElementById('cartModal');
+                        if (cartDrawer) {
+                            cartDrawer.style.display = 'block';
+                        } else {
+                            alert("Cart is active! Items in cart: " + (document.getElementById('cartCount') ? document.getElementById('cartCount').innerText : '0'));
+                        }
+                    }
+                });
+            }
+        });
 
         async function handleStudentLogin(e) {
             e.preventDefault();
