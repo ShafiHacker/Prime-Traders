@@ -33,17 +33,38 @@
         .contact-header {
             background-color: var(--bg-header);
             color: white;
-            text-align: center;
-            padding: 40px 20px;
+            padding: 30px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
             margin-bottom: 30px;
         }
-        .contact-header h1 {
-            font-size: 28px;
-            margin-bottom: 8px;
+        .header-title h1 {
+            font-size: 24px;
+            margin-bottom: 4px;
         }
-        .contact-header p {
+        .header-title p {
             color: #94a3b8;
-            font-size: 15px;
+            font-size: 14px;
+        }
+        /* Home Button Style */
+        .btn-home {
+            background-color: var(--accent-orange);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        .btn-home:hover {
+            background-color: #d97706;
         }
         .container {
             max-width: 1100px;
@@ -157,7 +178,6 @@
         .btn-submit:hover {
             background-color: #d97706;
         }
-        /* Footer info */
         .footer-note {
             text-align: center;
             font-size: 13px;
@@ -168,10 +188,19 @@
 </head>
 <body>
 
-    <!-- Header Section -->
+    <!-- Header Section with Home Button -->
     <header class="contact-header">
-        <h1>Contact & Support Center</h1>
-        <p>Prime Traders — Dropshipping Hub | We're Here to Help You!</p>
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0;">
+            <div class="header-title">
+                <h1>Contact & Support Center</h1>
+                <p>Prime Traders — Dropshipping Hub | We're Here to Help You!</p>
+            </div>
+            <div>
+                <a href="dropshipping.html" class="btn-home">
+                    <i class="fas fa-home"></i> Home / Catalog
+                </a>
+            </div>
+        </div>
     </header>
 
     <div class="container">
@@ -272,12 +301,7 @@
     <script>
         function handleSupportSubmit(e) {
             e.preventDefault();
-            const category = document.getElementById('issueCategory').value;
-            const contactInfo = document.getElementById('userEmail').value;
-            
-            // Generate a random Ticket ID for user reference
             const ticketId = 'PT-' + Math.floor(100000 + Math.random() * 900000);
-            
             alert(`Support Request Submitted Successfully!\nYour Ticket ID: ${ticketId}\nOur team will review your issue and contact you shortly.`);
             document.getElementById('supportTicketForm').reset();
         }
