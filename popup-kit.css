@@ -1,0 +1,17 @@
+/* Trend-style Popup Kit — edit colors and position here */
+#ds-popup-root{position:fixed;z-index:999999;left:18px;bottom:18px;display:flex;flex-direction:column;gap:10px;max-width:min(380px,calc(100vw - 36px));font-family:Arial,sans-serif}
+.ds-pop{position:relative;display:flex;align-items:center;gap:12px;background:#fff;color:#172033;border:1px solid #e8eaf0;border-radius:15px;padding:14px 42px 14px 14px;box-shadow:0 10px 35px #10182822;animation:ds-in .35s ease;line-height:1.35}
+.ds-pop.dark{background:#101a32;color:#fff;border-color:#26365d}
+.ds-pop.success{border-color:#9de6bb;background:#f2fff7}
+.ds-pop.warning{border-color:#ffd27a;background:#fff9eb}
+.ds-pop.purple{border-color:#d8c2ff;background:#faf6ff}
+.ds-pop .ds-icon{width:42px;height:42px;flex:0 0 42px;border-radius:12px;background:#eef2ff;display:grid;place-items:center;font-size:22px}
+.ds-pop .ds-copy{font-size:13px}
+.ds-pop .ds-copy strong{display:block;font-size:14px;margin-bottom:3px}
+.ds-pop .ds-close{position:absolute;right:10px;top:8px;border:0;background:transparent;color:inherit;font-size:20px;cursor:pointer}
+.ds-pop .ds-cta{display:inline-block;margin-top:7px;padding:7px 12px;background:#5b35d5;color:#fff;border-radius:8px;text-decoration:none;font-weight:bold}
+.ds-pop .ds-meter{height:7px;background:#eee;border-radius:9px;margin-top:8px;overflow:hidden}
+.ds-pop .ds-meter span{display:block;height:100%;background:#ff8a00;width:65%}
+.ds-pop .ds-small{opacity:.72;font-size:11px;margin-top:3px}
+@keyframes ds-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:520px){#ds-popup-root{left:10px;right:10px;bottom:10px;max-width:none}.ds-pop{padding:12px 38px 12px 12px}}
