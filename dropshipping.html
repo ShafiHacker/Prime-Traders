@@ -25,7 +25,15 @@
             box-sizing: border-box;
             font-family: 'Inter', sans-serif;
         }
-
+.product-img-box img,
+.product-card img, 
+.product-image img,
+.card img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain !important; /* Yeh change karna hai */
+    background-color: #ffffff;
+}
         body {
             background-color: var(--bg-body);
             color: var(--text-dark);
@@ -159,13 +167,13 @@
 
         /* Zoom-out proper fit image styling */
         .product-img-box img,
-        .product-card img, 
-        .product-image img,
-        .card img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain !important;
-            background-color: #ffffff;
+.product-card img, 
+.product-image img,
+.card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover !important; /* Image poore box ko cover kar legi aur white jagah khatam ho jayegi */
+}
         }
 
         .badge-tag {
