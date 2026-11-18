@@ -82,7 +82,6 @@
             margin-top: 2px;
         }
 
-        /* Full Width Container without Sidebar */
         .main-container {
             max-width: 1400px;
             margin: 25px auto;
@@ -125,7 +124,6 @@
             border: 1px solid var(--border-color);
         }
 
-        /* EXACT PROFESSIONAL PRODUCT GRID & CARDS STYLING FROM 1ST SCREEN */
         .products-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -141,6 +139,7 @@
             flex-direction: column;
             transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            cursor: pointer;
         }
 
         .product-card:hover {
@@ -158,10 +157,15 @@
             border-bottom: 1px solid var(--border-color);
         }
 
-        .product-img-box img {
+        /* Zoom-out proper fit image styling */
+        .product-img-box img,
+        .product-card img, 
+        .product-image img,
+        .card img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain !important;
+            background-color: #ffffff;
         }
 
         .badge-tag {
@@ -258,18 +262,11 @@
             justify-content: center;
             gap: 5px;
         }
-        /* Product image proper fit styling */
-.product-card img, 
-.product-image img,
-.card img {
-    object-fit: contain !important;
-    background-color: #ffffff;
-}
     </style>
 </head>
 <body>
 
-    <!-- Header with Search Bar, Category Dropdown & Custom Buttons -->
+    <!-- Header -->
     <header>
         <div class="brand">
             <div class="brand-logo">P</div>
@@ -294,32 +291,26 @@
 
         <!-- Header Actions -->
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            
-            <!-- Log in / Sign up Button -->
             <button onclick="openStudentAuthModal()" style="background: #f59e0b; color: #0b132b; font-weight: 700; padding: 7px 12px; border-radius: 6px; font-size: 12px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
                 <i class="fas fa-user"></i> Log in / Sign up
             </button>
 
-            <!-- Track Order Button -->
             <button onclick="openTrackOrderModal()" style="background: #1e293b; color: #cbd5e1; border: 1px solid #334155; font-weight: 600; padding: 7px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
                 <i class="fas fa-clock" style="color: #f59e0b;"></i> Track Order
             </button>
 
-            <!-- Contact Us Button -->
             <a href="contact.html" style="background: #1e293b; color: #cbd5e1; border: 1px solid #334155; font-weight: 600; padding: 7px 12px; border-radius: 6px; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
                 <i class="fas fa-envelope" style="color: #38bdf8;"></i> Contact Us
             </a>
 
-            <!-- Cart Button -->
             <button id="cartBtn" style="background: #1e293b; color: #fff; border: 1px solid #334155; padding: 7px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
                 <i class="fas fa-shopping-cart" style="color: #10b981;"></i> Cart <span id="cartCount" style="background: #f59e0b; color: #0b132b; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 800;">0</span>
             </button>
-
         </div>
     </header>
 
     <div class="main-container">
-                <main>
+        <main>
             <div class="content-header">
                 <div>
                     <h2><i class="fas fa-fire" style="color:#f97316;"></i> AVAILABLE DROPSHIP PRODUCTS</h2>
@@ -332,11 +323,68 @@
                 <!-- Dynamically loaded via dropshipping.js -->
             </div>
         </main>
-
     </div>
 
-    <!-- Checkout Modal Popup -->
-    <div id="dropshipCheckoutModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 99999; justify-content: center; align-items: center; font-family: sans-serif;">
+    <!-- Product Quick View Modal -->
+    <div id="productModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.75); z-index:99999; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#fff; border-radius:16px; max-width:850px; width:100%; max-height:90vh; overflow-y:auto; padding:28px; position:relative; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2);">
+            <button onclick="closeProductModal()" style="position:absolute; top:20px; right:20px; background:#f1f5f9; border:none; width:36px; height:36px; border-radius:50%; font-size:18px; cursor:pointer; color:#475569;">×</button>
+            
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:15px; padding-right:40px;">
+                <div>
+                    <span id="modalCategory" style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase;">GENERAL</span>
+                    <h2 id="modalTitle" style="font-size:22px; color:#0f172a; margin-top:4px;">Product Title</h2>
+                </div>
+                <div style="text-align:right;">
+                    <div id="modalPrice" style="font-size:24px; font-weight:800; color:#0b132b;">PKR 0</div>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:24px; margin-top:20px;">
+                <div style="border:1px solid #e2e8f0; border-radius:12px; padding:15px; display:flex; align-items:center; justify-content:center; background:#fff; min-height:280px;">
+                    <img id="modalImg" src="" alt="Product" style="max-width:100%; max-height:260px; object-fit:contain;">
+                </div>
+
+                <div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px;">
+                        <div>
+                            <label style="font-size:11px; font-weight:700; color:#64748b; display:block; margin-bottom:4px;">SIZE:</label>
+                            <select id="modalSize" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
+                                <option>Free Size</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:11px; font-weight:700; color:#64748b; display:block; margin-bottom:4px;">COLOR:</label>
+                            <select id="modalColor" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
+                                <option>Default / Assorted</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:11px; font-weight:700; color:#64748b; display:block; margin-bottom:4px;">QTY:</label>
+                            <input type="number" id="modalQty" value="1" min="1" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
+                        </div>
+                    </div>
+
+                    <label style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Description:</label>
+                    <div id="modalDesc" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; font-size:13px; color:#334155; max-height:170px; overflow-y:auto; white-space:pre-line; line-height:1.6;">
+                        Product details loading...
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:24px; padding-top:16px; border-top:1px solid #e2e8f0;">
+                <button id="modalAddCartBtn" style="background:#ffffff; color:#0f172a; border:2px solid #0b132b; padding:12px; border-radius:8px; font-weight:700; font-size:15px; cursor:pointer;">
+                    <i class="fas fa-shopping-cart"></i> Add To Cart
+                </button>
+                <button id="modalBuyNowBtn" style="background:#0b132b; color:#ffffff; border:none; padding:12px; border-radius:8px; font-weight:700; font-size:15px; cursor:pointer;">
+                    <i class="fas fa-bolt" style="color:#f59e0b;"></i> Buy Now
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout Modal Popup (Aapka purana modal) -->
+    <div id="dropshipCheckoutModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 999999; justify-content: center; align-items: center; font-family: sans-serif;">
         <div style="background: #0b132b; border: 1px solid #1e293b; width: 450px; max-width: 90%; border-radius: 12px; padding: 24px; position: relative; color: #f8fafc; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
             <button onclick="closeCheckoutModal()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">×</button>
             <h3 id="modalProductTitle" style="font-size: 16px; font-weight: 700; margin-bottom: 15px; color: #f59e0b; padding-right: 20px;">Product Title</h3>
@@ -389,15 +437,12 @@
     <div id="trackOrderModal" style="display: none; position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(6px); z-index: 999999; align-items: center; justify-content: center; padding: 16px; font-family: sans-serif;">
         <div style="background: #0f172a; border: 1px solid #334155; padding: 24px; border-radius: 16px; max-width: 400px; width: 100%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); color: #fff; position: relative;">
             <button onclick="closeTrackOrderModal()" style="position: absolute; top: 12px; right: 12px; background: #1e293b; border: none; color: #94a3b8; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 16px;">×</button>
-            
             <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 8px; color: #f59e0b;"><i class="fas fa-shipping-fast"></i> Real-Time Parcel Tracking</h3>
             <p style="font-size: 11px; color: #94a3b8; margin-bottom: 16px;">Enter your tracking ID (e.g. PT-1234) to check live status.</p>
-            
             <div style="display: flex; gap: 8px; margin-bottom: 14px;">
                 <input type="text" id="trackInputId" placeholder="Enter Tracking No..." style="flex: 1; padding: 10px; background: #020617; border: 1px solid #334155; border-radius: 8px; color: #fff; font-size: 12px; outline: none;">
                 <button onclick="searchParcelStatus()" style="background: #f59e0b; color: #0b132b; border: none; padding: 10px 16px; font-weight: 800; border-radius: 8px; font-size: 12px; cursor: pointer;">Track</button>
             </div>
-
             <div id="trackResultBox" style="background: #1e293b; padding: 12px; border-radius: 8px; font-size: 12px; display: none;"></div>
         </div>
     </div>
@@ -418,7 +463,6 @@
                 <button type="button" id="tabStudentRegister" onclick="switchStudentTab('register')" style="flex: 1; padding: 10px; text-align: center; color: #94a3b8; border: none; border-bottom: 2px solid transparent; background: transparent; cursor: pointer;">Register Student</button>
             </div>
 
-            <!-- 1. STUDENT LOGIN FORM -->
             <form id="studentLoginForm" onsubmit="handleStudentLogin(event)" style="display: flex; flex-direction: column; gap: 14px; font-size: 12px;">
                 <div>
                     <label style="display: block; color: #cbd5e1; margin-bottom: 6px; font-weight: 600;">Email Address</label>
@@ -445,7 +489,6 @@
                 </button>
             </form>
 
-            <!-- 2. STUDENT REGISTER FORM -->
             <form id="studentRegisterForm" onsubmit="handleStudentRegister(event)" style="display: none; flex-direction: column; gap: 11px; font-size: 12px;">
                 <div style="width: 100%; padding: 8px; background: #fbbf24; color: #0f172a; border-radius: 8px; font-weight: 700; text-align: center; margin-bottom: 4px;">
                     <div><i class="fas fa-user-graduate"></i> Welcome to Prime Dropshipping</div>
@@ -485,12 +528,84 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="dashboard.js?v=14.0"></script>
+    <script src="popup-kit.js"></script>
 
     <script>
         function openTrackOrderModal() { document.getElementById('trackOrderModal').style.display = 'flex'; }
         function closeTrackOrderModal() { document.getElementById('trackOrderModal').style.display = 'none'; document.getElementById('trackResultBox').style.display = 'none'; }
         function openStudentAuthModal() { document.getElementById('studentAuthModal').style.display = 'flex'; }
         function closeStudentAuthModal() { document.getElementById('studentAuthModal').style.display = 'none'; }
+
+        function openProductModal(product) {
+            document.getElementById('modalCategory').innerText = product.category || 'GENERAL';
+            document.getElementById('modalTitle').innerText = product.name || product.title || 'Product Details';
+            document.getElementById('modalPrice').innerText = 'PKR ' + (product.primeRate || product.price || 0);
+            document.getElementById('modalImg').src = product.image || product.imgUrl || '';
+            document.getElementById('modalDesc').innerText = product.description || 'No detailed description available for this item.';
+            
+            if(product.sizes) {
+                document.getElementById('modalSize').innerHTML = `<option>${product.sizes}</option>`;
+            }
+            if(product.colors) {
+                document.getElementById('modalColor').innerHTML = `<option>${product.colors}</option>`;
+            }
+
+            document.getElementById('modalAddCartBtn').onclick = function() {
+                if (typeof addToCart === 'function') addToCart(product.id);
+                closeProductModal();
+            };
+            document.getElementById('modalBuyNowBtn').onclick = function() {
+                if (typeof buyNow === 'function') buyNow(product.id);
+                closeProductModal();
+            };
+
+            document.getElementById('productModal').style.display = 'flex';
+        }
+
+        function closeProductModal() {
+            document.getElementById('productModal').style.display = 'none';
+        }
+
+        // Automatic click-to-open Quick-View Modal for any product card loaded dynamically
+        document.addEventListener('click', function(e) {
+            // Agar user ne Cart ya Buy Now button par click nahi kiya, balkay card/image/title par click kiya hai
+            if (e.target.closest('button')) return;
+            
+            const card = e.target.closest('.product-card');
+            if (card) {
+                const img = card.querySelector('img')?.src || '';
+                const title = card.querySelector('.product-title')?.innerText || card.querySelector('h3')?.innerText || 'Product Details';
+                const desc = card.getAttribute('data-desc') || card.querySelector('.product-desc')?.innerText || 'High-quality wholesale product available for dropshipping across Pakistan.';
+                const cat = card.getAttribute('data-category') || 'WHOLESALE ITEM';
+                
+                // Prime Rate dhoondhna
+                let price = '0';
+                const cardText = card.innerText;
+                const priceMatch = cardText.match(/PRIME RATE:\s*PKR\s*([\d,]+)/i) || cardText.match(/PKR\s*([\d,]+)/i);
+                if (priceMatch) price = priceMatch[1];
+
+                // Card ke andar mojud Cart / Buy Now buttons ko modal ke buttons se link karna
+                const cardCartBtn = card.querySelector('.btn-cart-sm') || card.querySelectorAll('button')[0];
+                const cardBuyBtn = card.querySelector('.btn-buynow-sm') || card.querySelectorAll('button')[1];
+
+                document.getElementById('modalCategory').innerText = cat;
+                document.getElementById('modalTitle').innerText = title;
+                document.getElementById('modalPrice').innerText = 'PKR ' + price;
+                document.getElementById('modalImg').src = img;
+                document.getElementById('modalDesc').innerText = desc;
+
+                document.getElementById('modalAddCartBtn').onclick = function() {
+                    closeProductModal();
+                    if (cardCartBtn) cardCartBtn.click();
+                };
+                document.getElementById('modalBuyNowBtn').onclick = function() {
+                    closeProductModal();
+                    if (cardBuyBtn) cardBuyBtn.click();
+                };
+
+                document.getElementById('productModal').style.display = 'flex';
+            }
+        });
 
         function toggleStudentPassword() {
             const passwordInput = document.getElementById('studentLoginPassword');
@@ -555,7 +670,6 @@
             }
         }
 
-        // 100% DYNAMIC & AUTO-UPDATING CATEGORY & SEARCH FILTER
         function filterDropshipCatalog() {
             const searchVal = document.getElementById('headerSearchInput').value.toLowerCase().trim();
             const selectElement = document.getElementById('headerCategorySelect');
@@ -564,22 +678,16 @@
             const productCards = document.querySelectorAll('.product-card');
             
             productCards.forEach(card => {
-                // Card ka poora text ya content nikal kar check karna
                 const cardText = card.innerText.toLowerCase();
-                
-                // Title element find karna
                 const titleElement = card.querySelector('.product-title') || card.querySelector('h3') || card.querySelector('h4');
                 const titleText = titleElement ? titleElement.innerText.toLowerCase() : '';
 
-                // Automatic category detection from card content (case-insensitive)
-                // Yeh code khud card ke andar se category dhoond lega chahe list kitni bhi barh jaye
                 let detectedCategory = '';
                 if (cardText.includes('accessories')) detectedCategory = 'accessories';
                 else if (cardText.includes('fashion') || cardText.includes('apparel')) detectedCategory = 'fashion & apparel';
                 else if (cardText.includes('electronics') || cardText.includes('gadgets')) detectedCategory = 'electronics & gadgets';
                 else if (cardText.includes('home') || cardText.includes('kitchen')) detectedCategory = 'home & kitchen';
 
-                // Agar koi nayi category bhi future mein aaye toh usay bhi automatically match kar lena
                 const matchesSearch = (searchVal === '' || titleText.includes(searchVal) || cardText.includes(searchVal));
                 const matchesCategory = (catVal === 'all' || detectedCategory === catVal || cardText.includes(catVal));
 
@@ -590,187 +698,6 @@
                 }
             });
         }
-
-        // CART BUTTON CLICK FIX (Cart drawer/modal open karne ke liye)
-        document.addEventListener('DOMContentLoaded', () => {
-            const cartBtn = document.getElementById('cartBtn');
-            if (cartBtn) {
-                cartBtn.addEventListener('click', () => {
-                    // Check if a cart drawer or modal function exists in dropshipping.js
-                    if (typeof openCartModal === 'function') {
-                        openCartModal();
-                    } else if (typeof toggleCart === 'function') {
-                        toggleCart();
-                    } else {
-                        // Agar koi function na ho toh cart section par scroll ya alert
-                        const cartDrawer = document.getElementById('cartDrawer') || document.getElementById('cartModal');
-                        if (cartDrawer) {
-                            cartDrawer.style.display = 'block';
-                        } else {
-                            alert("Cart is active! Items in cart: " + (document.getElementById('cartCount') ? document.getElementById('cartCount').innerText : '0'));
-                        }
-                    }
-                });
-            }
-        });
-
-        async function handleStudentLogin(e) {
-            e.preventDefault();
-            const email = document.getElementById('studentLoginEmail').value.trim().toLowerCase();
-            const pass = document.getElementById('studentLoginPassword').value;
-            try {
-                await auth.signInWithEmailAndPassword(email, pass);
-                window.location.href = 'ecommerce-dashboard.html';
-            } catch (err) {
-                alert("Login Error: " + err.message);
-            }
-        }
-
-        async function handleStudentRegister(e) {
-            e.preventDefault();
-            const email = document.getElementById('regStudentEmail').value.trim().toLowerCase();
-            const password = document.getElementById('regStudentPassword').value;
-            const fullName = document.getElementById('regStudentName').value;
-            const businessName = document.getElementById('regStudentBusinessName').value;
-            const phone = document.getElementById('regStudentPhone').value;
-
-            try {
-                const userCred = await auth.createUserWithEmailAndPassword(email, password);
-                const uid = userCred.user.uid;
-                await db.collection('students').doc(uid).set({
-                    uid: uid, fullName, businessName, email, phone, status: 'approved',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                window.location.href = 'ecommerce-dashboard.html';
-            } catch (err) {
-                alert("Registration Error: " + err.message);
-            }
-        }
-
-        function handleForgotPassword() {
-            const email = document.getElementById('studentLoginEmail').value.trim();
-            if (!email) { alert("Pehle email enter karein."); return; }
-            auth.sendPasswordResetEmail(email)
-                .then(() => { alert("Password reset email bhej di gayi hai!"); })
-                .catch(err => { alert("Error: " + err.message); });
-        }
-        function openProductModal(product) {
-    document.getElementById('modalCategory').innerText = product.category || 'GENERAL';
-    document.getElementById('modalTitle').innerText = product.name || product.title || 'Product Details';
-    document.getElementById('modalPrice').innerText = 'PKR ' + (product.primeRate || product.price || 0);
-    document.getElementById('modalImg').src = product.image || product.imgUrl || '';
-    document.getElementById('modalDesc').innerText = product.description || 'No detailed description available for this item.';
-    
-    // Size aur Color agar product data mein hon toh update karein
-    if(product.sizes) {
-        document.getElementById('modalSize').innerHTML = `<option>${product.sizes}</option>`;
-    }
-    if(product.colors) {
-        document.getElementById('modalColor').innerHTML = `<option>${product.colors}</option>`;
-    }
-
-    // Buttons ke sath existing cart/buy functions link karein
-    document.getElementById('modalAddCartBtn').onclick = function() {
-        if (typeof addToCart === 'function') addToCart(product.id);
-        closeProductModal();
-    };
-    document.getElementById('modalBuyNowBtn').onclick = function() {
-        if (typeof buyNow === 'function') buyNow(product.id);
-        closeProductModal();
-    };
-
-    document.getElementById('productModal').style.display = 'flex';
-}
-
-function closeProductModal() {
-    document.getElementById('productModal').style.display = 'none';
-}
     </script>
-    <script>
-    window.DS_POPUP_CONFIG = {
-        enabled: ['welcome', 'shipping', 'coupon', 'cart', 'countdown', 'viewers', 'recent-order', 'stock', 'flash', 'whatsapp', 'order-status'],
-        interval: 7000,
-        firstDelay: 2000,
-        whatsappNumber: '923313534676',
-        supportUrl: 'contact.html',
-        productUrl: 'dropshipping.html',
-        couponCode: 'AZADI10',
-        offerEndsAt: '2026-12-31T23:59:00+05:00',
-        viewerCount: 14,
-        recentOrder: { customer: 'Ahmad Ali', city: 'Lahore', product: 'Ring Light with Tripod Stand', minutesAgo: 3 },
-        stockLeft: 5,
-        shippingThreshold: 3000,
-        cartValue: 2400
-    };
-</script>
-<script src="popup-kit.js"></script>
-    <!-- Product Quick View Modal -->
-<div id="productModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.75); z-index:9999; align-items:center; justify-content:center; padding:20px;">
-    <div style="background:#fff; border-radius:16px; max-width:850px; width:100%; max-height:90vh; overflow-y:auto; padding:28px; position:relative; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2);">
-        
-        <!-- Close Button -->
-        <button onclick="closeProductModal()" style="position:absolute; top:20px; right:20px; background:#f1f5f9; border:none; width:36px; height:36px; border-radius:50%; font-size:18px; cursor:pointer; color:#475569;">×</button>
-        
-        <!-- Top Meta & Price -->
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:15px; padding-right:40px;">
-            <div>
-                <span id="modalCategory" style="font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase;">CATEGORY</span>
-                <h2 id="modalTitle" style="font-size:22px; color:#0f172a; margin-top:4px;">Product Title</h2>
-            </div>
-            <div style="text-align:right;">
-                <div id="modalPrice" style="font-size:24px; font-weight:800; color:#0b132b;">PKR 0</div>
-            </div>
-        </div>
-
-        <!-- Main Content Grid -->
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:24px; margin-top:20px;">
-            <!-- Left Image Box -->
-            <div style="border:1px solid #e2e8f0; border-radius:12px; padding:15px; display:flex; align-items:center; justify-content:center; background:#fff; min-height:280px;">
-                <img id="modalImg" src="" alt="Product" style="max-width:100%; max-height:260px; object-fit:contain;">
-            </div>
-
-            <!-- Right Options & Description -->
-            <div>
-                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px;">
-                    <div>
-                        <label style="font-size:11px; font-weight:700; color:#64748b; display:block; margin-bottom:4px;">SIZE:</label>
-                        <select id="modalSize" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
-                            <option>Free Size</option>
-                            <option>Standard</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="font-size:11px; font-weight:700; color:#64748b; display:block; margin-bottom:4px;">COLOR:</label>
-                        <select id="modalColor" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
-                            <option>Default / Assorted</option>
-                            <option>White</option>
-                            <option>Black</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="font-size:11px; font-weight:700; color:#64748b; display:block; margin-bottom:4px;">QTY:</label>
-                        <input type="number" id="modalQty" value="1" min="1" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;">
-                    </div>
-                </div>
-
-                <label style="font-size:12px; font-weight:700; color:#475569; display:block; margin-bottom:6px;">Description:</label>
-                <div id="modalDesc" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; font-size:13px; color:#334155; max-height:170px; overflow-y:auto; white-space:pre-line; line-height:1.6;">
-                    Product details loading...
-                </div>
-            </div>
-        </div>
-
-        <!-- Bottom Action Buttons -->
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:24px; padding-top:16px; border-top:1px solid #e2e8f0;">
-            <button id="modalAddCartBtn" style="background:#ffffff; color:#0f172a; border:2px solid #0b132b; padding:12px; border-radius:8px; font-weight:700; font-size:15px; cursor:pointer;">
-                <i class="fas fa-shopping-cart"></i> Add To Cart
-            </button>
-            <button id="modalBuyNowBtn" style="background:#0b132b; color:#ffffff; border:none; padding:12px; border-radius:8px; font-weight:700; font-size:15px; cursor:pointer;">
-                <i class="fas fa-bolt" style="color:#f59e0b;"></i> Buy Now
-            </button>
-        </div>
-
-    </div>
-</div>
 </body>
 </html>
