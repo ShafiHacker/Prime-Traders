@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Our Locations | Prime Traders</title>
+  <style>
+    :root {
+      --navy: #071224;
+      --navy-2: #0d1d38;
+      --amber: #f59e0b;
+      --amber-dark: #d97706;
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* Top Header */
+    .topbar {
+      background: var(--navy);
+      color: #ffffff;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #ffffff;
+    }
+
+    .brand-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: var(--amber);
+      color: var(--navy);
+      font-weight: 800;
+      font-size: 18px;
+      display: grid;
+      place-items: center;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: 0.3px;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: #cbd5e1;
+      letter-spacing: 0.6px;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .btn-amber {
+      background: var(--amber);
+      color: var(--navy);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1140px;
+      margin: 28px auto;
+      padding: 0 20px;
+    }
+
+    .page-header {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 24px;
+      margin-bottom: 22px;
+    }
+
+    .page-header h1 {
+      font-size: 22px;
+      margin-bottom: 6px;
+    }
+
+    .page-header p {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* 3 Locations Grid */
+    .locations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .location-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: #fef3c7;
+      color: #92400e;
+      margin-bottom: 8px;
+    }
+
+    .location-card h2 {
+      font-size: 17px;
+      margin-bottom: 6px;
+    }
+
+    .address {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .meta {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .card-link {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--navy-2);
+      text-decoration: none;
+    }
+
+    /* Direct Support Box */
+    .support-strip {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .support-strip h3 {
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .support-strip p {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .support-links {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .support-links span,
+    .support-links a {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 8px;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 36px;
+      background: var(--navy);
+      color: #cbd5e1;
+      padding: 16px 24px;
+      font-size: 13px;
+    }
+
+    .footer-inner {
+      max-width: 1140px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: #ffffff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <a href="dropshipping.html" class="brand">
+      <div class="brand-badge">P</div>
+      <div>
+        <div class="brand-title">PRIME TRADERS</div>
+        <div class="brand-sub">DROPSHIPPING HUB</div>
+      </div>
+    </a>
+    <div class="nav-actions">
+      <a href="contact.html" class="btn btn-ghost">Open Support Ticket</a>
+      <a href="dropshipping.html" class="btn btn-amber">Dropship Catalog</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="page-header">
+      <h1>Our Office & Hub Locations</h1>
+      <p>Visit our offices or hubs for coordination, inquiries, or support. For complaints and order issues, use our support ticket portal.</p>
+    </section>
+
+    <section class="locations-grid">
+      <!-- Location 1 -->
+      <article class="location-card">
+        <div>
+          <span class="tag">Location 01</span>
+          <h2>Johar Office</h2>
+          <p class="address">Gulistan-e-Johar, Karachi (Update exact street/block address here)</p>
+          <div class="meta"><strong>Hours:</strong> Mon – Sat, 10:00 AM – 7:00 PM</div>
+        </div>
+        <a href="https://maps.google.com/?q=Gulistan-e-Johar+Karachi" target="_blank" rel="noopener" class="card-link">View on Map →</a>
+      </article>
+
+      <!-- Location 2 -->
+      <article class="location-card">
+        <div>
+          <span class="tag">Location 02</span>
+          <h2>Crossing Office</h2>
+          <p class="address">Crossing Area, Karachi (Update exact street/building address here)</p>
+          <div class="meta"><strong>Hours:</strong> Mon – Sat, 10:00 AM – 7:00 PM</div>
+        </div>
+        <a href="https://maps.google.com/?q=Karachi" target="_blank" rel="noopener" class="card-link">View on Map →</a>
+      </article>
+
+      <!-- Location 3 -->
+      <article class="location-card">
+        <div>
+          <span class="tag">Location 03</span>
+          <h2>Third Hub / Branch</h2>
+          <p class="address">Karachi (Update 3rd location name & address here)</p>
+          <div class="meta"><strong>Hours:</strong> Mon – Sat, 10:00 AM – 7:00 PM</div>
+        </div>
+        <a href="https://maps.google.com/?q=Karachi" target="_blank" rel="noopener" class="card-link">View on Map →</a>
+      </article>
+    </section>
+
+    <section class="support-strip">
+      <div>
+        <h3>Need Direct Assistance?</h3>
+        <p>Reach out via WhatsApp, email, or submit a ticket in the support form.</p>
+      </div>
+      <div class="support-links">
+        <span>WhatsApp: 0331-3534676 / 0315-0570090</span>
+        <a href="mailto:support@primetraders.com">support@primetraders.com</a>
+        <a href="contact.html">Support Form →</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <div>© 2026 Prime Traders. All rights reserved.</div>
+      <div class="footer-links">
+        <a href="location.html">Locations</a>
+        <a href="contact.html">Open Support Ticket</a>
+        <a href="mailto:support@primetraders.com">support@primetraders.com</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
