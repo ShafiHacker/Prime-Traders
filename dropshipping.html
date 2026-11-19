@@ -25,15 +25,7 @@
             box-sizing: border-box;
             font-family: 'Inter', sans-serif;
         }
-.product-img-box img,
-.product-card img, 
-.product-image img,
-.card img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain !important; /* Yeh change karna hai */
-    background-color: #ffffff;
-}
+
         body {
             background-color: var(--bg-body);
             color: var(--text-dark);
@@ -155,38 +147,38 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.06);
         }
 
+        /* Product image box centered in the middle */
         .product-img-box {
             height: 190px;
-            background: #f8fafc;
+            background: #ffffff;
             position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            overflow: hidden;
             border-bottom: 1px solid var(--border-color);
+            padding: 10px;
         }
 
-        /* Zoom-out proper fit image styling */
         .product-img-box img,
-.product-card img, 
-.product-image img,
-.card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover !important; /* Image poore box ko cover kar legi aur white jagah khatam ho jayegi */
-    transform: scale(1.06);
-}
+        .product-card img, 
+        .product-image img,
+        .card img {
+            width: auto !important;
+            height: auto !important;
+            max-width: 90% !important;
+            max-height: 90% !important;
+            object-fit: contain !important;
+            background-color: #ffffff;
+            transform: none !important;
+            margin: auto !important;
         }
 
-        .badge-tag {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: #f97316;
-            color: white;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 6px;
+        /* Hide Wholesale badge */
+        .badge-tag,
+        .wholesale-badge,
+        [class*="badge"] {
+            display: none !important;
         }
 
         .product-info {
@@ -392,7 +384,7 @@
         </div>
     </div>
 
-    <!-- Checkout Modal Popup (Aapka purana modal) -->
+    <!-- Checkout Modal Popup -->
     <div id="dropshipCheckoutModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 999999; justify-content: center; align-items: center; font-family: sans-serif;">
         <div style="background: #0b132b; border: 1px solid #1e293b; width: 450px; max-width: 90%; border-radius: 12px; padding: 24px; position: relative; color: #f8fafc; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
             <button onclick="closeCheckoutModal()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">×</button>
@@ -577,7 +569,6 @@
 
         // Automatic click-to-open Quick-View Modal for any product card loaded dynamically
         document.addEventListener('click', function(e) {
-            // Agar user ne Cart ya Buy Now button par click nahi kiya, balkay card/image/title par click kiya hai
             if (e.target.closest('button')) return;
             
             const card = e.target.closest('.product-card');
@@ -587,13 +578,11 @@
                 const desc = card.getAttribute('data-desc') || card.querySelector('.product-desc')?.innerText || 'High-quality wholesale product available for dropshipping across Pakistan.';
                 const cat = card.getAttribute('data-category') || 'WHOLESALE ITEM';
                 
-                // Prime Rate dhoondhna
                 let price = '0';
                 const cardText = card.innerText;
                 const priceMatch = cardText.match(/PRIME RATE:\s*PKR\s*([\d,]+)/i) || cardText.match(/PKR\s*([\d,]+)/i);
                 if (priceMatch) price = priceMatch[1];
 
-                // Card ke andar mojud Cart / Buy Now buttons ko modal ke buttons se link karna
                 const cardCartBtn = card.querySelector('.btn-cart-sm') || card.querySelectorAll('button')[0];
                 const cardBuyBtn = card.querySelector('.btn-buynow-sm') || card.querySelectorAll('button')[1];
 
