@@ -221,3 +221,119 @@
     <script src="dashboard.js?v=9.0"></script>
 </body>
 </html>
+<!-- Dedicated Complaints & Support Tickets Section -->
+<div id="adminComplaintsSection" style="display: none; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; margin: 20px 0; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+        <div>
+            <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;">
+                <i class="fas fa-headset" style="color: #f59e0b;"></i> Complaints & Support Tickets
+            </h3>
+            <p style="font-size: 12px; color: #64748b; margin: 3px 0 0;">Separate view for customer/reseller complaints and support tickets.</p>
+        </div>
+        <button type="button" onclick="loadAdminComplaintsAndTickets()" style="background: #0b132b; color: #ffffff; border: none; padding: 7px 12px; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer;">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+
+    <div id="complaintsListContainer" style="display: grid; gap: 12px;">
+        <div style="font-size: 12px; color: #64748b;">Click "Complaints & Tickets" to load records...</div>
+    </div>
+</div>
+
+<script>
+    function getAdminDb() {
+        if (typeof db !== "undefined" && db) return db;
+        if (typeof firebase !== "undefined" && firebase.apps && firebase.apps.length > 0) {
+            return firebase.firestore();
+        }
+        return null;
+    }
+
+    function toggleAdminComplaintsSection() {
+        const sec = document.getElementById("adminComplaintsSection");
+        if (!sec) return;
+        const isHidden = sec.style.display === "none" || sec.style.display === "";
+        sec.style.display = isHidden ? "block" : "none";
+        if (isHidden) {
+            loadAdminComplaintsAndTickets();
+        }
+    }
+
+    async function loadAdminComplaintsAndTickets() {
+        const container = document.getElementById("complaintsListContainer");
+        const badge = document.getElementById("complaintsBadgeCount");
+        const firestore = getAdminDb();
+
+        if (!container) return;
+        if (!firestore) {
+            container.innerHTML = '<div style="color:#dc2626; font-size:12px;">Firestore not initialized.</div>';
+            return;
+        }
+
+        container.innerHTML = '<div style="font-size:12px; color:#64748b;">Loading complaints & tickets...</div>';
+
+        try {
+            const snap = await firestore.collection("support_tickets").orderBy("createdAt", "desc").get();
+            if (badge) badge.textContent = snap.size;
+
+            if (snap.empty) {
+                container.innerHTML = '<div style="font-size:12px; color:#64748b; padding:12px; background:#f8fafc; border-radius:8px;">No complaints or support tickets found.</div>';
+                return;
+            }
+
+            let html = "";
+            snap.forEach((doc) => {
+                const item = doc.data();
+                const docId = doc.id;
+                const status = item.status || "Open";
+                const isResolved = status === "Resolved";
+
+                html += `
+                    <div style="border: 1px solid #e2e8f0; border-left: 4px solid ${isResolved ? "#10b981" : "#f59e0b"}; border-radius: 10px; padding: 14px; background: #f8fafc;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                            <div>
+                                <strong style="color:#0f172a; font-size:13px;">${item.ticketId || docId}</strong>
+                                <span style="margin-left:8px; background:#0b132b; color:#fbbf24; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700;">${item.category || item.entryType || "Ticket"}</span>
+                                <span style="margin-left:6px; background:${isResolved ? "#d1fae5" : "#fef3c7"}; color:${isResolved ? "#065f46" : "#92400e"}; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700;">${status}</span>
+                            </div>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" onclick="updateTicketStatus('${docId}', '${isResolved ? "Open" : "Resolved"}')" style="background:${isResolved ? "#f59e0b" : "#10b981"}; color:#fff; border:none; padding:5px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">
+                                    ${isResolved ? "Reopen" : "Mark Resolved"}
+                                </button>
+                                <button type="button" onclick="deleteTicketDoc('${docId}')" style="background:#ef4444; color:#fff; border:none; padding:5px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                        <div style="font-size:12px; color:#334155; margin-bottom:6px;">
+                            <strong>Name:</strong> ${item.name || "-"} |
+                            <strong>Phone:</strong> ${item.phone || "-"} |
+                            <strong>Email:</strong> ${item.email || "-"}
+                            ${item.orderId ? ` | <strong>Order/Tracking:</strong> ${item.orderId}` : ""}
+                        </div>
+                        <div style="font-size:12px; color:#0f172a; background:#ffffff; border:1px solid #e2e8f0; padding:10px; border-radius:8px; white-space:pre-line;">${item.message || ""}</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        } catch (err) {
+            console.error("Error loading complaints:", err);
+            container.innerHTML = `<div style="color:#dc2626; font-size:12px;">Error loading tickets: ${err.message}</div>`;
+        }
+    }
+
+    async function updateTicketStatus(docId, newStatus) {
+        const firestore = getAdminDb();
+        if (!firestore) return;
+        await firestore.collection("support_tickets").doc(docId).update({ status: newStatus });
+        loadAdminComplaintsAndTickets();
+    }
+
+    async function deleteTicketDoc(docId) {
+        const firestore = getAdminDb();
+        if (!firestore) return;
+        await firestore.collection("support_tickets").doc(docId).delete();
+        loadAdminComplaintsAndTickets();
+    }
+</script>
