@@ -296,22 +296,26 @@
             <a href="contact.html" style="background: #1e293b; color: #cbd5e1; border: 1px solid #334155; font-weight: 600; padding: 7px 12px; border-radius: 6px; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
                 <i class="fas fa-envelope" style="color: #38bdf8;"></i> Contact Us
             </a>
-
-            <button id="cartBtn" style="background: #1e293b; color: #fff; border: 1px solid #334155; padding: 7px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                <i class="fas fa-shopping-cart" style="color: #10b981;"></i> Cart <span id="cartCount" style="background: #f59e0b; color: #0b132b; padding: 1px 6px; border-radius: 10px; font-size: 10px; font-weight: 800;">0</span>
-            </button>
-        </div>
+</div>
     </header>
 
     <div class="main-container">
         <main>
-            <div class="content-header">
-                <div>
-                    <h2><i class="fas fa-fire" style="color:#f97316;"></i> AVAILABLE DROPSHIP PRODUCTS</h2>
-                    <p>Browse trending dropshipping items at custom wholesale rates.</p>
-                </div>
+           <div class="content-header" style="flex-wrap: wrap; gap: 14px;">
+            <div>
+                <h2><i class="fas fa-route" style="color:#f97316;"></i> QUICK DROPSHIPPING PROCESS</h2>
+                <p>Simple workflow for fast order fulfillment across Pakistan.</p>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div class="total-pill"><strong style="color:#f59e0b;">1.</strong> Pick Product</div>
+                <span style="color:#94a3b8; font-weight:700;">→</span>
+                <div class="total-pill"><strong style="color:#f59e0b;">2.</strong> Place COD Order</div>
+                <span style="color:#94a3b8; font-weight:700;">→</span>
+                <div class="total-pill"><strong style="color:#10b981;">3.</strong> Fast Dispatch</div>
                 <div class="total-pill" id="totalItemsBadge">Total: 0 Items</div>
             </div>
+        </div>
 
             <div class="products-grid" id="dropshipProductsGrid">
                 <!-- Dynamically loaded via dropshipping.js -->
