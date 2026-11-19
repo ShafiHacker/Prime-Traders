@@ -356,7 +356,76 @@
             </div>
         </main>
     </div>
+<!-- Clean Dropshipping Footer -->
+    <footer style="background: #0b132b; color: #cbd5e1; border-top: 1px solid #1e293b; margin-top: 40px; padding: 32px 4% 20px;">
+        <div style="max-width: 1400px; margin: 0 auto;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 28px; padding-bottom: 24px; border-bottom: 1px solid #1e293b;">
+                
+                <!-- Column 1: Brand & Trust -->
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <span style="width: 30px; height: 30px; background: #f59e0b; color: #0b132b; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-size: 15px;">P</span>
+                        <strong style="color: #ffffff; font-size: 14px; letter-spacing: 0.5px;">PRIME TRADERS</strong>
+                    </div>
+                    <p style="font-size: 12px; color: #94a3b8; line-height: 1.6; margin-bottom: 12px;">
+                        Reliable wholesale & dropshipping catalog with nationwide Cash on Delivery support and fast dispatch.
+                    </p>
+                    <div style="display: inline-flex; align-items: center; gap: 6px; background: #1e293b; color: #fbbf24; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;">
+                        <i class="fas fa-shield-alt"></i> Cash on Delivery • Fast Dispatch
+                    </div>
+                </div>
 
+                <!-- Column 2: Quick Links -->
+                <div>
+                    <h4 style="color: #ffffff; font-size: 13px; font-weight: 800; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Quick Links</h4>
+                    <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
+                        <li><a href="dropshipping.html" style="color: #cbd5e1; text-decoration: none;"><i class="fas fa-angle-right" style="color: #f59e0b; margin-right: 6px;"></i>Dropship Catalog</a></li>
+                        <li><button type="button" onclick="openTrackOrderModal()" style="background: none; border: none; color: #cbd5e1; padding: 0; font-size: 12px; cursor: pointer; text-align: left;"><i class="fas fa-angle-right" style="color: #f59e0b; margin-right: 6px;"></i>Track Your Order</button></li>
+                        <li><a href="contact.html" style="color: #cbd5e1; text-decoration: none;"><i class="fas fa-angle-right" style="color: #f59e0b; margin-right: 6px;"></i>Support & Contact Us</a></li>
+                        <li><button type="button" onclick="openStudentAuthModal()" style="background: none; border: none; color: #cbd5e1; padding: 0; font-size: 12px; cursor: pointer; text-align: left;"><i class="fas fa-angle-right" style="color: #f59e0b; margin-right: 6px;"></i>Reseller / Student Portal</button></li>
+                    </ul>
+                </div>
+
+                <!-- Column 3: Categories -->
+                <div>
+                    <h4 style="color: #ffffff; font-size: 13px; font-weight: 800; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Categories</h4>
+                    <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
+                        <li><a href="#dropshipProductsGrid" onclick="quickSelectCategory('Fashion & Apparel')" style="color: #cbd5e1; text-decoration: none;">Fashion & Apparel</a></li>
+                        <li><a href="#dropshipProductsGrid" onclick="quickSelectCategory('Electronics & Gadgets')" style="color: #cbd5e1; text-decoration: none;">Electronics & Gadgets</a></li>
+                        <li><a href="#dropshipProductsGrid" onclick="quickSelectCategory('Home & Kitchen')" style="color: #cbd5e1; text-decoration: none;">Home & Kitchen</a></li>
+                        <li><a href="#dropshipProductsGrid" onclick="quickSelectCategory('Accessories')" style="color: #cbd5e1; text-decoration: none;">Accessories</a></li>
+                    </ul>
+                </div>
+
+                <!-- Column 4: Customer Care -->
+                <div>
+                    <h4 style="color: #ffffff; font-size: 13px; font-weight: 800; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Customer Care</h4>
+                    <p style="font-size: 12px; color: #94a3b8; line-height: 1.6; margin-bottom: 8px;">
+                        Need help with orders, COD confirmation, or support tickets?
+                    </p>
+                    <a href="contact.html" style="display: inline-flex; align-items: center; gap: 6px; background: #f59e0b; color: #0b132b; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 800; text-decoration: none;">
+                        <i class="fas fa-headset"></i> Open Support Ticket
+                    </a>
+                </div>
+
+            </div>
+
+            <div style="padding-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 11px; color: #94a3b8;">
+                <span>© 2026 Prime Traders. All rights reserved.</span>
+                <span>Shop Easy • Pay COD • Get on Time</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function quickSelectCategory(cat) {
+            const select = document.getElementById('headerCategorySelect');
+            if (select && typeof filterDropshipCatalog === 'function') {
+                select.value = cat;
+                filterDropshipCatalog();
+            }
+        }
+    </script>
     <!-- Product Quick View Modal -->
     <div id="productModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.75); z-index:99999; align-items:center; justify-content:center; padding:20px;">
         <div style="background:#fff; border-radius:16px; max-width:850px; width:100%; max-height:90vh; overflow-y:auto; padding:28px; position:relative; box-shadow:0 20px 25px -5px rgba(0,0,0,0.2);">
