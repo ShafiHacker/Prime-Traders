@@ -67,6 +67,13 @@
                     <a href="admin-dropshipping.html" id="navDropshipping" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3 block">
     <i class="fa-solid fa-store text-sm text-amber-400"></i> Dropshipping Hub
 </a>
+                    <button type="button" id="btnShowAdminTickets" onclick="toggleAdminTicketsPanel()" style="width: 100%; background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); padding: 10px 14px; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; text-align: left;">
+    <span style="display: inline-flex; align-items: center; gap: 10px;">
+        <i class="fas fa-ticket-alt" style="color: #f59e0b;"></i>
+        <span>Tickets & Complaints</span>
+    </span>
+    <span id="adminTicketsBadge" style="background: #f59e0b; color: #0b132b; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 900;">0</span>
+</button>
                 </div>
 
                 <!-- OPERATIONS & LOGISTICS SETTINGS -->
@@ -801,6 +808,122 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="dashboard.js?v=25.0"></script>
+    <!-- Admin Tickets & Complaints Panel -->
+<div id="adminTicketsPanel" style="display: none; background: #0f172a; border: 1px solid #334155; border-radius: 14px; padding: 20px; margin-bottom: 20px; color: #f1f5f9; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid #1e293b; padding-bottom: 12px;">
+        <div>
+            <h3 style="font-size: 16px; font-weight: 800; color: #ffffff; margin: 0;">
+                <i class="fas fa-ticket-alt" style="color: #f59e0b;"></i> Tickets & Complaints
+            </h3>
+            <p style="font-size: 12px; color: #94a3b8; margin: 3px 0 0;">Submissions received from contact.html (support_tickets).</p>
+        </div>
+        <button type="button" onclick="loadAdminTicketsList()" style="background: #1e293b; color: #f8fafc; border: 1px solid #334155; padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+
+    <div id="adminTicketsListContainer" style="display: grid; gap: 12px;">
+        <div style="font-size: 12px; color: #94a3b8;">Click "Tickets & Complaints" to load records...</div>
+    </div>
+</div>
+
+<script>
+    function getAdminTicketsDb() {
+        if (typeof db !== "undefined" && db) return db;
+        if (typeof firebase !== "undefined" && firebase.apps && firebase.apps.length > 0) {
+            return firebase.firestore();
+        }
+        return null;
+    }
+
+    function toggleAdminTicketsPanel() {
+        const panel = document.getElementById("adminTicketsPanel");
+        if (!panel) return;
+        const shouldOpen = panel.style.display === "none" || panel.style.display === "";
+        panel.style.display = shouldOpen ? "block" : "none";
+        if (shouldOpen) {
+            loadAdminTicketsList();
+        }
+    }
+
+    async function loadAdminTicketsList() {
+        const container = document.getElementById("adminTicketsListContainer");
+        const badge = document.getElementById("adminTicketsBadge");
+        const firestore = getAdminTicketsDb();
+
+        if (!container) return;
+        if (!firestore) {
+            container.innerHTML = '<div style="color:#f87171; font-size:12px;">Firebase Firestore not initialized.</div>';
+            return;
+        }
+
+        container.innerHTML = '<div style="font-size:12px; color:#94a3b8;">Loading tickets & complaints...</div>';
+
+        try {
+            const snap = await firestore.collection("support_tickets").orderBy("createdAt", "desc").get();
+            if (badge) badge.textContent = snap.size;
+
+            if (snap.empty) {
+                container.innerHTML = '<div style="font-size:12px; color:#94a3b8; padding:12px; background:#020617; border-radius:8px; border:1px solid #1e293b;">No tickets or complaints found.</div>';
+                return;
+            }
+
+            let html = "";
+            snap.forEach((doc) => {
+                const t = doc.data();
+                const docId = doc.id;
+                const status = t.status || "Open";
+                const isResolved = status === "Resolved";
+
+                html += `
+                    <div style="border: 1px solid #1e293b; border-left: 4px solid ${isResolved ? "#10b981" : "#f59e0b"}; border-radius: 10px; padding: 14px; background: #020617;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                            <div>
+                                <strong style="color:#ffffff; font-size:13px;">${t.ticketId || docId}</strong>
+                                <span style="margin-left:8px; background:#1e293b; color:#fbbf24; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700;">${t.category || t.entryType || "Ticket"}</span>
+                                <span style="margin-left:6px; background:${isResolved ? "rgba(16,185,129,0.2)" : "rgba(245,158,11,0.2)"}; color:${isResolved ? "#34d399" : "#fbbf24"}; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:700;">${status}</span>
+                            </div>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" onclick="setAdminTicketStatus('${docId}', '${isResolved ? "Open" : "Resolved"}')" style="background:${isResolved ? "#f59e0b" : "#10b981"}; color:${isResolved ? "#0b132b" : "#ffffff"}; border:none; padding:5px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">
+                                    ${isResolved ? "Reopen" : "Mark Resolved"}
+                                </button>
+                                <button type="button" onclick="removeAdminTicket('${docId}')" style="background:#ef4444; color:#ffffff; border:none; padding:5px 10px; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;">
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                        <div style="font-size:12px; color:#cbd5e1; margin-bottom:6px;">
+                            <strong>Name:</strong> ${t.name || "-"} |
+                            <strong>Phone:</strong> ${t.phone || "-"} |
+                            <strong>Email:</strong> ${t.email || "-"}
+                            ${t.orderId ? ` | <strong>Order/Tracking:</strong> ${t.orderId}` : ""}
+                        </div>
+                        <div style="font-size:12px; color:#f8fafc; background:#0f172a; border:1px solid #1e293b; padding:10px; border-radius:8px; white-space:pre-line;">${t.message || ""}</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        } catch (err) {
+            console.error("Error loading admin tickets:", err);
+            container.innerHTML = `<div style="color:#f87171; font-size:12px;">Error loading records: ${err.message}</div>`;
+        }
+    }
+
+    async function setAdminTicketStatus(docId, status) {
+        const firestore = getAdminTicketsDb();
+        if (!firestore) return;
+        await firestore.collection("support_tickets").doc(docId).update({ status: status });
+        loadAdminTicketsList();
+    }
+
+    async function removeAdminTicket(docId) {
+        const firestore = getAdminTicketsDb();
+        if (!firestore) return;
+        await firestore.collection("support_tickets").doc(docId).delete();
+        loadAdminTicketsList();
+    }
+</script>
 </body>
 </html>
 <!-- VIEW FOR E-COMMERCE STUDENTS VERIFICATION -->
