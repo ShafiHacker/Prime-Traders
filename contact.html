@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Support & Contact Us | Prime Traders</title>
+    <title>Contact & Complaints | Prime Traders</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -374,17 +374,14 @@
             <a href="dropshipping.html" class="nav-link-btn">
                 <i class="fas fa-store" style="color: #f59e0b;"></i> Dropship Catalog
             </a>
-            <a href="ecommerce-dashboard.html" class="nav-link-btn">
-                <i class="fas fa-th-large" style="color: #38bdf8;"></i> Dashboard
-            </a>
         </div>
     </header>
 
     <div class="container">
         <div class="page-banner">
             <div>
-                <h2><i class="fas fa-headset" style="color: #f59e0b;"></i> Support Desk & Complaint Center</h2>
-                <p>Submit a complaint or ticket regarding COD parcels, order tracking, product rates, or reseller accounts.</p>
+                <h2><i class="fas fa-headset" style="color: #f59e0b;"></i> Contact & Complaint Desk</h2>
+                <p>Send a complaint or inquiry regarding COD parcels, tracking, product rates, or store support.</p>
             </div>
             <div class="trust-pill">
                 <i class="fas fa-shield-alt"></i> Shop Easy • Pay COD • Get on Time
@@ -392,10 +389,10 @@
         </div>
 
         <div class="contact-grid">
-            <!-- Ticket / Complaint Form Card -->
+            <!-- Complaint / Contact Form Card -->
             <div class="card">
-                <div class="card-title">Submit a Complaint or Support Ticket</div>
-                <div class="card-sub">Fill out the details below. Your entry goes directly to the Admin Dashboard.</div>
+                <div class="card-title">Send a Complaint or Message</div>
+                <div class="card-sub">Submit your details below. Our admin support team manages all tickets & complaints in the admin panel.</div>
 
                 <form id="supportTicketForm" onsubmit="submitSupportTicket(event)">
                     <div class="form-row">
@@ -415,14 +412,13 @@
                             <input type="email" id="ticketEmail" required placeholder="you@example.com">
                         </div>
                         <div>
-                            <label for="ticketCategory">Type / Category *</label>
+                            <label for="ticketCategory">Topic / Category *</label>
                             <select id="ticketCategory" required>
                                 <option value="Complaint - COD / Delivery">Complaint - COD / Delivery</option>
                                 <option value="Complaint - Damaged / Wrong Item">Complaint - Damaged / Wrong Item</option>
                                 <option value="Parcel Tracking">Parcel Tracking</option>
                                 <option value="Product Rate / Stock">Product Rate / Stock</option>
-                                <option value="Account / Reseller Portal">Account / Reseller Portal</option>
-                                <option value="General Support">General Support</option>
+                                <option value="General Inquiry">General Inquiry</option>
                             </select>
                         </div>
                     </div>
@@ -433,22 +429,22 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="ticketMessage">Complaint / Issue Details *</label>
-                        <textarea id="ticketMessage" required placeholder="Describe your complaint or issue clearly so our team can resolve it quickly..."></textarea>
+                        <label for="ticketMessage">Details *</label>
+                        <textarea id="ticketMessage" required placeholder="Write your complaint or message clearly..."></textarea>
                     </div>
 
                     <button type="submit" id="ticketSubmitBtn" class="btn-submit">
-                        <i class="fas fa-paper-plane"></i> Submit to Support Desk
+                        <i class="fas fa-paper-plane"></i> Send Message
                     </button>
 
                     <div id="ticketStatusBox" class="alert-box"></div>
                 </form>
             </div>
 
-            <!-- Help & Guidelines Card -->
+            <!-- Direct Support Info Card -->
             <div class="card">
                 <div class="card-title">Direct Support Channels</div>
-                <div class="card-sub">Reach us via ticket form, email, or WhatsApp.</div>
+                <div class="card-sub">Reach our support team directly on WhatsApp or email.</div>
 
                 <div class="info-item">
                     <div class="info-icon"><i class="fab fa-whatsapp" style="color: #16a34a;"></i></div>
@@ -473,8 +469,8 @@
                 <div class="info-item">
                     <div class="info-icon"><i class="fas fa-barcode"></i></div>
                     <div>
-                        <h4>Include Order or Tracking ID</h4>
-                        <p>Share tracking ID and city for faster COD or parcel complaint resolution.</p>
+                        <h4>Order / Tracking Reference</h4>
+                        <p>Mention your tracking ID if your message relates to a shipment or COD payment.</p>
                     </div>
                 </div>
             </div>
@@ -560,12 +556,12 @@
                 : null;
 
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
             try {
                 await firestore.collection("support_tickets").add({
                     ticketId: ticketId,
-                    entryType: isComplaint ? "Complaint" : "Support Ticket",
+                    entryType: isComplaint ? "Complaint" : "Inquiry",
                     name: name,
                     phone: phone,
                     email: email,
@@ -580,18 +576,18 @@
 
                 showStatusMessage(
                     "success",
-                    `<strong>Submitted Successfully!</strong> Reference ID: <strong>${ticketId}</strong>. Our team will review it shortly.`
+                    `<strong>Submitted Successfully!</strong> Reference ID: <strong>${ticketId}</strong>. Our team will follow up shortly.`
                 );
                 document.getElementById("supportTicketForm").reset();
             } catch (err) {
-                console.error("Error saving ticket:", err);
+                console.error("Error submitting form:", err);
                 showStatusMessage(
                     "error",
-                    `<strong>Submission Failed:</strong> ${err.message || "Could not save your request."}`
+                    `<strong>Submission Failed:</strong> ${err.message || "Could not submit your message."}`
                 );
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit to Support Desk';
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message';
             }
         }
     </script>
