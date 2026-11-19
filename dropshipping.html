@@ -147,33 +147,26 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.06);
         }
 
-        /* Product image box centered in the middle */
-        .product-img-box {
-            height: 190px;
-            background: #ffffff;
-            position: relative;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            overflow: hidden;
-            border-bottom: 1px solid var(--border-color);
-            padding: 10px;
-        }
-
-        .product-img-box img,
-        .product-card img, 
-        .product-image img,
-        .card img {
-            width: auto !important;
-            height: auto !important;
-            max-width: 90% !important;
-            max-height: 90% !important;
-            object-fit: contain !important;
-            background-color: #ffffff;
-            transform: none !important;
-            margin: auto !important;
-        }
-
+.product-img-box {
+    height: 200px;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 !important;
+}
+.product-img-box img,
+.product-card img, 
+.product-image img,
+.card img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    transform: none !important;
+}
         /* Hide Wholesale badge */
         .badge-tag,
         .wholesale-badge,
