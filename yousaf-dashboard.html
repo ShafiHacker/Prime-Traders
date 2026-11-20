@@ -241,7 +241,7 @@
                 window.location.href = 'dropshipping.html';
             });
         }
-        <script>
+<script>
         const firebaseConfig = {
           apiKey: "AIzaSyCRkKoE48FjYIjYfUNFEYzcxNueKUm6YOM",
           authDomain: "prime-traders-f3eec.firebaseapp.com",
@@ -256,11 +256,127 @@
           firebase.initializeApp(firebaseConfig);
         }
 
-        // YAHAN ADD KARNA HAI:
-        var auth = firebase.auth();
-        var db = firebase.firestore();
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-        // Iske neeche aapka existing auth.onAuthStateChanged(...) code aayega
+        function setTimeGreeting() {
+            const hour = new Date().getHours();
+            const greetingEl = document.getElementById('greetingLine');
+            if (!greetingEl) return;
+
+            if (hour >= 5 && hour < 12) {
+                greetingEl.innerText = "Good morning,";
+            } else {
+                greetingEl.innerText = "Good evening,";
+            }
+        }
+
+        function switchTab(tab) {
+            const secOverview = document.getElementById('secOverview');
+            const secStudents = document.getElementById('secStudents');
+            const secPayments = document.getElementById('secPayments');
+
+            const btnOverview = document.getElementById('btnOverview');
+            const btnStudents = document.getElementById('btnStudents');
+            const btnPayments = document.getElementById('btnPayments');
+
+            const activeClass = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow";
+            const inactiveClass = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3";
+
+            secOverview.classList.add('hidden');
+            secStudents.classList.add('hidden');
+            secPayments.classList.add('hidden');
+
+            btnOverview.className = inactiveClass;
+            btnStudents.className = inactiveClass;
+            btnPayments.className = inactiveClass;
+
+            if (tab === 'overview') {
+                secOverview.classList.remove('hidden');
+                btnOverview.className = activeClass;
+                setTimeGreeting();
+            } else if (tab === 'students') {
+                secStudents.classList.remove('hidden');
+                btnStudents.className = activeClass;
+                loadStudentDetails();
+            } else if (tab === 'payments') {
+                secPayments.classList.remove('hidden');
+                btnPayments.className = activeClass;
+            }
+        }
+
+        async function loadStudentDetails() {
+            const tbody = document.getElementById('studentDetailsBody');
+            if (!tbody) return;
+
+            tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-slate-400">Loading student details...</td></tr>`;
+
+            try {
+                const snapshot = await db.collection('students').get();
+                if (snapshot.empty) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-slate-400">No student records found.</td></tr>`;
+                    return;
+                }
+
+                let rows = '';
+                snapshot.forEach((doc) => {
+                    const d = doc.data();
+                    const statusVal = (d.status || 'pending').toLowerCase();
+                    const badge = statusVal === 'approved'
+                        ? `<span class="px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold uppercase">APPROVED</span>`
+                        : `<span class="px-2.5 py-1 rounded bg-amber-950 text-amber-400 border border-amber-500/40 text-[10px] font-bold uppercase">PENDING</span>`;
+
+                    rows += `
+                        <tr class="border-b border-slate-800/80 hover:bg-slate-800/40 transition">
+                            <td class="p-3.5">
+                                <div class="font-bold text-white">${d.fullName || d.name || 'N/A'}</div>
+                                <div class="text-[11px] text-amber-400 font-semibold">${d.businessName || 'N/A'}</div>
+                            </td>
+                            <td class="p-3.5">
+                                <div class="text-slate-200">${d.email || 'N/A'}</div>
+                                <div class="text-[11px] text-slate-400">${d.phone || 'N/A'}</div>
+                            </td>
+                            <td class="p-3.5">
+                                <div class="text-slate-200">${d.cnic || 'N/A'}</div>
+                                <div class="text-[11px] text-purple-300 font-semibold">${d.batchNo || 'N/A'}</div>
+                            </td>
+                            <td class="p-3.5 text-slate-300">${d.bankDetails || 'N/A'}</td>
+                            <td class="p-3.5">${badge}</td>
+                        </tr>
+                    `;
+                });
+
+                tbody.innerHTML = rows;
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-rose-400">Error loading records: ${err.message}</td></tr>`;
+            }
+        }
+
+        auth.onAuthStateChanged(async (user) => {
+            if (!user || (user.email || '').toLowerCase() !== 'yousafansari@primetraders.com') {
+                window.location.href = 'dropshipping.html';
+                return;
+            }
+
+            setTimeGreeting();
+            document.getElementById('headerUserEmail').innerText = user.email;
+
+            try {
+                const doc = await db.collection('students').doc(user.uid).get();
+                const displayName = (doc.exists && (doc.data().fullName || doc.data().name))
+                    ? (doc.data().fullName || doc.data().name)
+                    : 'Yousaf Ansari';
+                document.getElementById('loggedInUserName').innerText = displayName;
+            } catch (_) {
+                document.getElementById('loggedInUserName').innerText = 'Yousaf Ansari';
+            }
+        });
+
+        function logoutYousaf() {
+            auth.signOut().then(() => {
+                window.location.href = 'dropshipping.html';
+            });
+        }
     </script>
 </body>
 </html>
