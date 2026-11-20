@@ -153,6 +153,20 @@
 
     <!-- Scripts -->
     <script>
+        (function captureIncomingReferral() {
+            const params = new URLSearchParams(window.location.search);
+            const refParam = (params.get("ref") || "").trim();
+            if (refParam) {
+                localStorage.setItem("pt_ref_code", refParam);
+                localStorage.setItem("pt_ref_link", window.location.href);
+                window.addEventListener("DOMContentLoaded", () => {
+                    if (typeof switchStudentTab === "function") {
+                        switchStudentTab("register");
+                    }
+                });
+            }
+        })();
+
         function toggleStudentPassword() {
             const passwordInput = document.getElementById('studentLoginPassword');
             const eyeIcon = document.getElementById('eyeIconStudent');
@@ -233,11 +247,14 @@
             const batchNo = document.getElementById('regStudentBatchNo').value;
             const bank = document.getElementById('regStudentBank').value;
 
+            const refCode = (localStorage.getItem("pt_ref_code") || "").trim();
+            const refLink = (localStorage.getItem("pt_ref_link") || "").trim();
+
             try {
                 const userCred = await auth.createUserWithEmailAndPassword(email, password);
                 const uid = userCred.user.uid;
 
-                // Save to Firestore 'students' collection with 'pending' status
+                // Save to Firestore 'students' collection with 'pending' status & referral info
                 await db.collection('students').doc(uid).set({
                     uid: uid,
                     fullName: fullName,
@@ -247,6 +264,8 @@
                     cnic: cnic,
                     batchNo: batchNo || 'N/A',
                     bankDetails: bank,
+                    referredBy: refCode || null,
+                    referralLink: refLink || null,
                     status: 'pending',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
