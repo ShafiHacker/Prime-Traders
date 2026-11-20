@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yousaf Ansari Dashboard | Prime Traders</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-6">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+        <div class="flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl">
+            <div>
+                <h1 class="text-lg font-black text-amber-400 uppercase">Yousaf Ansari Admin Portal</h1>
+                <p id="adminEmailText" class="text-xs text-slate-400">Loading...</p>
+            </div>
+            <button onclick="logoutYousaf()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-xs font-bold">
+                Logout
+            </button>
+        </div>
+
+        <!-- Yahan aap apna Yousaf Ansari dashboard data / tables rakh sakte hain -->
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl">
+            <h2 class="text-base font-bold text-white mb-2">Welcome Yousaf Ansari</h2>
+            <p class="text-xs text-slate-400">Yeh dashboard sirf yousafansari@primetraders.com ke liye alag banaya gaya hai.</p>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="dropshipping.js"></script>
+
+    <script>
+        auth.onAuthStateChanged((user) => {
+            if (!user || (user.email || '').toLowerCase() !== 'yousafansari@primetraders.com') {
+                window.location.href = 'dropshipping.html';
+                return;
+            }
+            document.getElementById('adminEmailText').innerText = user.email;
+        });
+
+        function logoutYousaf() {
+            auth.signOut().then(() => {
+                window.location.href = 'dropshipping.html';
+            });
+        }
+    </script>
+</body>
+</html>
