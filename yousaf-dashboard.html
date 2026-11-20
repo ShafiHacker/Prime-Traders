@@ -54,16 +54,40 @@
 
             <!-- 1. DASHBOARD OVERVIEW -->
             <section id="secOverview" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-10 shadow-xl">
-                <div class="space-y-2">
-                    <h2 id="greetingLine" class="text-3xl md:text-5xl font-black tracking-tight text-white">
-                        Good morning,
-                    </h2>
-                    <h3 id="loggedInUserName" class="text-2xl md:text-4xl font-extrabold text-amber-400">
-                        Yousaf Ansari
-                    </h3>
-                    <p class="text-base md:text-lg font-semibold text-slate-300 pt-2">
-                        Have a Nice Day!
-                    </p>
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <!-- Left Greeting -->
+                    <div class="space-y-2">
+                        <h2 id="greetingLine" class="text-3xl md:text-5xl font-black tracking-tight text-white">
+                            Good morning,
+                        </h2>
+                        <h3 id="loggedInUserName" class="text-2xl md:text-4xl font-extrabold text-amber-400">
+                            Yousaf Ansari
+                        </h3>
+                        <p class="text-base md:text-lg font-semibold text-slate-300 pt-2">
+                            Have a Nice Day!
+                        </p>
+                    </div>
+
+                    <!-- Right Referral Link Box (Fixed Code: 143256) -->
+                    <div class="bg-slate-950 border border-amber-500/30 rounded-2xl p-4 space-y-3 lg:w-[390px] shrink-0">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
+                                <i class="fa-solid fa-link mr-1"></i> Referral Link
+                            </span>
+                            <span class="bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-md text-[11px] font-black">
+                                Code: 143256
+                            </span>
+                        </div>
+
+                        <input id="fixedRefLinkInput" type="text" readonly
+                            value="https://shafihacker.github.io/Prime-Traders/dropshipping.html?ref=143256"
+                            class="w-full bg-slate-900 border border-slate-800 text-slate-200 text-xs px-3 py-2.5 rounded-lg outline-none">
+
+                        <button type="button" onclick="copyReferral143256()"
+                            class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow">
+                            <i class="fa-regular fa-copy"></i> Copy Referral Link
+                        </button>
+                    </div>
                 </div>
             </section>
 
@@ -87,12 +111,13 @@
                                     <th class="p-3.5">Email & Contact</th>
                                     <th class="p-3.5">CNIC & Batch</th>
                                     <th class="p-3.5">Bank Details</th>
+                                    <th class="p-3.5">Referral Link / Code</th>
                                     <th class="p-3.5">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="studentDetailsBody">
                                 <tr>
-                                    <td colspan="5" class="p-5 text-center text-slate-400">Loading student details...</td>
+                                    <td colspan="6" class="p-5 text-center text-slate-400">Loading student details...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -137,6 +162,18 @@
 
         const auth = firebase.auth();
         const db = firebase.firestore();
+
+        function copyReferral143256() {
+            const input = document.getElementById('fixedRefLinkInput');
+            if (!input) return;
+            navigator.clipboard.writeText(input.value).then(() => {
+                alert("Referral link copy ho gaya! (Code: 143256)");
+            }).catch(() => {
+                input.select();
+                document.execCommand("copy");
+                alert("Referral link copy ho gaya! (Code: 143256)");
+            });
+        }
 
         function setTimeGreeting() {
             const hour = new Date().getHours();
@@ -188,12 +225,12 @@
             const tbody = document.getElementById('studentDetailsBody');
             if (!tbody) return;
 
-            tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-slate-400">Loading student details...</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-slate-400">Loading student details...</td></tr>`;
 
             try {
                 const snapshot = await db.collection('students').get();
                 if (snapshot.empty) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-slate-400">No student records found.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-slate-400">No student records found.</td></tr>`;
                     return;
                 }
 
@@ -204,6 +241,13 @@
                     const badge = statusVal === 'approved'
                         ? `<span class="px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold uppercase">APPROVED</span>`
                         : `<span class="px-2.5 py-1 rounded bg-amber-950 text-amber-400 border border-amber-500/40 text-[10px] font-bold uppercase">PENDING</span>`;
+
+                    const refCode = d.referredBy || '';
+                    const refLink = d.referralLink || (refCode ? `https://shafihacker.github.io/Prime-Traders/dropshipping.html?ref=${refCode}` : '');
+                    const refCell = refCode
+                        ? `<div class="font-bold text-amber-400">Code: ${refCode}</div>
+                           <div class="text-[10px] text-slate-400 break-all max-w-[200px]">${refLink}</div>`
+                        : `<span class="text-slate-500">Direct</span>`;
 
                     rows += `
                         <tr class="border-b border-slate-800/80 hover:bg-slate-800/40 transition">
@@ -220,6 +264,7 @@
                                 <div class="text-[11px] text-purple-300 font-semibold">${d.batchNo || 'N/A'}</div>
                             </td>
                             <td class="p-3.5 text-slate-300">${d.bankDetails || 'N/A'}</td>
+                            <td class="p-3.5">${refCell}</td>
                             <td class="p-3.5">${badge}</td>
                         </tr>
                     `;
@@ -227,7 +272,7 @@
 
                 tbody.innerHTML = rows;
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-rose-400">Error loading records: ${err.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-rose-400">Error loading records: ${err.message}</td></tr>`;
             }
         }
 
@@ -256,38 +301,6 @@
                 window.location.href = 'dropshipping.html';
             });
         }
-        <!-- Referral Link Card (Right Side of Overview) -->
-<div class="mt-6 bg-slate-950 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-    <div class="space-y-1">
-        <p class="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
-            Your Referral Link (Code: <span id="yousafRefCode">YOUSAF-REF</span>)
-        </p>
-        <input id="yousafRefLinkInput" type="text" readonly
-            value="https://shafihacker.github.io/Prime-Traders/dropshipping.html?ref=YOUSAF-REF"
-            class="w-full sm:w-[430px] bg-slate-900 border border-slate-800 text-slate-200 text-xs px-3 py-2 rounded-lg outline-none">
-    </div>
-    <button type="button" onclick="copyYousafRefLink()"
-        class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition shrink-0 flex items-center gap-1.5">
-        <i class="fa-regular fa-copy"></i> Copy Link
-    </button>
-</div>
-        <!-- Referral Link Card (Right Side of Overview) -->
-<div class="mt-6 bg-slate-950 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-    <div class="space-y-1">
-        <p class="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
-            Your Referral Link (Code: <span id="yousafRefCode">YOUSAF-REF</span>)
-        </p>
-        <input id="yousafRefLinkInput" type="text" readonly
-            value="https://shafihacker.github.io/Prime-Traders/dropshipping.html?ref=YOUSAF-REF"
-            class="w-full sm:w-[430px] bg-slate-900 border border-slate-800 text-slate-200 text-xs px-3 py-2 rounded-lg outline-none">
-    </div>
-    <button type="button" onclick="copyYousafRefLink()"
-        class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition shrink-0 flex items-center gap-1.5">
-        <i class="fa-regular fa-copy"></i> Copy Link
-    </button>
-</div>
-        const refDisplay = d.referralLink || d.referredBy || 'Direct (No Ref)';
-        <div class="text-[10px] text-amber-300 mt-1 break-all">Ref: ${refDisplay}</div>
     </script>
 </body>
 </html>
