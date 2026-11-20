@@ -7,38 +7,233 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-6">
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col">
 
-    <div class="max-w-6xl mx-auto space-y-6">
-        <div class="flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl">
-            <div>
-                <h1 class="text-lg font-black text-amber-400 uppercase">Yousaf Ansari Admin Portal</h1>
-                <p id="adminEmailText" class="text-xs text-slate-400">Loading...</p>
+    <!-- Top Header -->
+    <header class="bg-slate-900 border-b border-slate-800 px-5 py-3.5 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-500 text-slate-950 font-black text-xl w-10 h-10 flex items-center justify-center rounded-xl shadow">P</div>
+                <div>
+                    <h1 class="text-sm font-black tracking-wider text-white uppercase">PRIME TRADERS</h1>
+                    <p class="text-[10px] text-amber-400 font-semibold tracking-widest uppercase">Yousaf Ansari Portal</p>
+                </div>
             </div>
-            <button onclick="logoutYousaf()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-xs font-bold">
-                Logout
-            </button>
-        </div>
 
-        <!-- Yahan aap apna Yousaf Ansari dashboard data / tables rakh sakte hain -->
-        <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl">
-            <h2 class="text-base font-bold text-white mb-2">Welcome Yousaf Ansari</h2>
-            <p class="text-xs text-slate-400">Yeh dashboard sirf yousafansari@primetraders.com ke liye alag banaya gaya hai.</p>
+            <div class="flex items-center gap-3">
+                <span id="headerUserEmail" class="text-xs text-slate-300 hidden sm:inline-block">yousafansari@primetraders.com</span>
+                <button onclick="logoutYousaf()" class="bg-rose-600/20 text-rose-400 border border-rose-500/30 hover:bg-rose-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
         </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto p-4 md:p-6 gap-6">
+
+        <!-- Left Sidebar -->
+        <aside class="w-full md:w-64 bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2 h-fit shadow-xl">
+            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 pb-1">Menu</p>
+
+            <button id="btnOverview" onclick="switchTab('overview')" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow">
+                <i class="fa-solid fa-table-cells-large text-sm"></i> Dashboard Overview
+            </button>
+
+            <button id="btnStudents" onclick="switchTab('students')" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">
+                <i class="fa-solid fa-users text-sm text-amber-400"></i> Student Details
+            </button>
+
+            <button id="btnPayments" onclick="switchTab('payments')" class="w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3">
+                <i class="fa-solid fa-wallet text-sm text-emerald-400"></i> Payment Details
+            </button>
+        </aside>
+
+        <!-- Right Content Area -->
+        <main class="flex-1 space-y-6">
+
+            <!-- 1. DASHBOARD OVERVIEW -->
+            <section id="secOverview" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-10 shadow-xl">
+                <div class="space-y-2">
+                    <h2 id="greetingLine" class="text-3xl md:text-5xl font-black tracking-tight text-white">
+                        Good morning,
+                    </h2>
+                    <h3 id="loggedInUserName" class="text-2xl md:text-4xl font-extrabold text-amber-400">
+                        Yousaf Ansari
+                    </h3>
+                    <p class="text-base md:text-lg font-semibold text-slate-300 pt-2">
+                        Have a Nice Day!
+                    </p>
+                </div>
+            </section>
+
+            <!-- 2. STUDENT DETAILS -->
+            <section id="secStudents" class="hidden space-y-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                    <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+                        <h2 class="text-sm md:text-base font-extrabold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-user-graduate text-amber-400"></i> E-Commerce Student Account Details
+                        </h2>
+                        <button onclick="loadStudentDetails()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-rotate"></i> Refresh List
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-950 text-slate-400 border-b border-slate-800 uppercase text-[11px]">
+                                <tr>
+                                    <th class="p-3.5">Student Name / Business</th>
+                                    <th class="p-3.5">Email & Contact</th>
+                                    <th class="p-3.5">CNIC & Batch</th>
+                                    <th class="p-3.5">Bank Details</th>
+                                    <th class="p-3.5">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentDetailsBody">
+                                <tr>
+                                    <td colspan="5" class="p-5 text-center text-slate-400">Loading student details...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. PAYMENT DETAILS -->
+            <section id="secPayments" class="hidden space-y-4">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-base font-extrabold text-white flex items-center gap-2 mb-2">
+                        <i class="fa-solid fa-wallet text-emerald-400"></i> Payment Details
+                    </h2>
+                    <p class="text-xs text-slate-400">
+                        Payment details section ready hai. Jab aap batayenge toh yahan payment ki complete details add kar denge.
+                    </p>
+                </div>
+            </section>
+
+        </main>
     </div>
 
+    <!-- Firebase SDKs & dropshipping.js -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="dropshipping.js"></script>
 
     <script>
-        auth.onAuthStateChanged((user) => {
+        function setTimeGreeting() {
+            const hour = new Date().getHours();
+            const greetingEl = document.getElementById('greetingLine');
+            if (!greetingEl) return;
+
+            // Morning: 5:00 AM - 11:59 AM, Evening/After: 12:00 PM onwards
+            if (hour >= 5 && hour < 12) {
+                greetingEl.innerText = "Good morning,";
+            } else {
+                greetingEl.innerText = "Good evening,";
+            }
+        }
+
+        function switchTab(tab) {
+            const secOverview = document.getElementById('secOverview');
+            const secStudents = document.getElementById('secStudents');
+            const secPayments = document.getElementById('secPayments');
+
+            const btnOverview = document.getElementById('btnOverview');
+            const btnStudents = document.getElementById('btnStudents');
+            const btnPayments = document.getElementById('btnPayments');
+
+            const activeClass = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 transition flex items-center gap-3 shadow";
+            const inactiveClass = "w-full text-left px-4 py-3 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition flex items-center gap-3";
+
+            secOverview.classList.add('hidden');
+            secStudents.classList.add('hidden');
+            secPayments.classList.add('hidden');
+
+            btnOverview.className = inactiveClass;
+            btnStudents.className = inactiveClass;
+            btnPayments.className = inactiveClass;
+
+            if (tab === 'overview') {
+                secOverview.classList.remove('hidden');
+                btnOverview.className = activeClass;
+                setTimeGreeting();
+            } else if (tab === 'students') {
+                secStudents.classList.remove('hidden');
+                btnStudents.className = activeClass;
+                loadStudentDetails();
+            } else if (tab === 'payments') {
+                secPayments.classList.remove('hidden');
+                btnPayments.className = activeClass;
+            }
+        }
+
+        async function loadStudentDetails() {
+            const tbody = document.getElementById('studentDetailsBody');
+            if (!tbody) return;
+
+            tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-slate-400">Loading student details...</td></tr>`;
+
+            try {
+                const snapshot = await db.collection('students').get();
+                if (snapshot.empty) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-slate-400">No student records found.</td></tr>`;
+                    return;
+                }
+
+                let rows = '';
+                snapshot.forEach((doc) => {
+                    const d = doc.data();
+                    const statusVal = (d.status || 'pending').toLowerCase();
+                    const badge = statusVal === 'approved'
+                        ? `<span class="px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/40 text-[10px] font-bold uppercase">APPROVED</span>`
+                        : `<span class="px-2.5 py-1 rounded bg-amber-950 text-amber-400 border border-amber-500/40 text-[10px] font-bold uppercase">PENDING</span>`;
+
+                    rows += `
+                        <tr class="border-b border-slate-800/80 hover:bg-slate-800/40 transition">
+                            <td class="p-3.5">
+                                <div class="font-bold text-white">${d.fullName || d.name || 'N/A'}</div>
+                                <div class="text-[11px] text-amber-400 font-semibold">${d.businessName || 'N/A'}</div>
+                            </td>
+                            <td class="p-3.5">
+                                <div class="text-slate-200">${d.email || 'N/A'}</div>
+                                <div class="text-[11px] text-slate-400">${d.phone || 'N/A'}</div>
+                            </td>
+                            <td class="p-3.5">
+                                <div class="text-slate-200">${d.cnic || 'N/A'}</div>
+                                <div class="text-[11px] text-purple-300 font-semibold">${d.batchNo || 'N/A'}</div>
+                            </td>
+                            <td class="p-3.5 text-slate-300">${d.bankDetails || 'N/A'}</td>
+                            <td class="p-3.5">${badge}</td>
+                        </tr>
+                    `;
+                });
+
+                tbody.innerHTML = rows;
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-5 text-center text-rose-400">Error loading records: ${err.message}</td></tr>`;
+            }
+        }
+
+        auth.onAuthStateChanged(async (user) => {
             if (!user || (user.email || '').toLowerCase() !== 'yousafansari@primetraders.com') {
                 window.location.href = 'dropshipping.html';
                 return;
             }
-            document.getElementById('adminEmailText').innerText = user.email;
+
+            setTimeGreeting();
+            document.getElementById('headerUserEmail').innerText = user.email;
+
+            try {
+                const doc = await db.collection('students').doc(user.uid).get();
+                const displayName = (doc.exists && (doc.data().fullName || doc.data().name))
+                    ? (doc.data().fullName || doc.data().name)
+                    : 'Yousaf Ansari';
+                document.getElementById('loggedInUserName').innerText = displayName;
+            } catch (_) {
+                document.getElementById('loggedInUserName').innerText = 'Yousaf Ansari';
+            }
         });
 
         function logoutYousaf() {
