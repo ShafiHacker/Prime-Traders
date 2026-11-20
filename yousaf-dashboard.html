@@ -256,6 +256,38 @@
                 window.location.href = 'dropshipping.html';
             });
         }
+        <!-- Referral Link Card (Right Side of Overview) -->
+<div class="mt-6 bg-slate-950 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div class="space-y-1">
+        <p class="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
+            Your Referral Link (Code: <span id="yousafRefCode">YOUSAF-REF</span>)
+        </p>
+        <input id="yousafRefLinkInput" type="text" readonly
+            value="https://shafihacker.github.io/Prime-Traders/dropshipping.html?ref=YOUSAF-REF"
+            class="w-full sm:w-[430px] bg-slate-900 border border-slate-800 text-slate-200 text-xs px-3 py-2 rounded-lg outline-none">
+    </div>
+    <button type="button" onclick="copyYousafRefLink()"
+        class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition shrink-0 flex items-center gap-1.5">
+        <i class="fa-regular fa-copy"></i> Copy Link
+    </button>
+</div>
+        <!-- Referral Link Card (Right Side of Overview) -->
+<div class="mt-6 bg-slate-950 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div class="space-y-1">
+        <p class="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
+            Your Referral Link (Code: <span id="yousafRefCode">YOUSAF-REF</span>)
+        </p>
+        <input id="yousafRefLinkInput" type="text" readonly
+            value="https://shafihacker.github.io/Prime-Traders/dropshipping.html?ref=YOUSAF-REF"
+            class="w-full sm:w-[430px] bg-slate-900 border border-slate-800 text-slate-200 text-xs px-3 py-2 rounded-lg outline-none">
+    </div>
+    <button type="button" onclick="copyYousafRefLink()"
+        class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition shrink-0 flex items-center gap-1.5">
+        <i class="fa-regular fa-copy"></i> Copy Link
+    </button>
+</div>
+        const refDisplay = d.referralLink || d.referredBy || 'Direct (No Ref)';
+        <div class="text-[10px] text-amber-300 mt-1 break-all">Ref: ${refDisplay}</div>
     </script>
 </body>
 </html>
