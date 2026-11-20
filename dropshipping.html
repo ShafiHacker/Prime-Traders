@@ -807,5 +807,43 @@
             });
         }
     </script>
+    
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("studentAuthModal");
+    if (!modal) return;
+
+    const form = modal.querySelector("form");
+    if (!form) return;
+
+    form.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const emailInput =
+            document.getElementById("studentLoginEmail") ||
+            form.querySelector('input[type="email"]');
+        const passInput =
+            document.getElementById("studentLoginPassword") ||
+            form.querySelector('input[type="password"]');
+
+        const email = emailInput ? emailInput.value.trim().toLowerCase() : "";
+        const pass = passInput ? passInput.value : "";
+
+        if (!email || !pass) {
+            alert("Email aur password enter karein.");
+            return;
+        }
+
+        try {
+            if (email === "yousafansari@primetraders.com") {
+                await auth.signInWithEmailAndPassword(email, pass);
+                window.location.href = "yousaf-dashboard.html";
+            }
+        } catch (err) {
+            alert("Login Error: " + err.message);
+        }
+    });
+});
+</script>
 </body>
 </html>
