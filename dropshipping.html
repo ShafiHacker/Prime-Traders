@@ -844,6 +844,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 });
+        (function captureDropshippingRef() {
+    const params = new URLSearchParams(window.location.search);
+    const refParam = (params.get("ref") || "").trim();
+    if (refParam) {
+        localStorage.setItem("pt_ref_code", refParam);
+        localStorage.setItem("pt_ref_link", window.location.href);
+    }
+})();
 </script>
 </body>
 </html>
