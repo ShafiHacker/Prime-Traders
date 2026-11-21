@@ -315,5 +315,168 @@ auth.onAuthStateChanged(async (user) => {
             });
         }
     </script>
+    <!-- Inside Payment Details section in yousaf-dashboard.html -->
+<div id="yousafReadOnlyPaymentBox" style="margin-top:12px;"></div>
+    <script>
+(function initYousafReadOnlyPaymentReview() {
+  const COLLECTION_NAME = "yousafPayments";
+  const DOC_ID = "yousafansari_ledger";
+
+  function calcRow(r) {
+    const qty = parseFloat(r.qty) || 0;
+    const rate = parseFloat(r.rate) || 0;
+    const totalReceived = qty * rate;
+    const gst18 = (totalReceived / 100) * 18;
+    const sst15 = (totalReceived / 100) * 15;
+    const deduction33 = gst18 + sst15;
+    const cod4 = (totalReceived / 100) * 4;
+    const totalDeduction = deduction33 + cod4;
+    const commUnit = parseFloat(r.commissionUnitRate) || 0;
+    const commTotal = commUnit * qty;
+    const comm2 = (commTotal / 100) * 2;
+    const pay = commTotal + comm2;
+    return { totalReceived, gst18, sst15, deduction33, cod4, totalDeduction, commTotal, comm2, pay };
+  }
+
+  function fmtNum(n) {
+    if (!isFinite(n)) return "0";
+    return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
+  }
+
+  function openSlip(dataUrl, title) {
+    if (!dataUrl) return;
+    const w = window.open("", "_blank");
+    if (!w) return;
+    const isPdf = dataUrl.startsWith("data:application/pdf");
+    w.document.write(`
+      <html><head><title>${title || "Bank Slip Review"}</title></head>
+      <body style="margin:0;background:#090d16;display:flex;align-items:center;justify-content:center;min-height:100vh;">
+        ${isPdf
+          ? `<iframe src="${dataUrl}" style="width:95vw;height:95vh;border:none;"></iframe>`
+          : `<img src="${dataUrl}" style="max-width:95vw;max-height:95vh;border-radius:8px;" />`
+        }
+      </body></html>
+    `);
+  }
+
+  async function renderReadOnlyTable() {
+    const box = document.getElementById("yousafReadOnlyPaymentBox");
+    if (!box) return;
+
+    let rows = [];
+    try {
+      if (window.db) {
+        const doc = await window.db.collection(COLLECTION_NAME).doc(DOC_ID).get();
+        if (doc.exists && Array.isArray(doc.data().rows)) rows = doc.data().rows;
+      }
+    } catch (_) {}
+
+    if (!rows.length) {
+      try {
+        rows = JSON.parse(localStorage.getItem("pt_yousaf_payment_rows")) || [];
+      } catch (_) {
+        rows = [];
+      }
+    }
+
+    if (!rows.length) {
+      box.innerHTML = `<p style="color:#94a3b8;font-size:13px;">Abhi koi payment record review ke liye available nahi hai.</p>`;
+      return;
+    }
+
+    let html = `
+      <div style="margin-bottom:10px;display:inline-block;background:#1e293b;color:#fbbf24;padding:5px 10px;border-radius:8px;font-size:12px;font-weight:700;">
+        👁 Review Mode Only (Editing Disabled)
+      </div>
+      <div style="overflow-x:auto;border:1px solid #1e293b;border-radius:12px;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:1650px;color:#f8fafc;">
+          <thead>
+            <tr style="background:#1e293b;text-align:center;">
+              <th colspan="4" style="padding:7px;border:1px solid #334155;">Student Details</th>
+              <th colspan="4" style="padding:7px;border:1px solid #334155;">Product Details</th>
+              <th colspan="3" style="padding:7px;border:1px solid #334155;">FBR Deduction</th>
+              <th style="padding:7px;border:1px solid #334155;">COD</th>
+              <th style="padding:7px;border:1px solid #334155;">Total Deduction</th>
+              <th colspan="4" style="padding:7px;border:1px solid #334155;">Commission</th>
+              <th colspan="3" style="padding:7px;border:1px solid #334155;">Payment Status</th>
+            </tr>
+            <tr style="background:#0b1220;color:#cbd5e1;font-size:11px;text-align:center;">
+              <th style="padding:6px;border:1px solid #1e293b;">Referral Code</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Student Name</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Contact</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Batch</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Order #</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Product Description</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Qty</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Rate</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Total Received</th>
+              <th style="padding:6px;border:1px solid #1e293b;">18% GST</th>
+              <th style="padding:6px;border:1px solid #1e293b;">15% SST</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Deduction 33%</th>
+              <th style="padding:6px;border:1px solid #1e293b;">COD 4%</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Total Deduction</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Under 500 (Rs.80) / Above 500 (Rs.100)</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Total</th>
+              <th style="padding:6px;border:1px solid #1e293b;">2%</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Pay</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Date</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Return / Charged</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Prof (Review)</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    rows.forEach((r, i) => {
+      const c = calcRow(r);
+      html += `
+        <tr style="background:${i % 2 === 0 ? "#0f172a" : "#111b2e"};text-align:center;">
+          <td style="padding:6px;border:1px solid #1e293b;">${r.referralCode || "143256"}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${r.studentName || ""}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${r.contact || ""}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${r.batch || ""}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${r.orderNo || ""}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${r.productDescription || ""}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${r.qty || ""}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${r.rate || ""}</td>
+          <td style="padding:6px;border:1px solid #1e293b;font-weight:700;color:#93c5fd;">${fmtNum(c.totalReceived)}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${fmtNum(c.gst18)}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${fmtNum(c.sst15)}</td>
+          <td style="padding:6px;border:1px solid #1e293b;font-weight:700;color:#fde047;">${fmtNum(c.deduction33)}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${fmtNum(c.cod4)}</td>
+          <td style="padding:6px;border:1px solid #1e293b;font-weight:700;color:#fda4af;">${fmtNum(c.totalDeduction)}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${r.commissionUnitRate || ""}</td>
+          <td style="padding:6px;border:1px solid #1e293b;font-weight:700;color:#86efac;">${fmtNum(c.commTotal)}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${fmtNum(c.comm2)}</td>
+          <td style="padding:6px;border:1px solid #1e293b;font-weight:800;color:#4ade80;">${fmtNum(c.pay)}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${r.date || ""}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${r.returnOrCharged || ""}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">
+            ${r.proofDataUrl
+              ? `<button type="button" data-review-slip="${i}" style="background:#0284c7;color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">Review Slip</button>`
+              : `<span style="color:#64748b;font-size:11px;">Pending</span>`}
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `</tbody></table></div>`;
+    box.innerHTML = html;
+
+    box.querySelectorAll("button[data-review-slip]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.dataset.reviewSlip);
+        openSlip(rows[idx].proofDataUrl, rows[idx].proofName);
+      });
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => setTimeout(renderReadOnlyTable, 250));
+  } else {
+    setTimeout(renderReadOnlyTable, 250);
+  }
+})();
+</script>
 </body>
 </html>
