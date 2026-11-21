@@ -7,7 +7,7 @@
     inset: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
-    background: radial-gradient(circle at 26% 45%, #1c170d 0%, #090b10 62%, #040507 100%) !important;
+    background: radial-gradient(circle at 26% 45%, #1d180e 0%, #090b10 62%, #040507 100%) !important;
     overflow: hidden !important;
     z-index: 9990 !important;
     pointer-events: none;
@@ -43,17 +43,17 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: 28px;
+    gap: 24px;
     width: 100%;
-    max-width: 1180px;
+    max-width: 1260px;
     margin: 0 auto;
   }
 
-  /* Matched to login card height (~450px) */
+  /* Larger than login card border (~520px height) */
   .lumiere-lamp-holder {
     position: relative;
-    width: 390px;
-    height: 455px;
+    width: 440px;
+    height: 520px;
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -63,17 +63,17 @@
   /* Warm light cast toward the login form on the right */
   .lumiere-beam-to-login {
     position: absolute;
-    top: 135px;
-    left: 225px;
-    width: 450px;
-    height: 260px;
+    top: 165px;
+    left: 260px;
+    width: 480px;
+    height: 290px;
     background: radial-gradient(
       ellipse at 10% 42%,
-      rgba(250, 204, 21, 0.36) 0%,
-      rgba(245, 158, 11, 0.14) 46%,
+      rgba(250, 204, 21, 0.38) 0%,
+      rgba(245, 158, 11, 0.15) 46%,
       transparent 76%
     );
-    transform: rotate(4deg);
+    transform: rotate(5deg);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -98,56 +98,59 @@
   }
 
   .lumiere-pull-cord.is-pulled {
-    transform: translateY(11px);
+    transform: translateY(12px);
   }
 
   .lumiere-form-glow {
-    box-shadow: -28px 0 60px rgba(250, 204, 21, 0.28), 0 24px 54px rgba(0, 0, 0, 0.72) !important;
+    box-shadow: -30px 0 64px rgba(250, 204, 21, 0.28), 0 24px 54px rgba(0, 0, 0, 0.72) !important;
     border-color: rgba(250, 204, 21, 0.5) !important;
     transition: box-shadow 0.3s ease, border-color 0.3s ease;
   }
 
+  /* Mobile layout matching 3rd reference screen */
   @media (max-width: 640px) {
     .lumiere-login-stage {
       flex-direction: column !important;
       align-items: center !important;
-      gap: 10px !important;
-      padding: 8px 10px 22px !important;
+      gap: 6px !important;
+      padding: 8px 10px 24px !important;
     }
 
     .lumiere-lamp-holder {
-      width: 290px !important;
-      height: 315px !important;
-      margin-bottom: -10px;
+      width: 310px !important;
+      height: 325px !important;
+      align-self: flex-start !important;
+      margin-left: -12px !important;
+      margin-bottom: -24px !important;
     }
 
     .lumiere-lamp-art {
-      width: 285px !important;
-      height: 310px !important;
+      width: 310px !important;
+      height: 325px !important;
     }
 
     .lumiere-beam-to-login {
-      top: 115px !important;
-      left: 55% !important;
+      top: 120px !important;
+      left: 175px !important;
       width: 320px !important;
-      height: 195px !important;
-      transform: translateX(-50%) rotate(10deg) !important;
+      height: 220px !important;
+      transform: rotate(22deg) !important;
       background: radial-gradient(
-        ellipse at 50% 15%,
-        rgba(250, 204, 21, 0.36) 0%,
-        rgba(245, 158, 11, 0.13) 48%,
-        transparent 76%
+        ellipse at 20% 25%,
+        rgba(250, 204, 21, 0.4) 0%,
+        rgba(245, 158, 11, 0.15) 50%,
+        transparent 78%
       ) !important;
     }
 
     .lumiere-form-glow {
-      box-shadow: 0 -14px 38px rgba(250, 204, 21, 0.25), 0 18px 38px rgba(0, 0, 0, 0.7) !important;
+      box-shadow: 0 -16px 40px rgba(250, 204, 21, 0.26), 0 18px 38px rgba(0, 0, 0, 0.72) !important;
     }
   }
 </style>
 
 <script>
-(function mountReferenceArticulatedLamp() {
+(function mountRefinedLumiereLamp() {
   let isLightOn = true;
 
   function playCordSound(turnedOn) {
@@ -243,17 +246,22 @@
     holder.className = "lumiere-lamp-holder lamp-lit";
     holder.innerHTML = `
       <div class="lumiere-beam-to-login"></div>
-      <svg class="lumiere-lamp-art" viewBox="0 0 360 440" width="380" height="450">
+      <svg class="lumiere-lamp-art" viewBox="0 0 420 500" width="440" height="520">
         <defs>
-          <radialGradient id="refConeLight" cx="55%" cy="22%" r="72%">
-            <stop offset="0%" stop-color="#facc15" stop-opacity="0.46"/>
+          <radialGradient id="refConeLight" cx="55%" cy="20%" r="74%">
+            <stop offset="0%" stop-color="#facc15" stop-opacity="0.48"/>
             <stop offset="55%" stop-color="#d97706" stop-opacity="0.16"/>
             <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
           </radialGradient>
           <radialGradient id="refBulbGlow" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
-            <stop offset="40%" stop-color="#fef08a" stop-opacity="0.85"/>
+            <stop offset="42%" stop-color="#fef08a" stop-opacity="0.88"/>
             <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="refBulbGlass" cx="38%" cy="32%" r="65%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+            <stop offset="55%" stop-color="#fef08a" stop-opacity="0.65"/>
+            <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.45"/>
           </radialGradient>
           <linearGradient id="refDomeGloss" x1="20%" y1="5%" x2="85%" y2="95%">
             <stop offset="0%" stop-color="#52525b"/>
@@ -279,54 +287,49 @@
         </defs>
 
         <!-- Floor Shadow -->
-        <ellipse cx="166" cy="404" rx="112" ry="16" fill="#000000" opacity="0.65"/>
+        <ellipse cx="182" cy="472" rx="124" ry="18" fill="#000000" opacity="0.65"/>
 
-        <!-- Downward Warm Cone from Shade -->
-        <path class="ref-cone" d="M168 175 L108 386 L296 386 L274 175 Z" fill="url(#refConeLight)"/>
+        <!-- Downward Warm Cone -->
+        <path class="ref-cone" d="M210 195 L118 452 L344 452 L314 195 Z" fill="url(#refConeLight)"/>
 
         <!-- Base Disc -->
-        <ellipse cx="166" cy="392" rx="92" ry="15" fill="#09090b" stroke="#3f3f46" stroke-width="1.5"/>
-        <ellipse cx="166" cy="387" rx="90" ry="13" fill="url(#refBaseDisc)"/>
+        <ellipse cx="182" cy="458" rx="102" ry="16" fill="#09090b" stroke="#3f3f46" stroke-width="1.6"/>
+        <ellipse cx="182" cy="452" rx="100" ry="14" fill="url(#refBaseDisc)"/>
 
         <!-- Base Golden Cup & Dark Pivot -->
-        <path d="M144 386 C144 360, 188 360, 188 386 Z" fill="url(#refGoldRim)"/>
-        <circle cx="166" cy="378" r="10" fill="#18181b" stroke="#52525b" stroke-width="1.5"/>
+        <path d="M158 451 C158 422, 206 422, 206 451 Z" fill="url(#refGoldRim)"/>
+        <circle cx="182" cy="442" r="11" fill="#18181b" stroke="#52525b" stroke-width="1.5"/>
 
-        <!-- Lower Arm (leans slightly left & up like reference) -->
-        <line x1="162" y1="372" x2="118" y2="236" stroke="url(#refArmPipe)" stroke-width="13" stroke-linecap="round"/>
+        <!-- Lower Arm -->
+        <line x1="178" y1="436" x2="128" y2="276" stroke="url(#refArmPipe)" stroke-width="14.5" stroke-linecap="round"/>
 
-        <!-- Middle Elbow Hinge (Gold disc + dark center) -->
-        <circle cx="118" cy="236" r="20" fill="url(#refGoldRim)" stroke="#ca8a04" stroke-width="1.5"/>
-        <circle cx="118" cy="236" r="8" fill="#18181b"/>
+        <!-- Middle Elbow Hinge -->
+        <circle cx="128" cy="276" r="23" fill="url(#refGoldRim)" stroke="#ca8a04" stroke-width="1.6"/>
+        <circle cx="128" cy="276" r="9.5" fill="#18181b"/>
 
-        <!-- Upper Arm (angled up & right into dome socket) -->
-        <line x1="124" y1="224" x2="188" y2="126" stroke="url(#refArmPipe)" stroke-width="12" stroke-linecap="round"/>
+        <!-- Upper Arm leaning forward toward login form -->
+        <line x1="135" y1="262" x2="212" y2="146" stroke="url(#refArmPipe)" stroke-width="13.5" stroke-linecap="round"/>
 
-        <!-- Tilted Dome Shade Group (angled right/down toward login form) -->
-        <g transform="rotate(22 214 126)">
-          <!-- Socket Cap -->
-          <path d="M174 124 L194 98 L216 112 L196 136 Z" fill="#27272a" stroke="#52525b" stroke-width="1.5"/>
+        <!-- Tilted Dome Shade (angled toward right/down login card) -->
+        <g transform="rotate(24 246 146)">
+          <path d="M198 144 L222 114 L248 130 L224 158 Z" fill="#27272a" stroke="#52525b" stroke-width="1.6"/>
+          <path d="M162 158 C164 68, 326 68, 330 158 Z" fill="url(#refDomeGloss)" stroke="#52525b" stroke-width="1.6"/>
+          <path d="M192 122 C202 88, 246 78, 268 86 C234 86, 208 100, 198 126 Z" fill="#ffffff" opacity="0.25"/>
+          <ellipse class="ref-inner-rim" cx="246" cy="158" rx="84" ry="14" fill="none" stroke="url(#refGoldRim)" stroke-width="7.5"/>
+          <ellipse class="ref-inner-glow" cx="246" cy="158" rx="78" ry="10.5" fill="#facc15" opacity="0.3"/>
+        </g>
 
-          <!-- Dome Outer Shell -->
-          <path d="M142 136 C144 58, 282 58, 286 136 Z" fill="url(#refDomeGloss)" stroke="#52525b" stroke-width="1.5"/>
+        <!-- Clear, Prominent Filament Bulb (positioned cleanly under dome) -->
+        <circle class="ref-bulb-aura" cx="268" cy="182" r="46" fill="url(#refBulbGlow)"/>
+        <rect class="ref-bulb-socket" x="259" y="156" width="18" height="9" rx="2.5" fill="#facc15" stroke="#b45309" stroke-width="1.2"/>
+        <circle class="ref-bulb" cx="268" cy="184" r="20" fill="url(#refBulbGlass)" stroke="#fef08a" stroke-width="2"/>
+        <ellipse cx="261" cy="176" rx="4.5" ry="7" transform="rotate(-22 261 176)" fill="#ffffff" opacity="0.65"/>
+        <path class="ref-filament" d="M261 193 L264 178 L268 188 L272 178 L275 193" fill="none" stroke="#ea580c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
 
-          <!-- Glossy Highlight on Dome -->
-          <path d="M168 106 C176 78, 214 70, 232 76 C204 76, 182 88, 174 110 Z" fill="#ffffff" opacity="0.24"/>
-
-          <!-- Warm Golden Inner Rim -->
-          <ellipse class="ref-inner-rim" cx="214" cy="136" rx="72" ry="12" fill="none" stroke="url(#refGoldRim)" stroke-width="6.5"/>
-          <ellipse class="ref-inner-glow" cx="214" cy="136" rx="68" ry="9" fill="#facc15" opacity="0.28"/>
-
-          <!-- Bulb Aura & Filament Bulb -->
-          <circle class="ref-bulb-aura" cx="218" cy="144" r="34" fill="url(#refBulbGlow)"/>
-          <circle class="ref-bulb" cx="218" cy="144" r="16" fill="#fef9c3" fill-opacity="0.72" stroke="#fde047" stroke-width="1.6"/>
-          <path class="ref-filament" d="M213 151 L215 140 L221 148 L223 139" fill="none" stroke="#ea580c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-
-          <!-- Pull Cord & Teardrop Handle -->
-          <g class="lumiere-pull-cord" title="Pull cord to toggle light">
-            <line x1="220" y1="150" x2="220" y2="232" stroke="#eab308" stroke-width="3" stroke-linecap="round"/>
-            <path d="M220 232 C212 242, 212 254, 220 258 C228 254, 228 242, 220 232 Z" fill="#facc15" stroke="#ca8a04" stroke-width="1.2"/>
-          </g>
+        <!-- Straight Vertical Pull Cord & Teardrop Handle (hangs straight down) -->
+        <g class="lumiere-pull-cord" title="Pull cord to toggle light">
+          <line x1="274" y1="192" x2="274" y2="296" stroke="#facc15" stroke-width="3.2" stroke-linecap="round"/>
+          <path d="M274 296 C264 308, 264 322, 274 327 C284 322, 284 308, 274 296 Z" fill="#facc15" stroke="#ca8a04" stroke-width="1.4"/>
         </g>
       </svg>
     `;
@@ -343,12 +346,12 @@
       if (cone) cone.setAttribute("opacity", isLightOn ? "1" : "0");
       if (aura) aura.setAttribute("opacity", isLightOn ? "1" : "0");
       if (bulb) {
-        bulb.setAttribute("fill", isLightOn ? "#fef9c3" : "#3f3f46");
-        bulb.setAttribute("fill-opacity", isLightOn ? "0.72" : "0.45");
+        bulb.setAttribute("fill", isLightOn ? "url(#refBulbGlass)" : "#3f3f46");
+        bulb.setAttribute("fill-opacity", isLightOn ? "0.95" : "0.55");
       }
       if (filament) filament.setAttribute("opacity", isLightOn ? "1" : "0.15");
       if (rim) rim.setAttribute("opacity", isLightOn ? "1" : "0.35");
-      if (innerGlow) innerGlow.setAttribute("opacity", isLightOn ? "0.28" : "0");
+      if (innerGlow) innerGlow.setAttribute("opacity", isLightOn ? "0.3" : "0");
       if (loginBox) loginBox.classList.toggle("lumiere-form-glow", isLightOn);
     }
 
