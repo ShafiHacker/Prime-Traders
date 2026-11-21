@@ -863,5 +863,40 @@ document.addEventListener("DOMContentLoaded", function () {
 // YAHAN SET KARNA HAI:
 window.location.href = "ecommerce-dashboard.html";
 </script>
+    <script>
+(function enforceYousafRedirectGuard() {
+    const TARGET_ADMIN_EMAIL = "yousafansari@primetraders.com";
+    const TARGET_DASHBOARD = "yousaf-dashboard.html";
+
+    function checkAndRoute(user) {
+        if (user && (user.email || "").trim().toLowerCase() === TARGET_ADMIN_EMAIL) {
+            if (!window.location.pathname.endsWith(TARGET_DASHBOARD)) {
+                window.location.replace(TARGET_DASHBOARD);
+            }
+        }
+    }
+
+    // 1. Firebase auth state listener (runs automatically on login & page reload)
+    const waitForFirebase = setInterval(() => {
+        if (window.firebase && firebase.apps && firebase.apps.length > 0) {
+            clearInterval(waitForFirebase);
+            firebase.auth().onAuthStateChanged((user) => {
+                checkAndRoute(user);
+            });
+        }
+    }, 150);
+
+    // 2. Fallback: Catch form submit inside dropshipping.html student login modal
+    document.addEventListener("submit", (e) => {
+        const emailInput = e.target.querySelector('input[type="email"]');
+        if (emailInput && emailInput.value.trim().toLowerCase() === TARGET_ADMIN_EMAIL) {
+            setTimeout(() => {
+                const currentUser = window.firebase && firebase.auth().currentUser;
+                if (currentUser) checkAndRoute(currentUser);
+            }, 1200);
+        }
+    }, true);
+})();
+</script>
 </body>
 </html>
