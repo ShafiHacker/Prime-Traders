@@ -317,7 +317,7 @@ auth.onAuthStateChanged(async (user) => {
     </script>
     <!-- Inside Payment Details section in yousaf-dashboard.html -->
 <div id="yousafReadOnlyPaymentBox" style="margin-top:12px;"></div>
-    <script>
+<script>
 (function initYousafReadOnlyPaymentReview() {
   const COLLECTION_NAME = "yousafPayments";
   const DOC_ID = "yousafansari_ledger";
@@ -340,7 +340,7 @@ auth.onAuthStateChanged(async (user) => {
 
   function fmtNum(n) {
     if (!isFinite(n)) return "0";
-    return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
+    return Number.isInteger(n) ? n.toLocaleString() : n.toFixed(2).replace(/\.?0+$/, "");
   }
 
   function openSlip(dataUrl, title) {
@@ -359,8 +359,32 @@ auth.onAuthStateChanged(async (user) => {
     `);
   }
 
+  function findPaymentDetailsCard() {
+    let box = document.getElementById("yousafReadOnlyPaymentBox");
+    if (box) return box;
+
+    const headings = Array.from(document.querySelectorAll("h1, h2, h3, h4, p, div, span"));
+    const titleEl = headings.find((el) =>
+      (el.textContent || "").trim().toLowerCase().includes("payment details")
+    );
+    if (!titleEl) return null;
+
+    let card = titleEl;
+    for (let i = 0; i < 4 && card && card.parentElement !== document.body; i++) {
+      const r = card.getBoundingClientRect();
+      if (r.width >= 300 && r.height >= 80) break;
+      card = card.parentElement;
+    }
+
+    box = document.createElement("div");
+    box.id = "yousafReadOnlyPaymentBox";
+    box.style.marginTop = "14px";
+    card.appendChild(box);
+    return box;
+  }
+
   async function renderReadOnlyTable() {
-    const box = document.getElementById("yousafReadOnlyPaymentBox");
+    const box = findPaymentDetailsCard();
     if (!box) return;
 
     let rows = [];
@@ -380,16 +404,44 @@ auth.onAuthStateChanged(async (user) => {
     }
 
     if (!rows.length) {
-      box.innerHTML = `<p style="color:#94a3b8;font-size:13px;">Abhi koi payment record review ke liye available nahi hai.</p>`;
+      box.innerHTML = `<p style="color:#94a3b8;font-size:13px;margin:4px 0 0;">Abhi koi payment record review ke liye available nahi hai.</p>`;
       return;
     }
 
+    let grandReceived = 0;
+    let grandDeduction = 0;
+    let grandPay = 0;
+
+    rows.forEach((r) => {
+      const c = calcRow(r);
+      grandReceived += c.totalReceived;
+      grandDeduction += c.totalDeduction;
+      grandPay += c.pay;
+    });
+
     let html = `
-      <div style="margin-bottom:10px;display:inline-block;background:#1e293b;color:#fbbf24;padding:5px 10px;border-radius:8px;font-size:12px;font-weight:700;">
-        👁 Review Mode Only (Editing Disabled)
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;background:#0b1220;border:1px solid #1e293b;border-radius:12px;padding:12px 14px;margin-bottom:12px;">
+        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;">
+          <div>
+            <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;">Total Received</div>
+            <div style="font-size:16px;font-weight:800;color:#93c5fd;">Rs. ${fmtNum(grandReceived)}</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;">Total Deduction</div>
+            <div style="font-size:16px;font-weight:800;color:#fda4af;">Rs. ${fmtNum(grandDeduction)}</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#fbbf24;text-transform:uppercase;">Total Payment (Pay)</div>
+            <div style="font-size:18px;font-weight:900;color:#4ade80;">Rs. ${fmtNum(grandPay)}</div>
+          </div>
+        </div>
+        <span style="background:rgba(251,191,36,0.14);color:#fbbf24;border:1px solid rgba(251,191,36,0.35);padding:5px 10px;border-radius:8px;font-size:11px;font-weight:800;">
+          👁 Review Only
+        </span>
       </div>
-      <div style="overflow-x:auto;border:1px solid #1e293b;border-radius:12px;">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:1650px;color:#f8fafc;">
+
+      <div style="overflow-x:auto;border:1px solid #1e293b;border-radius:12px;background:#0f172a;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:1620px;color:#f8fafc;">
           <thead>
             <tr style="background:#1e293b;text-align:center;">
               <th colspan="4" style="padding:7px;border:1px solid #334155;">Student Details</th>
