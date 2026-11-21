@@ -74,6 +74,11 @@
     </span>
     <span id="adminTicketsBadge" style="background: #f59e0b; color: #0b132b; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 900;">0</span>
 </button>
+                    <!-- Add this button inside admin.html sidebar menu -->
+<button type="button" id="openYousafPaymentBtn" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 14px;margin-top:6px;border-radius:10px;background:#f59e0b;color:#090d16;font-weight:800;font-size:13px;border:none;cursor:pointer;">
+  <span>💳</span>
+  <span>Yousaf Ansari Payment</span>
+</button>
                 </div>
 
                 <!-- OPERATIONS & LOGISTICS SETTINGS -->
@@ -932,6 +937,360 @@
         await firestore.collection("support_tickets").doc(docId).delete();
         loadAdminTicketsList();
     }
+</script>
+    <script>
+(function initAdminYousafPaymentSystem() {
+  const COLLECTION_NAME = "yousafPayments";
+  const DOC_ID = "yousafansari_ledger";
+
+  let rowsData = [];
+
+  function createEmptyRow() {
+    return {
+      id: "row_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
+      referralCode: "143256",
+      studentName: "",
+      contact: "",
+      batch: "",
+      orderNo: "",
+      productDescription: "",
+      qty: "",
+      rate: "",
+      commissionUnitRate: "", // Manual Under 500 (80) / Above 500 (100)
+      date: "",
+      returnOrCharged: "",
+      proofName: "",
+      proofDataUrl: "" // Base64/data URL so Yousaf Ansari can view slip in review mode
+    };
+  }
+
+  function calcRow(r) {
+    const qty = parseFloat(r.qty) || 0;
+    const rate = parseFloat(r.rate) || 0;
+    const totalReceived = qty * rate;
+
+    const gst18 = (totalReceived / 100) * 18;
+    const sst15 = (totalReceived / 100) * 15;
+    const deduction33 = gst18 + sst15;
+
+    const cod4 = (totalReceived / 100) * 4;
+    const totalDeduction = deduction33 + cod4;
+
+    const commUnit = parseFloat(r.commissionUnitRate) || 0;
+    const commTotal = commUnit * qty;
+    const comm2 = (commTotal / 100) * 2;
+    const pay = commTotal + comm2;
+
+    return {
+      totalReceived,
+      gst18,
+      sst15,
+      deduction33,
+      cod4,
+      totalDeduction,
+      commTotal,
+      comm2,
+      pay
+    };
+  }
+
+  function fmtNum(n) {
+    if (!isFinite(n)) return "0";
+    return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
+  }
+
+  function ensureModal() {
+    if (document.getElementById("adminYousafPaymentModal")) return;
+
+    const modal = document.createElement("div");
+    modal.id = "adminYousafPaymentModal";
+    modal.style.cssText =
+      "display:none;position:fixed;inset:0;z-index:99999;background:rgba(2,6,23,0.88);backdrop-filter:blur(6px);padding:16px;overflow:auto;";
+
+    modal.innerHTML = `
+      <div style="max-width:1600px;margin:10px auto;background:#0f172a;border:1px solid #334155;border-radius:16px;padding:18px;color:#f8fafc;box-shadow:0 25px 60px rgba(0,0,0,0.75);">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;border-bottom:1px solid #1e293b;padding-bottom:12px;">
+          <div>
+            <h2 style="margin:0;font-size:19px;font-weight:800;color:#fbbf24;">Yousaf Ansari Payment Ledger (Admin)</h2>
+            <p style="margin:3px 0 0;font-size:12px;color:#94a3b8;">Referral default: <strong>143256</strong> • Formulas auto-calculate • Attach bank slip & save</p>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <button type="button" id="addYousafRowBtn" style="background:#2563eb;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">+ Add Line</button>
+            <button type="button" id="saveYousafLedgerBtn" style="background:#16a34a;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">💾 Save</button>
+            <button type="button" id="closeYousafPaymentModalBtn" style="background:#334155;color:#fff;border:none;padding:9px 14px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">✕ Close</button>
+          </div>
+        </div>
+
+        <div id="yousafSaveStatus" style="font-size:12px;margin-bottom:10px;color:#fbbf24;min-height:18px;"></div>
+
+        <div style="overflow-x:auto;border:1px solid #1e293b;border-radius:12px;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:1750px;">
+            <thead>
+              <tr style="background:#1e293b;color:#f8fafc;text-align:center;">
+                <th colspan="4" style="padding:8px;border:1px solid #334155;">Student Details</th>
+                <th colspan="4" style="padding:8px;border:1px solid #334155;">Product Details</th>
+                <th colspan="3" style="padding:8px;border:1px solid #334155;">FBR Deduction</th>
+                <th style="padding:8px;border:1px solid #334155;">COD</th>
+                <th style="padding:8px;border:1px solid #334155;">Total Deduction</th>
+                <th colspan="4" style="padding:8px;border:1px solid #334155;">Commission</th>
+                <th colspan="3" style="padding:8px;border:1px solid #334155;">Payment Status</th>
+                <th style="padding:8px;border:1px solid #334155;">Action</th>
+              </tr>
+              <tr style="background:#0b1220;color:#cbd5e1;text-align:center;font-size:11px;">
+                <th style="padding:7px;border:1px solid #1e293b;">Referral Code</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Student Name</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Contact</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Batch</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Order #</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Product Description</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Qty</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Rate</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Total Received</th>
+                <th style="padding:7px;border:1px solid #1e293b;">18% GST</th>
+                <th style="padding:7px;border:1px solid #1e293b;">15% SST</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Deduction 33%</th>
+                <th style="padding:7px;border:1px solid #1e293b;">COD 4%</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Total Deduction</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Under 500 (Rs.80) / Above 500 (Rs.100)</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Total</th>
+                <th style="padding:7px;border:1px solid #1e293b;">2%</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Pay</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Date</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Return / Charged</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Prof (Attach / View)</th>
+                <th style="padding:7px;border:1px solid #1e293b;">Save / Del</th>
+              </tr>
+            </thead>
+            <tbody id="yousafPaymentTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById("closeYousafPaymentModalBtn").addEventListener("click", () => {
+      modal.style.display = "none";
+    });
+    document.getElementById("addYousafRowBtn").addEventListener("click", () => {
+      rowsData.push(createEmptyRow());
+      renderTable();
+    });
+    document.getElementById("saveYousafLedgerBtn").addEventListener("click", saveToFirestore);
+  }
+
+  function inpStyle(w = "95px") {
+    return `width:${w};background:#020617;color:#f8fafc;border:1px solid #334155;border-radius:6px;padding:5px 7px;font-size:12px;`;
+  }
+
+  function calcCellStyle(bg = "#131c31", color = "#fbbf24") {
+    return `padding:7px 8px;border:1px solid #1e293b;background:${bg};color:${color};font-weight:700;text-align:right;white-space:nowrap;`;
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById("yousafPaymentTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    if (!rowsData.length) {
+      rowsData.push(createEmptyRow());
+    }
+
+    rowsData.forEach((row, idx) => {
+      const c = calcRow(row);
+      const tr = document.createElement("tr");
+      tr.style.background = idx % 2 === 0 ? "#0f172a" : "#111b2e";
+
+      tr.innerHTML = `
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="referralCode" data-idx="${idx}" value="${row.referralCode || "143256"}" style="${inpStyle("85px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="studentName" data-idx="${idx}" value="${row.studentName || ""}" placeholder="Name" style="${inpStyle("115px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="contact" data-idx="${idx}" value="${row.contact || ""}" placeholder="03xx-xxxxxxx" style="${inpStyle("115px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="batch" data-idx="${idx}" value="${row.batch || ""}" placeholder="Batch" style="${inpStyle("70px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="orderNo" data-idx="${idx}" value="${row.orderNo || ""}" placeholder="Order #" style="${inpStyle("75px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="productDescription" data-idx="${idx}" value="${row.productDescription || ""}" placeholder="Product" style="${inpStyle("135px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="number" step="any" data-field="qty" data-idx="${idx}" value="${row.qty}" placeholder="0" style="${inpStyle("65px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="number" step="any" data-field="rate" data-idx="${idx}" value="${row.rate}" placeholder="0" style="${inpStyle("75px")}"></td>
+        <td style="${calcCellStyle("#172554", "#93c5fd")}">${fmtNum(c.totalReceived)}</td>
+        <td style="${calcCellStyle()}">${fmtNum(c.gst18)}</td>
+        <td style="${calcCellStyle()}">${fmtNum(c.sst15)}</td>
+        <td style="${calcCellStyle("#1e1b4b", "#fde047")}">${fmtNum(c.deduction33)}</td>
+        <td style="${calcCellStyle()}">${fmtNum(c.cod4)}</td>
+        <td style="${calcCellStyle("#31102f", "#fda4af")}">${fmtNum(c.totalDeduction)}</td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="number" step="any" data-field="commissionUnitRate" data-idx="${idx}" value="${row.commissionUnitRate}" placeholder="80 / 100" style="${inpStyle("95px")}"></td>
+        <td style="${calcCellStyle("#14291e", "#86efac")}">${fmtNum(c.commTotal)}</td>
+        <td style="${calcCellStyle()}">${fmtNum(c.comm2)}</td>
+        <td style="${calcCellStyle("#052e16", "#4ade80")}">${fmtNum(c.pay)}</td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="date" data-idx="${idx}" value="${row.date || ""}" placeholder="DD-MM-YY" style="${inpStyle("95px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="returnOrCharged" data-idx="${idx}" value="${row.returnOrCharged || ""}" placeholder="Charged / Return" style="${inpStyle("105px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;white-space:nowrap;">
+          <label style="display:inline-block;background:#334155;color:#fff;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:11px;">
+            Attach
+            <input type="file" accept="image/*,application/pdf" data-attach-idx="${idx}" style="display:none;">
+          </label>
+          ${row.proofDataUrl ? `<button type="button" data-view-idx="${idx}" style="background:#0284c7;color:#fff;border:none;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:11px;margin-left:4px;">View</button>` : `<span style="color:#64748b;font-size:10px;margin-left:4px;">No Slip</span>`}
+        </td>
+        <td style="padding:6px;border:1px solid #1e293b;white-space:nowrap;">
+          <button type="button" data-save-row-idx="${idx}" style="background:#16a34a;color:#fff;border:none;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:11px;">Save</button>
+          <button type="button" data-del-idx="${idx}" style="background:#dc2626;color:#fff;border:none;padding:4px 7px;border-radius:6px;cursor:pointer;font-size:11px;margin-left:3px;">✕</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Bind live input changes
+    tbody.querySelectorAll("input[data-field]").forEach((el) => {
+      el.addEventListener("input", (e) => {
+        const idx = Number(e.target.dataset.idx);
+        const field = e.target.dataset.field;
+        rowsData[idx][field] = e.target.value;
+        // Re-render calculated cells without losing focus
+        updateCalculatedCellsOnly();
+      });
+    });
+
+    // Bind proof attachment
+    tbody.querySelectorAll("input[type='file'][data-attach-idx]").forEach((fileInput) => {
+      fileInput.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const idx = Number(e.target.dataset.attachIdx);
+        const reader = new FileReader();
+        reader.onload = () => {
+          rowsData[idx].proofName = file.name;
+          rowsData[idx].proofDataUrl = reader.result;
+          renderTable();
+          setStatus(`Slip attached for row ${idx + 1}: ${file.name}. Click Save to store.`);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    // Bind View slip
+    tbody.querySelectorAll("button[data-view-idx]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.dataset.viewIdx);
+        openSlipPreview(rowsData[idx]);
+      });
+    });
+
+    // Bind single row Save
+    tbody.querySelectorAll("button[data-save-row-idx]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        saveToFirestore();
+      });
+    });
+
+    // Bind row delete
+    tbody.querySelectorAll("button[data-del-idx]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.dataset.delIdx);
+        rowsData.splice(idx, 1);
+        renderTable();
+      });
+    });
+  }
+
+  function updateCalculatedCellsOnly() {
+    const tbody = document.getElementById("yousafPaymentTableBody");
+    if (!tbody) return;
+    const trList = tbody.querySelectorAll("tr");
+    rowsData.forEach((row, idx) => {
+      const tr = trList[idx];
+      if (!tr) return;
+      const c = calcRow(row);
+      const cells = tr.querySelectorAll("td");
+      // Indices match rendered columns
+      if (cells[8]) cells[8].textContent = fmtNum(c.totalReceived);
+      if (cells[9]) cells[9].textContent = fmtNum(c.gst18);
+      if (cells[10]) cells[10].textContent = fmtNum(c.sst15);
+      if (cells[11]) cells[11].textContent = fmtNum(c.deduction33);
+      if (cells[12]) cells[12].textContent = fmtNum(c.cod4);
+      if (cells[13]) cells[13].textContent = fmtNum(c.totalDeduction);
+      if (cells[15]) cells[15].textContent = fmtNum(c.commTotal);
+      if (cells[16]) cells[16].textContent = fmtNum(c.comm2);
+      if (cells[17]) cells[17].textContent = fmtNum(c.pay);
+    });
+  }
+
+  function openSlipPreview(row) {
+    if (!row || !row.proofDataUrl) return;
+    const win = window.open("", "_blank");
+    if (!win) {
+      alert("Pop-up blocked. Please allow pop-ups to view attached bank slip.");
+      return;
+    }
+    const isPdf = row.proofDataUrl.startsWith("data:application/pdf");
+    win.document.write(`
+      <html><head><title>Bank Slip - ${row.studentName || "Proof"}</title></head>
+      <body style="margin:0;background:#090d16;display:flex;align-items:center;justify-content:center;min-height:100vh;">
+        ${isPdf
+          ? `<iframe src="${row.proofDataUrl}" style="width:95vw;height:95vh;border:none;"></iframe>`
+          : `<img src="${row.proofDataUrl}" style="max-width:95vw;max-height:95vh;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.6);" />`
+        }
+      </body></html>
+    `);
+  }
+
+  function setStatus(msg, isErr = false) {
+    const el = document.getElementById("yousafSaveStatus");
+    if (el) {
+      el.textContent = msg;
+      el.style.color = isErr ? "#f87171" : "#4ade80";
+    }
+  }
+
+  async function loadFromFirestore() {
+    try {
+      if (window.db) {
+        const snap = await window.db.collection(COLLECTION_NAME).doc(DOC_ID).get();
+        if (snap.exists && Array.isArray(snap.data().rows)) {
+          rowsData = snap.data().rows;
+          renderTable();
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("Firestore load fallback to localStorage:", e);
+    }
+
+    const localSaved = localStorage.getItem("pt_yousaf_payment_rows");
+    if (localSaved) {
+      try {
+        rowsData = JSON.parse(localStorage.getItem("pt_yousaf_payment_rows")) || [];
+      } catch (_) {
+        rowsData = [];
+      }
+    }
+    renderTable();
+  }
+
+  async function saveToFirestore() {
+    localStorage.setItem("pt_yousaf_payment_rows", JSON.stringify(rowsData));
+    try {
+      if (window.db) {
+        await window.db.collection(COLLECTION_NAME).doc(DOC_ID).set({
+          rows: rowsData,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+        setStatus("Saved successfully to Firestore & synced for Yousaf Ansari review.");
+        return;
+      }
+    } catch (e) {
+      console.error(e);
+      setStatus("Firestore save error: " + e.message, true);
+      return;
+    }
+    setStatus("Saved locally (Firestore db not detected).");
+  }
+
+  document.addEventListener("click", async (e) => {
+    const btn = e.target.closest("#openYousafPaymentBtn");
+    if (!btn) return;
+    ensureModal();
+    document.getElementById("adminYousafPaymentModal").style.display = "block";
+    await loadFromFirestore();
+  });
+})();
 </script>
 </body>
 </html>
