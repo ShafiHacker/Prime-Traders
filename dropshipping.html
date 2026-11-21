@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <style>
-  /* Full-screen Animated Stars Backdrop (hides old background visuals) */
   .prime-stars-bg {
     position: fixed !important;
     inset: 0 !important;
@@ -10,8 +9,13 @@
     height: 100vh !important;
     background: radial-gradient(circle at 25% 35%, #171923 0%, #090b10 65%, #050609 100%) !important;
     overflow: hidden !important;
-    z-index: 5 !important;
+    z-index: 35 !important;
     pointer-events: none;
+    display: none;
+  }
+
+  .prime-stars-bg.active-login-stars {
+    display: block;
   }
 
   .prime-star-dot {
@@ -33,10 +37,9 @@
     }
   }
 
-  /* Clean Lamp + Login Row without extra box/title */
   .prime-lamp-stage {
     position: relative;
-    z-index: 30;
+    z-index: 50;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -57,7 +60,6 @@
     flex-shrink: 0;
   }
 
-  /* Warm light cast toward the login form on the right */
   .prime-lamp-cast {
     position: absolute;
     top: 84px;
@@ -98,10 +100,60 @@
     border-color: rgba(250, 204, 21, 0.45) !important;
     transition: box-shadow 0.3s ease, border-color 0.3s ease;
   }
+
+  @media (max-width: 640px) {
+    .prime-lamp-stage {
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      gap: 6px !important;
+      padding: 10px 10px 24px !important;
+    }
+
+    .prime-lamp-only {
+      width: 240px !important;
+      height: 195px !important;
+      margin-bottom: -14px;
+      z-index: 55;
+    }
+
+    .prime-lamp-svg {
+      width: 225px !important;
+      height: 195px !important;
+      transform: translateX(-18px);
+    }
+
+    .prime-lamp-cast {
+      top: 76px !important;
+      left: 54% !important;
+      width: 290px !important;
+      height: 220px !important;
+      transform: translateX(-50%) rotate(10deg) !important;
+      background: radial-gradient(
+        ellipse at 50% 12%,
+        rgba(251, 191, 36, 0.38) 0%,
+        rgba(245, 158, 11, 0.14) 48%,
+        transparent 76%
+      ) !important;
+      z-index: 52 !important;
+    }
+
+    .prime-login-glow {
+      position: relative;
+      z-index: 60;
+      background: rgba(15, 23, 42, 0.82) !important;
+      backdrop-filter: blur(12px) !important;
+      border-color: rgba(251, 191, 36, 0.48) !important;
+      box-shadow:
+        0 -16px 38px rgba(251, 191, 36, 0.24),
+        0 0 28px rgba(245, 158, 11, 0.16),
+        0 20px 40px rgba(0, 0, 0, 0.7) !important;
+    }
+  }
 </style>
 
 <script>
-(function setupCleanLampWithStars() {
+(function setupLoginOnlyLamp() {
   let lampOn = true;
 
   function playSwitchSound(turnOn) {
@@ -123,14 +175,14 @@
     } catch (_) {}
   }
 
-  function mountAnimatedStars() {
-    if (document.getElementById("primeAnimatedStarsBg")) return;
-    const bg = document.createElement("div");
+  function ensureStarsElement() {
+    let bg = document.getElementById("primeAnimatedStarsBg");
+    if (bg) return bg;
+    bg = document.createElement("div");
     bg.id = "primeAnimatedStarsBg";
     bg.className = "prime-stars-bg";
 
-    const starCount = 75;
-    for (let i = 0; i < starCount; i++) {
+    for (let i = 0; i < 75; i++) {
       const star = document.createElement("span");
       star.className = "prime-star-dot";
       const size = (i % 3 === 0) ? 3 : (i % 2 === 0 ? 2 : 1.5);
@@ -143,6 +195,32 @@
       bg.appendChild(star);
     }
     document.body.prepend(bg);
+    return bg;
+  }
+
+  function findLoginCard() {
+    return (
+      document.querySelector("#studentLoginForm")?.closest("div.bg-slate-900, div[class*='max-w-']") ||
+      document.querySelector("form[id*='Login'], form[id*='login']")?.closest("div") ||
+      null
+    );
+  }
+
+  function isElementVisible(el) {
+    if (!el) return false;
+    const style = window.getComputedStyle(el);
+    if (style.display === "none" || style.visibility === "hidden" || parseFloat(style.opacity) === 0) {
+      return false;
+    }
+    let parent = el.parentElement;
+    while (parent && parent !== document.body) {
+      const pStyle = window.getComputedStyle(parent);
+      if (pStyle.display === "none" || pStyle.visibility === "hidden" || pStyle.classList.contains("hidden")) {
+        return false;
+      }
+      parent = parent.parentElement;
+    }
+    return el.getBoundingClientRect().width > 0 && el.getBoundingClientRect().height > 0;
   }
 
   function createReferenceLamp(loginCard) {
@@ -158,29 +236,17 @@
             <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
           </radialGradient>
         </defs>
-
-        <!-- Soft aura around bulb -->
         <circle class="prime-bulb-aura" cx="148" cy="112" r="34" fill="url(#primeBulbGlowGrad)" opacity="0.9"/>
-
-        <!-- Base -->
         <ellipse cx="74" cy="246" rx="46" ry="9" fill="#18181b" stroke="#eab308" stroke-width="2"/>
         <path d="M56 244 L62 232 L86 232 L92 244 Z" fill="#27272a" stroke="#eab308" stroke-width="1.5"/>
-
-        <!-- Articulated Arm -->
         <line x1="74" y1="232" x2="108" y2="152" stroke="#52525b" stroke-width="8" stroke-linecap="round"/>
         <line x1="74" y1="232" x2="108" y2="152" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round"/>
         <circle cx="108" cy="152" r="9" fill="#eab308" stroke="#18181b" stroke-width="2.5"/>
         <line x1="108" y1="152" x2="144" y2="88" stroke="#52525b" stroke-width="7" stroke-linecap="round"/>
         <line x1="108" y1="152" x2="144" y2="88" stroke="#d4d4d8" stroke-width="2" stroke-linecap="round"/>
-
-        <!-- Dome Shade -->
         <path d="M104 94 C112 56, 182 56, 190 94 Z" fill="#27272a" stroke="#eab308" stroke-width="2.2"/>
         <ellipse cx="147" cy="94" rx="43" ry="7" fill="#eab308" opacity="0.85"/>
-
-        <!-- Bulb -->
         <circle class="prime-bulb-glass" cx="148" cy="108" r="10" fill="#fef08a" stroke="#f59e0b" stroke-width="1.5"/>
-
-        <!-- Pull Cord (Click to Toggle Light + Sound) -->
         <g class="prime-lamp-cord-group" title="Pull cord to toggle light">
           <line x1="158" y1="106" x2="158" y2="174" stroke="#eab308" stroke-width="2.2"/>
           <ellipse cx="158" cy="181" rx="5.5" ry="8" fill="#eab308" stroke="#fef08a" stroke-width="1.2"/>
@@ -218,31 +284,41 @@
     return wrap;
   }
 
-  function attachLampStage() {
-    mountAnimatedStars();
-    if (document.querySelector(".prime-lamp-only")) return;
+  function syncLoginLampVisibility() {
+    const starsBg = ensureStarsElement();
+    const card = findLoginCard();
+    const loginVisible = isElementVisible(card);
 
-    const card =
-      document.querySelector("#studentLoginForm")?.closest("div.bg-slate-900, div[class*='max-w-']") ||
-      document.querySelector("form[id*='Login'], form[id*='login']")?.closest("div");
+    starsBg.classList.toggle("active-login-stars", loginVisible);
 
     if (!card || !card.parentNode) return;
 
-    const stage = document.createElement("div");
-    stage.className = "prime-lamp-stage";
-    card.parentNode.insertBefore(stage, card);
-    stage.appendChild(createReferenceLamp(card));
-    stage.appendChild(card);
+    if (loginVisible) {
+      if (!document.querySelector(".prime-lamp-only")) {
+        const stage = document.createElement("div");
+        stage.className = "prime-lamp-stage";
+        card.parentNode.insertBefore(stage, card);
+        stage.appendChild(createReferenceLamp(card));
+        stage.appendChild(card);
+      }
+      const existingLamp = document.querySelector(".prime-lamp-only");
+      if (existingLamp) existingLamp.style.display = "";
+      card.classList.toggle("prime-login-glow", lampOn);
+    } else {
+      const existingLamp = document.querySelector(".prime-lamp-only");
+      if (existingLamp) existingLamp.style.display = "none";
+      card.classList.remove("prime-login-glow");
+    }
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", attachLampStage);
+    document.addEventListener("DOMContentLoaded", syncLoginLampVisibility);
   } else {
-    attachLampStage();
+    syncLoginLampVisibility();
   }
 
-  const observer = new MutationObserver(() => attachLampStage());
-  observer.observe(document.body, { childList: true, subtree: true });
+  const observer = new MutationObserver(() => syncLoginLampVisibility());
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
 })();
 </script>
     <meta charset="UTF-8">
