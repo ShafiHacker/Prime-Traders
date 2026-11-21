@@ -852,16 +852,17 @@ document.addEventListener("DOMContentLoaded", function () {
         localStorage.setItem("pt_ref_link", window.location.href);
     }
 })();
-        await db.collection('students').doc(uid).set({
-    // ... baqi student fields
-    referredBy: refCode || "143256",
-    referralLink: refLink || null,
-    status: 'pending',
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-});
+</script>
+    await db.collection('students').doc(uid).set({
+        // ... baqi student fields
+        referredBy: refCode || "143256",
+        referralLink: refLink || null,
+        status: 'pending',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
-// YAHAN SET KARNA HAI:
-window.location.href = "ecommerce-dashboard.html";
+    // YAHAN SET KARNA HAI:
+    window.location.href = "ecommerce-dashboard.html";
 </script>
     <script>
 (function enforceYousafRedirectGuard() {
