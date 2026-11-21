@@ -276,25 +276,38 @@
             }
         }
 
-        auth.onAuthStateChanged(async (user) => {
-            if (!user || (user.email || '').toLowerCase() !== 'yousafansari@primetraders.com') {
-                window.location.href = 'dropshipping.html';
-                return;
-            }
+        let authCheckedOnce = false;
+auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+        if (!authCheckedOnce) {
+            authCheckedOnce = true;
+            setTimeout(() => {
+                if (!auth.currentUser) {
+                    window.location.replace('dropshipping.html');
+                }
+            }, 800);
+        }
+        return;
+    }
 
-            setTimeGreeting();
-            document.getElementById('headerUserEmail').innerText = user.email;
+    if ((user.email || '').trim().toLowerCase() !== 'yousafansari@primetraders.com') {
+        window.location.replace('dropshipping.html');
+        return;
+    }
 
-            try {
-                const doc = await db.collection('students').doc(user.uid).get();
-                const displayName = (doc.exists && (doc.data().fullName || doc.data().name))
-                    ? (doc.data().fullName || doc.data().name)
-                    : 'Yousaf Ansari';
-                document.getElementById('loggedInUserName').innerText = displayName;
-            } catch (_) {
-                document.getElementById('loggedInUserName').innerText = 'Yousaf Ansari';
-            }
-        });
+    setTimeGreeting();
+    document.getElementById('headerUserEmail').innerText = user.email;
+
+    try {
+        const doc = await db.collection('students').doc(user.uid).get();
+        const displayName = (doc.exists && (doc.data().fullName || doc.data().name))
+            ? (doc.data().fullName || doc.data().name)
+            : 'Yousaf Ansari';
+        document.getElementById('loggedInUserName').innerText = displayName;
+    } catch (_) {
+        document.getElementById('loggedInUserName').innerText = 'Yousaf Ansari';
+    }
+});
 
         function logoutYousaf() {
             auth.signOut().then(() => {
