@@ -1292,6 +1292,139 @@
   });
 })();
 </script>
+    <script>
+(function initYousafDashboardTotalReviewCard() {
+  const COLLECTION_NAME = "yousafPayments";
+  const DOC_ID = "yousafansari_ledger";
+
+  function calcRowPay(r) {
+    const qty = parseFloat(r.qty) || 0;
+    const rate = parseFloat(r.rate) || 0;
+    const totalReceived = qty * rate;
+    const commUnit = parseFloat(r.commissionUnitRate) || 0;
+    const commTotal = commUnit * qty;
+    const comm2 = (commTotal / 100) * 2;
+    const pay = commTotal + comm2;
+    return { totalReceived, pay };
+  }
+
+  function formatAmount(num) {
+    if (!isFinite(num)) return "0";
+    return Number.isInteger(num) ? num.toLocaleString() : num.toFixed(2).replace(/\.?0+$/, "");
+  }
+
+  function findOverviewCardsGrid() {
+    // Locate the grid containing TOTAL SHIPMENTS / ACTIVE USERS / PENDING APPROVAL cards
+    const headings = Array.from(document.querySelectorAll("h1, h2, h3, h4, p, div, span"));
+    const targetLabel = headings.find((el) =>
+      ["PENDING APPROVAL", "ACTIVE USERS", "TOTAL SHIPMENTS"].includes((el.textContent || "").trim().toUpperCase())
+    );
+    if (!targetLabel) return null;
+
+    let cur = targetLabel.parentElement;
+    for (let i = 0; i < 6 && cur && cur !== document.body; i++) {
+      const style = window.getComputedStyle(cur);
+      if (style.display === "grid" || style.display === "flex" || cur.className.includes("grid")) {
+        return cur;
+      }
+      cur = cur.parentElement;
+    }
+    return targetLabel.parentElement;
+  }
+
+  function ensureReviewCard() {
+    if (document.getElementById("yousafPaymentReviewCard")) {
+      return document.getElementById("yousafPaymentReviewCard");
+    }
+
+    const grid = findOverviewCardsGrid();
+    if (!grid) return null;
+
+    const card = document.createElement("div");
+    card.id = "yousafPaymentReviewCard";
+    card.title = "Click to open Yousaf Ansari Payment Ledger";
+    card.style.cssText =
+      "background:linear-gradient(135deg,#18181b 0%,#111827 100%);border:1px solid rgba(251,191,36,0.45);border-radius:14px;padding:18px 20px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;min-height:118px;box-shadow:0 10px 28px rgba(0,0,0,0.45);transition:transform 0.18s ease,border-color 0.18s ease;";
+
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <span style="font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#fbbf24;">Yousaf Ansari Payment</span>
+        <span style="background:rgba(251,191,36,0.16);color:#fde047;padding:4px 8px;border-radius:8px;font-size:12px;font-weight:700;">Review</span>
+      </div>
+      <div style="margin:10px 0 4px;">
+        <div id="yousafTotalPayReviewAmount" style="font-size:26px;font-weight:900;color:#ffffff;line-height:1.15;">Rs. 0</div>
+      </div>
+      <div id="yousafTotalPayReviewMeta" style="font-size:12px;color:#94a3b8;">0 entries • Click to view details</div>
+    `;
+
+    card.addEventListener("mouseenter", () => {
+      card.style.transform = "translateY(-2px)";
+      card.style.borderColor = "#fbbf24";
+    });
+    card.addEventListener("mouseleave", () => {
+      card.style.transform = "translateY(0)";
+      card.style.borderColor = "rgba(251,191,36,0.45)";
+    });
+    card.addEventListener("click", () => {
+      const btn = document.getElementById("openYousafPaymentBtn");
+      if (btn) btn.click();
+    });
+
+    grid.appendChild(card);
+    return card;
+  }
+
+  async function refreshYousafPaymentReview() {
+    ensureReviewCard();
+    const amountEl = document.getElementById("yousafTotalPayReviewAmount");
+    const metaEl = document.getElementById("yousafTotalPayReviewMeta");
+    if (!amountEl || !metaEl) return;
+
+    let rows = [];
+    try {
+      if (window.db) {
+        const snap = await window.db.collection(COLLECTION_NAME).doc(DOC_ID).get();
+        if (snap.exists && Array.isArray(snap.data().rows)) {
+          rows = snap.data().rows;
+        }
+      }
+    } catch (_) {}
+
+    if (!rows.length) {
+      try {
+        rows = JSON.parse(localStorage.getItem("pt_yousaf_payment_rows")) || [];
+      } catch (_) {
+        rows = [];
+      }
+    }
+
+    let totalPay = 0;
+    let totalReceivedSum = 0;
+    rows.forEach((r) => {
+      const calc = calcRowPay(r);
+      totalPay += calc.pay;
+      totalReceivedSum += calc.totalReceived;
+    });
+
+    amountEl.textContent = "Rs. " + formatAmount(totalPay);
+    metaEl.textContent = `${rows.length} record(s) • Received: Rs. ${formatAmount(totalReceivedSum)}`;
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => setTimeout(refreshYousafPaymentReview, 250));
+  } else {
+    setTimeout(refreshYousafPaymentReview, 250);
+  }
+
+  // Refresh review total automatically whenever Save button is clicked or storage updates
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("#saveYousafLedgerBtn") || e.target.closest("button[data-save-row-idx]")) {
+      setTimeout(refreshYousafPaymentReview, 400);
+    }
+  });
+  window.addEventListener("storage", refreshYousafPaymentReview);
+})();
+</script>
 </body>
 </html>
 <!-- VIEW FOR E-COMMERCE STUDENTS VERIFICATION -->
