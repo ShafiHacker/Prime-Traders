@@ -1313,48 +1313,50 @@
     return Number.isInteger(num) ? num.toLocaleString() : num.toFixed(2).replace(/\.?0+$/, "");
   }
 
-  function findOverviewCardsGrid() {
-    // Locate the grid containing TOTAL SHIPMENTS / ACTIVE USERS / PENDING APPROVAL cards
-    const headings = Array.from(document.querySelectorAll("h1, h2, h3, h4, p, div, span"));
-    const targetLabel = headings.find((el) =>
-      ["PENDING APPROVAL", "ACTIVE USERS", "TOTAL SHIPMENTS"].includes((el.textContent || "").trim().toUpperCase())
+  function findPendingApprovalCard() {
+    const allEls = Array.from(document.querySelectorAll("h1, h2, h3, h4, p, div, span"));
+    const labelEl = allEls.find(
+      (el) =>
+        el.children.length === 0 &&
+        (el.textContent || "").trim().toUpperCase() === "PENDING APPROVAL"
     );
-    if (!targetLabel) return null;
+    if (!labelEl) return null;
 
-    let cur = targetLabel.parentElement;
-    for (let i = 0; i < 6 && cur && cur !== document.body; i++) {
-      const style = window.getComputedStyle(cur);
-      if (style.display === "grid" || style.display === "flex" || cur.className.includes("grid")) {
+    let cur = labelEl;
+    for (let i = 0; i < 5 && cur && cur !== document.body; i++) {
+      const rect = cur.getBoundingClientRect();
+      if (rect.width >= 150 && rect.height >= 75 && rect.height <= 240) {
         return cur;
       }
       cur = cur.parentElement;
     }
-    return targetLabel.parentElement;
+    return labelEl.parentElement;
   }
 
-  function ensureReviewCard() {
+  function ensureReviewCardInPendingSlot() {
     if (document.getElementById("yousafPaymentReviewCard")) {
       return document.getElementById("yousafPaymentReviewCard");
     }
 
-    const grid = findOverviewCardsGrid();
-    if (!grid) return null;
+    const pendingCard = findPendingApprovalCard();
+    if (!pendingCard || !pendingCard.parentNode) return null;
 
     const card = document.createElement("div");
     card.id = "yousafPaymentReviewCard";
     card.title = "Click to open Yousaf Ansari Payment Ledger";
+    card.className = pendingCard.className || "";
     card.style.cssText =
-      "background:linear-gradient(135deg,#18181b 0%,#111827 100%);border:1px solid rgba(251,191,36,0.45);border-radius:14px;padding:18px 20px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;min-height:118px;box-shadow:0 10px 28px rgba(0,0,0,0.45);transition:transform 0.18s ease,border-color 0.18s ease;";
+      "background:linear-gradient(135deg,#18181b 0%,#111827 100%);border:1px solid rgba(251,191,36,0.5);border-radius:14px;padding:18px 20px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;min-height:118px;width:100%;box-sizing:border-box;box-shadow:0 10px 28px rgba(0,0,0,0.45);transition:transform 0.18s ease,border-color 0.18s ease;";
 
     card.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
         <span style="font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#fbbf24;">Yousaf Ansari Payment</span>
-        <span style="background:rgba(251,191,36,0.16);color:#fde047;padding:4px 8px;border-radius:8px;font-size:12px;font-weight:700;">Review</span>
+        <span style="background:rgba(251,191,36,0.16);color:#fde047;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:700;">Review</span>
       </div>
-      <div style="margin:10px 0 4px;">
+      <div style="margin:8px 0 2px;">
         <div id="yousafTotalPayReviewAmount" style="font-size:26px;font-weight:900;color:#ffffff;line-height:1.15;">Rs. 0</div>
       </div>
-      <div id="yousafTotalPayReviewMeta" style="font-size:12px;color:#94a3b8;">0 entries • Click to view details</div>
+      <div id="yousafTotalPayReviewMeta" style="font-size:12px;color:#94a3b8;">0 record(s) • Received: Rs. 0</div>
     `;
 
     card.addEventListener("mouseenter", () => {
@@ -1363,19 +1365,19 @@
     });
     card.addEventListener("mouseleave", () => {
       card.style.transform = "translateY(0)";
-      card.style.borderColor = "rgba(251,191,36,0.45)";
+      card.style.borderColor = "rgba(251,191,36,0.5)";
     });
     card.addEventListener("click", () => {
       const btn = document.getElementById("openYousafPaymentBtn");
       if (btn) btn.click();
     });
 
-    grid.appendChild(card);
+    pendingCard.parentNode.replaceChild(card, pendingCard);
     return card;
   }
 
   async function refreshYousafPaymentReview() {
-    ensureReviewCard();
+    ensureReviewCardInPendingSlot();
     const amountEl = document.getElementById("yousafTotalPayReviewAmount");
     const metaEl = document.getElementById("yousafTotalPayReviewMeta");
     if (!amountEl || !metaEl) return;
@@ -1416,7 +1418,6 @@
     setTimeout(refreshYousafPaymentReview, 250);
   }
 
-  // Refresh review total automatically whenever Save button is clicked or storage updates
   document.addEventListener("click", (e) => {
     if (e.target.closest("#saveYousafLedgerBtn") || e.target.closest("button[data-save-row-idx]")) {
       setTimeout(refreshYousafPaymentReview, 400);
