@@ -2,118 +2,163 @@
 <html lang="en">
 <head>
     <style>
-  /* Full-screen Animated Stars Backdrop (hides old background visuals) */
-  .prime-stars-bg {
+  .lumiere-stars-backdrop {
     position: fixed !important;
     inset: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
-    background: radial-gradient(circle at 25% 35%, #171923 0%, #090b10 65%, #050609 100%) !important;
+    background: radial-gradient(circle at 28% 42%, #1b1812 0%, #0b0c10 58%, #050608 100%) !important;
     overflow: hidden !important;
-    z-index: 5 !important;
+    z-index: 9990 !important;
     pointer-events: none;
+    display: none;
   }
 
-  .prime-star-dot {
+  .lumiere-stars-backdrop.is-visible {
+    display: block;
+  }
+
+  .lumiere-star {
     position: absolute;
     border-radius: 9999px;
     background: #fef08a;
-    opacity: 0.75;
-    animation: primeStarTwinkle var(--dur, 3.2s) ease-in-out infinite;
+    animation: lumiereTwinkle var(--t, 3.4s) ease-in-out infinite;
   }
 
-  @keyframes primeStarTwinkle {
+  @keyframes lumiereTwinkle {
     0%, 100% {
       opacity: 0.2;
-      transform: translateY(0px) scale(0.85);
+      transform: scale(0.85);
     }
     50% {
       opacity: 0.95;
-      transform: translateY(-6px) scale(1.2);
+      transform: scale(1.25);
     }
   }
 
-  /* Clean Lamp + Login Row without extra box/title */
-  .prime-lamp-stage {
+  .lumiere-login-stage {
     position: relative;
-    z-index: 30;
+    z-index: 9999 !important;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: 44px;
+    gap: 40px;
     width: 100%;
-    max-width: 980px;
+    max-width: 1020px;
     margin: 0 auto;
   }
 
-  .prime-lamp-only {
+  .lumiere-lamp-holder {
     position: relative;
-    width: 240px;
-    height: 310px;
+    width: 260px;
+    height: 330px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
   }
 
-  /* Warm light cast toward the login form on the right */
-  .prime-lamp-cast {
+  /* Warm light cast toward the login card on the right */
+  .lumiere-beam-to-login {
     position: absolute;
-    top: 84px;
-    left: 125px;
-    width: 340px;
-    height: 210px;
-    background: radial-gradient(ellipse at 15% 45%, rgba(250, 204, 21, 0.34) 0%, rgba(245, 158, 11, 0.12) 45%, transparent 75%);
-    transform: rotate(-6deg);
+    top: 95px;
+    left: 145px;
+    width: 360px;
+    height: 220px;
+    background: radial-gradient(
+      ellipse at 12% 48%,
+      rgba(250, 204, 21, 0.34) 0%,
+      rgba(245, 158, 11, 0.13) 46%,
+      transparent 76%
+    );
+    transform: rotate(-5deg);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease;
     z-index: 1;
   }
 
-  .prime-lamp-only.is-on .prime-lamp-cast {
+  .lumiere-lamp-holder.lamp-lit .lumiere-beam-to-login {
     opacity: 1;
   }
 
-  .prime-lamp-svg {
+  .lumiere-lamp-art {
     position: relative;
     z-index: 2;
     overflow: visible;
   }
 
-  .prime-lamp-cord-group {
+  .lumiere-pull-cord {
     cursor: pointer;
     transform-box: fill-box;
     transform-origin: top center;
     transition: transform 0.16s ease;
   }
 
-  .prime-lamp-cord-group.pulled {
-    transform: translateY(8px);
+  .lumiere-pull-cord.is-pulled {
+    transform: translateY(9px);
   }
 
-  .prime-login-glow {
-    box-shadow: -22px 0 48px rgba(250, 204, 21, 0.25), 0 22px 50px rgba(0, 0, 0, 0.65) !important;
+  .lumiere-form-glow {
+    box-shadow: -24px 0 52px rgba(250, 204, 21, 0.25), 0 22px 50px rgba(0, 0, 0, 0.68) !important;
     border-color: rgba(250, 204, 21, 0.45) !important;
     transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+
+  @media (max-width: 640px) {
+    .lumiere-login-stage {
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 10px !important;
+      padding: 8px 10px 20px !important;
+    }
+
+    .lumiere-lamp-holder {
+      width: 220px !important;
+      height: 225px !important;
+      margin-bottom: -10px;
+    }
+
+    .lumiere-lamp-art {
+      width: 210px !important;
+      height: 220px !important;
+    }
+
+    .lumiere-beam-to-login {
+      top: 78px !important;
+      left: 50% !important;
+      width: 290px !important;
+      height: 185px !important;
+      transform: translateX(-50%) rotate(6deg) !important;
+      background: radial-gradient(
+        ellipse at 50% 15%,
+        rgba(250, 204, 21, 0.34) 0%,
+        rgba(245, 158, 11, 0.12) 48%,
+        transparent 76%
+      ) !important;
+    }
+
+    .lumiere-form-glow {
+      box-shadow: 0 -14px 38px rgba(250, 204, 21, 0.24), 0 18px 38px rgba(0, 0, 0, 0.68) !important;
+    }
   }
 </style>
 
 <script>
-(function setupCleanLampWithStars() {
-  let lampOn = true;
+(function mountExactLumiereLamp() {
+  let isLightOn = true;
 
-  function playSwitchSound(turnOn) {
+  function playCordSound(turnedOn) {
     try {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContextClass) return;
-      const ctx = new AudioContextClass();
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "triangle";
-      osc.frequency.setValueAtTime(turnOn ? 880 : 520, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(turnOn ? 1380 : 260, ctx.currentTime + 0.065);
+      osc.frequency.setValueAtTime(turnedOn ? 900 : 520, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(turnedOn ? 1420 : 250, ctx.currentTime + 0.065);
       gain.gain.setValueAtTime(0.2, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.075);
       osc.connect(gain);
@@ -123,126 +168,210 @@
     } catch (_) {}
   }
 
-  function mountAnimatedStars() {
-    if (document.getElementById("primeAnimatedStarsBg")) return;
-    const bg = document.createElement("div");
-    bg.id = "primeAnimatedStarsBg";
-    bg.className = "prime-stars-bg";
+  function getStarsLayer() {
+    let layer = document.getElementById("lumiereStarsLayer");
+    if (layer) return layer;
+    layer = document.createElement("div");
+    layer.id = "lumiereStarsLayer";
+    layer.className = "lumiere-stars-backdrop";
 
-    const starCount = 75;
-    for (let i = 0; i < starCount; i++) {
-      const star = document.createElement("span");
-      star.className = "prime-star-dot";
-      const size = (i % 3 === 0) ? 3 : (i % 2 === 0 ? 2 : 1.5);
-      star.style.width = size + "px";
-      star.style.height = size + "px";
-      star.style.left = ((i * 37) % 100) + "%";
-      star.style.top = ((i * 53) % 100) + "%";
-      star.style.setProperty("--dur", (2.2 + (i % 6) * 0.7) + "s");
-      star.style.animationDelay = ((i % 9) * 0.35) + "s";
-      bg.appendChild(star);
+    for (let i = 0; i < 80; i++) {
+      const dot = document.createElement("span");
+      dot.className = "lumiere-star";
+      const size = (i % 4 === 0) ? 2.8 : (i % 2 === 0 ? 1.8 : 1.3);
+      dot.style.width = size + "px";
+      dot.style.height = size + "px";
+      dot.style.left = ((i * 41) % 100) + "%";
+      dot.style.top = ((i * 59) % 100) + "%";
+      dot.style.setProperty("--t", (2.4 + (i % 6) * 0.65) + "s");
+      dot.style.animationDelay = ((i % 10) * 0.3) + "s";
+      layer.appendChild(dot);
     }
-    document.body.prepend(bg);
+    document.body.appendChild(layer);
+    return layer;
   }
 
-  function createReferenceLamp(loginCard) {
-    const wrap = document.createElement("div");
-    wrap.className = "prime-lamp-only is-on";
-    wrap.innerHTML = `
-      <div class="prime-lamp-cast"></div>
-      <svg class="prime-lamp-svg" viewBox="0 0 220 270" width="225" height="275">
+  function getLoginContainer() {
+    const forms = [
+      document.querySelector("#studentLoginForm"),
+      document.querySelector("#studentRegisterForm"),
+      document.querySelector("form[id*='Login']"),
+      document.querySelector("form[id*='login']")
+    ].filter(Boolean);
+
+    for (const form of forms) {
+      let node = form.parentElement;
+      for (let step = 0; step < 5 && node && node !== document.body; step++) {
+        const rect = node.getBoundingClientRect();
+        const cs = window.getComputedStyle(node);
+        if (
+          rect.width >= 260 &&
+          rect.height >= 260 &&
+          cs.display !== "none" &&
+          cs.visibility !== "hidden" &&
+          !node.classList.contains("hidden")
+        ) {
+          return node;
+        }
+        node = node.parentElement;
+      }
+    }
+    return null;
+  }
+
+  function isShown(el) {
+    if (!el) return false;
+    let cur = el;
+    while (cur && cur !== document.body && cur !== document.documentElement) {
+      const st = window.getComputedStyle(cur);
+      if (st.display === "none" || st.visibility === "hidden" || cur.classList.contains("hidden")) {
+        return false;
+      }
+      cur = cur.parentElement;
+    }
+    const r = el.getBoundingClientRect();
+    return r.width > 60 && r.height > 60;
+  }
+
+  function buildLamp(loginBox) {
+    const holder = document.createElement("div");
+    holder.className = "lumiere-lamp-holder lamp-lit";
+    holder.innerHTML = `
+      <div class="lumiere-beam-to-login"></div>
+      <svg class="lumiere-lamp-art" viewBox="0 0 240 310" width="245" height="315">
         <defs>
-          <radialGradient id="primeBulbGlowGrad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#fef9c3" stop-opacity="1"/>
-            <stop offset="55%" stop-color="#facc15" stop-opacity="0.75"/>
+          <radialGradient id="lumiereShadeInner" cx="55%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#fef08a"/>
+            <stop offset="55%" stop-color="#eab308"/>
+            <stop offset="100%" stop-color="#854d0e"/>
+          </radialGradient>
+          <radialGradient id="lumiereBulbAura" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+            <stop offset="45%" stop-color="#facc15" stop-opacity="0.65"/>
             <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
           </radialGradient>
+          <linearGradient id="lumiereMetalArm" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#71717a"/>
+            <stop offset="50%" stop-color="#3f3f46"/>
+            <stop offset="100%" stop-color="#18181b"/>
+          </linearGradient>
         </defs>
 
-        <!-- Soft aura around bulb -->
-        <circle class="prime-bulb-aura" cx="148" cy="112" r="34" fill="url(#primeBulbGlowGrad)" opacity="0.9"/>
+        <!-- Bulb Outer Glow -->
+        <circle class="lumiere-aura" cx="158" cy="112" r="46" fill="url(#lumiereBulbAura)"/>
 
         <!-- Base -->
-        <ellipse cx="74" cy="246" rx="46" ry="9" fill="#18181b" stroke="#eab308" stroke-width="2"/>
-        <path d="M56 244 L62 232 L86 232 L92 244 Z" fill="#27272a" stroke="#eab308" stroke-width="1.5"/>
+        <ellipse cx="78" cy="282" rx="52" ry="10" fill="#18181b" stroke="#ca8a04" stroke-width="2"/>
+        <ellipse cx="78" cy="278" rx="42" ry="6" fill="#27272a"/>
+        <path d="M64 277 L69 262 L87 262 L92 277 Z" fill="url(#lumiereMetalArm)"/>
+        <circle cx="78" cy="262" r="6" fill="#eab308"/>
 
-        <!-- Articulated Arm -->
-        <line x1="74" y1="232" x2="108" y2="152" stroke="#52525b" stroke-width="8" stroke-linecap="round"/>
-        <line x1="74" y1="232" x2="108" y2="152" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="108" cy="152" r="9" fill="#eab308" stroke="#18181b" stroke-width="2.5"/>
-        <line x1="108" y1="152" x2="144" y2="88" stroke="#52525b" stroke-width="7" stroke-linecap="round"/>
-        <line x1="108" y1="152" x2="144" y2="88" stroke="#d4d4d8" stroke-width="2" stroke-linecap="round"/>
+        <!-- Lower & Upper Articulated Arms -->
+        <line x1="78" y1="260" x2="112" y2="178" stroke="url(#lumiereMetalArm)" stroke-width="9" stroke-linecap="round"/>
+        <line x1="78" y1="260" x2="112" y2="178" stroke="#d4d4d8" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
 
-        <!-- Dome Shade -->
-        <path d="M104 94 C112 56, 182 56, 190 94 Z" fill="#27272a" stroke="#eab308" stroke-width="2.2"/>
-        <ellipse cx="147" cy="94" rx="43" ry="7" fill="#eab308" opacity="0.85"/>
+        <!-- Elbow Joint -->
+        <circle cx="112" cy="178" r="10.5" fill="#27272a" stroke="#eab308" stroke-width="2.5"/>
+        <circle cx="112" cy="178" r="4" fill="#facc15"/>
+
+        <!-- Upper Arm -->
+        <line x1="112" y1="178" x2="152" y2="92" stroke="url(#lumiereMetalArm)" stroke-width="8" stroke-linecap="round"/>
+        <line x1="112" y1="178" x2="152" y2="92" stroke="#e4e4e7" stroke-width="1.5" stroke-linecap="round" opacity="0.55"/>
+
+        <!-- Top Joint -->
+        <circle cx="152" cy="92" r="8" fill="#27272a" stroke="#eab308" stroke-width="2"/>
+
+        <!-- Dome Shade (Outer + Warm Inner Rim) -->
+        <path d="M108 100 C116 54, 196 54, 204 100 Z" fill="#27272a" stroke="#52525b" stroke-width="2"/>
+        <path d="M111 100 C142 108, 171 108, 201 100 C174 92, 138 92, 111 100 Z" class="lumiere-inner-shade" fill="url(#lumiereShadeInner)"/>
 
         <!-- Bulb -->
-        <circle class="prime-bulb-glass" cx="148" cy="108" r="10" fill="#fef08a" stroke="#f59e0b" stroke-width="1.5"/>
+        <circle class="lumiere-bulb" cx="158" cy="108" r="10.5" fill="#fef9c3" stroke="#f59e0b" stroke-width="1.5"/>
 
-        <!-- Pull Cord (Click to Toggle Light + Sound) -->
-        <g class="prime-lamp-cord-group" title="Pull cord to toggle light">
-          <line x1="158" y1="106" x2="158" y2="174" stroke="#eab308" stroke-width="2.2"/>
-          <ellipse cx="158" cy="181" rx="5.5" ry="8" fill="#eab308" stroke="#fef08a" stroke-width="1.2"/>
+        <!-- Pull Cord with Teardrop Handle -->
+        <g class="lumiere-pull-cord" title="Pull cord to toggle light">
+          <line x1="168" y1="104" x2="168" y2="178" stroke="#eab308" stroke-width="2.2"/>
+          <path d="M168 178 C162 186, 162 195, 168 198 C174 195, 174 186, 168 178 Z" fill="#facc15" stroke="#fef08a" stroke-width="1.2"/>
         </g>
       </svg>
     `;
 
-    function syncVisuals() {
-      wrap.classList.toggle("is-on", lampOn);
-      const aura = wrap.querySelector(".prime-bulb-aura");
-      const bulb = wrap.querySelector(".prime-bulb-glass");
-      if (aura) aura.setAttribute("opacity", lampOn ? "0.9" : "0");
-      if (bulb) bulb.setAttribute("fill", lampOn ? "#fef08a" : "#3f3f46");
-      if (loginCard) loginCard.classList.toggle("prime-login-glow", lampOn);
+    function applyState() {
+      holder.classList.toggle("lamp-lit", isLightOn);
+      const aura = holder.querySelector(".lumiere-aura");
+      const bulb = holder.querySelector(".lumiere-bulb");
+      const shade = holder.querySelector(".lumiere-inner-shade");
+      if (aura) aura.setAttribute("opacity", isLightOn ? "1" : "0");
+      if (bulb) bulb.setAttribute("fill", isLightOn ? "#fef9c3" : "#3f3f46");
+      if (shade) shade.setAttribute("opacity", isLightOn ? "1" : "0.18");
+      if (loginBox) loginBox.classList.toggle("lumiere-form-glow", isLightOn);
     }
 
-    const cord = wrap.querySelector(".prime-lamp-cord-group");
-    const bulbHit = wrap.querySelector(".prime-bulb-glass");
+    const cord = holder.querySelector(".lumiere-pull-cord");
+    const bulb = holder.querySelector(".lumiere-bulb");
 
-    function handlePull() {
-      lampOn = !lampOn;
-      playSwitchSound(lampOn);
-      cord.classList.add("pulled");
-      setTimeout(() => cord.classList.remove("pulled"), 180);
-      syncVisuals();
+    function triggerToggle() {
+      isLightOn = !isLightOn;
+      playCordSound(isLightOn);
+      cord.classList.add("is-pulled");
+      setTimeout(() => cord.classList.remove("is-pulled"), 180);
+      applyState();
     }
 
-    cord.addEventListener("click", handlePull);
-    if (bulbHit) {
-      bulbHit.style.cursor = "pointer";
-      bulbHit.addEventListener("click", handlePull);
+    cord.addEventListener("click", triggerToggle);
+    if (bulb) {
+      bulb.style.cursor = "pointer";
+      bulb.addEventListener("click", triggerToggle);
     }
 
-    syncVisuals();
-    return wrap;
+    applyState();
+    return holder;
   }
 
-  function attachLampStage() {
-    mountAnimatedStars();
-    if (document.querySelector(".prime-lamp-only")) return;
+  function refreshStage() {
+    const stars = getStarsLayer();
+    const box = getLoginContainer();
+    const active = isShown(box);
 
-    const card =
-      document.querySelector("#studentLoginForm")?.closest("div.bg-slate-900, div[class*='max-w-']") ||
-      document.querySelector("form[id*='Login'], form[id*='login']")?.closest("div");
+    stars.classList.toggle("is-visible", active);
 
-    if (!card || !card.parentNode) return;
+    if (!active || !box || !box.parentNode) {
+      const existingStage = document.querySelector(".lumiere-login-stage");
+      if (existingStage) existingStage.style.display = "none";
+      return;
+    }
 
-    const stage = document.createElement("div");
-    stage.className = "prime-lamp-stage";
-    card.parentNode.insertBefore(stage, card);
-    stage.appendChild(createReferenceLamp(card));
-    stage.appendChild(card);
+    let stage = document.querySelector(".lumiere-login-stage");
+    if (!stage) {
+      stage = document.createElement("div");
+      stage.className = "lumiere-login-stage";
+      box.parentNode.insertBefore(stage, box);
+      stage.appendChild(buildLamp(box));
+      stage.appendChild(box);
+    } else if (!stage.contains(box)) {
+      box.parentNode.insertBefore(stage, box);
+      stage.appendChild(box);
+    }
+
+    stage.style.display = "";
+    box.classList.toggle("lumiere-form-glow", isLightOn);
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", attachLampStage);
+    document.addEventListener("DOMContentLoaded", () => setTimeout(refreshStage, 120));
   } else {
-    attachLampStage();
+    setTimeout(refreshStage, 120);
   }
 
-  const observer = new MutationObserver(() => attachLampStage());
-  observer.observe(document.body, { childList: true, subtree: true });
+  document.addEventListener("click", () => setTimeout(refreshStage, 80));
+
+  const obs = new MutationObserver(() => setTimeout(refreshStage, 60));
+  obs.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["class", "style"]
+  });
 })();
 </script>
     <meta charset="UTF-8">
