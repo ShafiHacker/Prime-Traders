@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <<style>
+    <style>
   .lumiere-stars-backdrop {
     position: fixed !important;
     inset: 0 !important;
     width: 100vw !important;
     height: 100vh !important;
-    background: radial-gradient(circle at 26% 45%, #1d180f 0%, #0b0c10 58%, #050608 100%) !important;
+    background: radial-gradient(circle at 25% 45%, #1d180e 0%, #090b10 62%, #040507 100%) !important;
     overflow: hidden !important;
     z-index: 9990 !important;
     pointer-events: none;
@@ -15,24 +15,24 @@
   }
 
   .lumiere-stars-backdrop.is-visible {
-    display: block;
+    display: block !important;
   }
 
   .lumiere-star {
     position: absolute;
     border-radius: 9999px;
-    background: #fef08a;
-    animation: lumiereTwinkle var(--t, 3.4s) ease-in-out infinite;
+    pointer-events: none;
+    animation: lumiereStarPulse var(--t, 3s) ease-in-out infinite;
   }
 
-  @keyframes lumiereTwinkle {
+  @keyframes lumiereStarPulse {
     0%, 100% {
-      opacity: 0.2;
-      transform: scale(0.85);
+      opacity: 0.25;
+      transform: translate(0px, 0px) scale(0.8);
     }
     50% {
-      opacity: 0.95;
-      transform: scale(1.25);
+      opacity: 1;
+      transform: translate(var(--dx, 4px), var(--dy, -6px)) scale(1.3);
     }
   }
 
@@ -43,36 +43,37 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: 32px;
+    gap: 28px;
     width: 100%;
-    max-width: 1120px;
+    max-width: 1180px;
     margin: 0 auto;
   }
 
+  /* Matched to login box height (~450px) */
   .lumiere-lamp-holder {
     position: relative;
-    width: 340px;
-    height: 410px;
+    width: 390px;
+    height: 455px;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
     flex-shrink: 0;
   }
 
-  /* Strong warm light cast toward the login card on the right */
+  /* Warm light cast forward & downward onto the login form */
   .lumiere-beam-to-login {
     position: absolute;
-    top: 132px;
-    left: 205px;
-    width: 420px;
-    height: 250px;
+    top: 165px;
+    left: 235px;
+    width: 450px;
+    height: 270px;
     background: radial-gradient(
-      ellipse at 10% 45%,
-      rgba(250, 204, 21, 0.36) 0%,
-      rgba(245, 158, 11, 0.14) 45%,
+      ellipse at 10% 35%,
+      rgba(250, 204, 21, 0.38) 0%,
+      rgba(245, 158, 11, 0.15) 45%,
       transparent 76%
     );
-    transform: rotate(-3deg);
+    transform: rotate(8deg);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -97,12 +98,12 @@
   }
 
   .lumiere-pull-cord.is-pulled {
-    transform: translateY(10px);
+    transform: translateY(11px);
   }
 
   .lumiere-form-glow {
-    box-shadow: -26px 0 56px rgba(250, 204, 21, 0.27), 0 22px 50px rgba(0, 0, 0, 0.7) !important;
-    border-color: rgba(250, 204, 21, 0.48) !important;
+    box-shadow: -28px 0 60px rgba(250, 204, 21, 0.28), 0 24px 54px rgba(0, 0, 0, 0.72) !important;
+    border-color: rgba(250, 204, 21, 0.5) !important;
     transition: box-shadow 0.3s ease, border-color 0.3s ease;
   }
 
@@ -110,43 +111,43 @@
     .lumiere-login-stage {
       flex-direction: column !important;
       align-items: center !important;
-      gap: 8px !important;
-      padding: 8px 10px 20px !important;
+      gap: 10px !important;
+      padding: 8px 10px 22px !important;
     }
 
     .lumiere-lamp-holder {
-      width: 265px !important;
-      height: 270px !important;
+      width: 285px !important;
+      height: 295px !important;
       margin-bottom: -12px;
     }
 
     .lumiere-lamp-art {
-      width: 260px !important;
-      height: 265px !important;
+      width: 280px !important;
+      height: 290px !important;
     }
 
     .lumiere-beam-to-login {
-      top: 105px !important;
-      left: 54% !important;
-      width: 310px !important;
-      height: 190px !important;
-      transform: translateX(-50%) rotate(8deg) !important;
+      top: 120px !important;
+      left: 56% !important;
+      width: 320px !important;
+      height: 195px !important;
+      transform: translateX(-50%) rotate(12deg) !important;
       background: radial-gradient(
         ellipse at 50% 15%,
-        rgba(250, 204, 21, 0.35) 0%,
-        rgba(245, 158, 11, 0.12) 48%,
+        rgba(250, 204, 21, 0.36) 0%,
+        rgba(245, 158, 11, 0.13) 48%,
         transparent 76%
       ) !important;
     }
 
     .lumiere-form-glow {
-      box-shadow: 0 -14px 38px rgba(250, 204, 21, 0.24), 0 18px 38px rgba(0, 0, 0, 0.68) !important;
+      box-shadow: 0 -14px 38px rgba(250, 204, 21, 0.25), 0 18px 38px rgba(0, 0, 0, 0.7) !important;
     }
   }
 </style>
 
 <script>
-(function mountLargeTiltedLumiereLamp() {
+(function mountFullHeightTiltedLumiereLamp() {
   let isLightOn = true;
 
   function playCordSound(turnedOn) {
@@ -159,7 +160,7 @@
       osc.type = "triangle";
       osc.frequency.setValueAtTime(turnedOn ? 900 : 520, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(turnedOn ? 1420 : 250, ctx.currentTime + 0.065);
-      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.setValueAtTime(0.22, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.075);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -175,16 +176,20 @@
     layer.id = "lumiereStarsLayer";
     layer.className = "lumiere-stars-backdrop";
 
-    for (let i = 0; i < 85; i++) {
+    for (let i = 0; i < 110; i++) {
       const dot = document.createElement("span");
       dot.className = "lumiere-star";
-      const size = (i % 4 === 0) ? 2.8 : (i % 2 === 0 ? 1.8 : 1.3);
+      const size = (i % 5 === 0) ? 3.5 : (i % 2 === 0 ? 2.4 : 1.8);
       dot.style.width = size + "px";
       dot.style.height = size + "px";
-      dot.style.left = ((i * 41) % 100) + "%";
-      dot.style.top = ((i * 59) % 100) + "%";
-      dot.style.setProperty("--t", (2.4 + (i % 6) * 0.65) + "s");
-      dot.style.animationDelay = ((i % 10) * 0.3) + "s";
+      dot.style.background = (i % 4 === 0) ? "#ffffff" : "#fde047";
+      dot.style.boxShadow = (i % 5 === 0) ? "0 0 8px rgba(254, 240, 138, 0.9)" : "0 0 4px rgba(250, 204, 21, 0.65)";
+      dot.style.left = ((i * 37) % 99 + 0.5) + "%";
+      dot.style.top = ((i * 53) % 98 + 1) + "%";
+      dot.style.setProperty("--t", (2.1 + (i % 6) * 0.6) + "s");
+      dot.style.setProperty("--dx", ((i % 2 === 0 ? 1 : -1) * (3 + (i % 5))) + "px");
+      dot.style.setProperty("--dy", ((i % 3 === 0 ? -1 : 1) * (4 + (i % 6))) + "px");
+      dot.style.animationDelay = ((i % 10) * 0.25) + "s";
       layer.appendChild(dot);
     }
     document.body.appendChild(layer);
@@ -238,7 +243,7 @@
     holder.className = "lumiere-lamp-holder lamp-lit";
     holder.innerHTML = `
       <div class="lumiere-beam-to-login"></div>
-      <svg class="lumiere-lamp-art" viewBox="0 0 320 390" width="330" height="400">
+      <svg class="lumiere-lamp-art" viewBox="0 0 360 440" width="380" height="450">
         <defs>
           <radialGradient id="lumiereShadeInner" cx="55%" cy="35%" r="65%">
             <stop offset="0%" stop-color="#fef9c3"/>
@@ -247,7 +252,7 @@
           </radialGradient>
           <radialGradient id="lumiereBulbAura" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98"/>
-            <stop offset="45%" stop-color="#facc15" stop-opacity="0.72"/>
+            <stop offset="45%" stop-color="#facc15" stop-opacity="0.75"/>
             <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
           </radialGradient>
           <linearGradient id="lumiereMetalArm" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -263,39 +268,39 @@
         </defs>
 
         <!-- Bulb Outer Glow -->
-        <circle class="lumiere-aura" cx="212" cy="156" r="62" fill="url(#lumiereBulbAura)"/>
+        <circle class="lumiere-aura" cx="242" cy="184" r="70" fill="url(#lumiereBulbAura)"/>
 
-        <!-- Heavy Round Base -->
-        <ellipse cx="88" cy="352" rx="68" ry="13" fill="#09090b" stroke="#ca8a04" stroke-width="2.2"/>
-        <ellipse cx="88" cy="347" rx="56" ry="8" fill="#27272a"/>
-        <path d="M68 346 L75 325 L101 325 L108 346 Z" fill="url(#lumiereMetalArm)" stroke="#3f3f46" stroke-width="1.2"/>
-        <circle cx="88" cy="324" r="8" fill="#eab308"/>
+        <!-- Heavy Round Base aligned at bottom -->
+        <ellipse cx="86" cy="405" rx="74" ry="14" fill="#09090b" stroke="#ca8a04" stroke-width="2.4"/>
+        <ellipse cx="86" cy="400" rx="60" ry="9" fill="#27272a"/>
+        <path d="M64 399 L72 374 L100 374 L108 399 Z" fill="url(#lumiereMetalArm)" stroke="#3f3f46" stroke-width="1.3"/>
+        <circle cx="86" cy="373" r="9" fill="#eab308"/>
 
         <!-- Lower Arm leaning upward & forward -->
-        <line x1="88" y1="322" x2="132" y2="215" stroke="url(#lumiereMetalArm)" stroke-width="12" stroke-linecap="round"/>
-        <line x1="88" y1="322" x2="132" y2="215" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+        <line x1="86" y1="371" x2="136" y2="245" stroke="url(#lumiereMetalArm)" stroke-width="13" stroke-linecap="round"/>
+        <line x1="86" y1="371" x2="136" y2="245" stroke="#a1a1aa" stroke-width="2.2" stroke-linecap="round" opacity="0.5"/>
 
         <!-- Elbow Joint -->
-        <circle cx="132" cy="215" r="14" fill="#18181b" stroke="#eab308" stroke-width="3"/>
-        <circle cx="132" cy="215" r="5" fill="#facc15"/>
+        <circle cx="136" cy="245" r="15.5" fill="#18181b" stroke="#eab308" stroke-width="3.2"/>
+        <circle cx="136" cy="245" r="5.5" fill="#facc15"/>
 
-        <!-- Upper Arm leaning strongly forward toward right -->
-        <line x1="132" y1="215" x2="196" y2="122" stroke="url(#lumiereMetalArm)" stroke-width="10.5" stroke-linecap="round"/>
-        <line x1="132" y1="215" x2="196" y2="122" stroke="#d4d4d8" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+        <!-- Upper Arm leaning strongly right & downward toward login -->
+        <line x1="136" y1="245" x2="222" y2="148" stroke="url(#lumiereMetalArm)" stroke-width="11.5" stroke-linecap="round"/>
+        <line x1="136" y1="245" x2="222" y2="148" stroke="#d4d4d8" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
 
-        <!-- Tilted Forward Dome Shade -->
-        <g transform="rotate(24 214 128)">
-          <circle cx="196" cy="122" r="10" fill="#18181b" stroke="#eab308" stroke-width="2.5"/>
-          <path d="M154 134 C164 76, 266 76, 276 134 Z" fill="url(#lumiereDomeOuter)" stroke="#71717a" stroke-width="2"/>
-          <path d="M158 134 C196 144, 234 144, 272 134 C238 124, 192 124, 158 134 Z" class="lumiere-inner-shade" fill="url(#lumiereShadeInner)"/>
+        <!-- Tilted Forward & Downward Dome Shade -->
+        <g transform="rotate(36 242 156)">
+          <circle cx="222" cy="148" r="11" fill="#18181b" stroke="#eab308" stroke-width="2.6"/>
+          <path d="M174 162 C186 96, 298 96, 310 162 Z" fill="url(#lumiereDomeOuter)" stroke="#71717a" stroke-width="2.2"/>
+          <path d="M179 162 C220 174, 262 174, 305 162 C266 150, 218 150, 179 162 Z" class="lumiere-inner-shade" fill="url(#lumiereShadeInner)"/>
 
           <!-- Glowing Glass Bulb -->
-          <circle class="lumiere-bulb" cx="215" cy="144" r="13" fill="#fef9c3" stroke="#f59e0b" stroke-width="2"/>
+          <circle class="lumiere-bulb" cx="242" cy="174" r="14.5" fill="#fef9c3" stroke="#f59e0b" stroke-width="2"/>
 
           <!-- Pull Cord with Teardrop Handle -->
           <g class="lumiere-pull-cord" title="Pull cord to toggle light">
-            <line x1="227" y1="142" x2="227" y2="226" stroke="#eab308" stroke-width="2.6"/>
-            <path d="M227 226 C219 236, 219 248, 227 252 C235 248, 235 236, 227 226 Z" fill="#facc15" stroke="#fef08a" stroke-width="1.4"/>
+            <line x1="256" y1="172" x2="256" y2="262" stroke="#eab308" stroke-width="2.8"/>
+            <path d="M256 262 C247 273, 247 286, 256 291 C265 286, 265 273, 256 262 Z" fill="#facc15" stroke="#fef08a" stroke-width="1.5"/>
           </g>
         </g>
       </svg>
