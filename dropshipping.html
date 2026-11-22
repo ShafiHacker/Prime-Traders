@@ -1226,17 +1226,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 })();
 </script>
-    await db.collection('students').doc(uid).set({
-        // ... baqi student fields
-        referredBy: refCode || "143256",
-        referralLink: refLink || null,
-        status: 'pending',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    // YAHAN SET KARNA HAI:
-    window.location.href = "ecommerce-dashboard.html";
-</script>
     <script>
 (function enforceYousafRedirectGuard() {
     const TARGET_ADMIN_EMAIL = "yousafansari@primetraders.com";
@@ -1270,6 +1259,36 @@ document.addEventListener("DOMContentLoaded", function () {
             }, 1200);
         }
     }, true);
+})();
+</script>
+    <script id="ptDropshipPublicNaDisplay">
+(function formatPublicDropshipCards() {
+  function applyCardFormatting() {
+    document.querySelectorAll("div, span, p, strong, b").forEach((el) => {
+      if (el.children.length > 0) return;
+      const txt = (el.textContent || "").trim();
+
+      if (/^PRIME RATE:?$/i.test(txt)) {
+        el.textContent = txt.replace(/PRIME RATE/i, "OUR RATE");
+      } else if (/^PKR\s*0(\.0+)?$/i.test(txt) || /^N\/A$/i.test(txt)) {
+        el.textContent = "N/A";
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    applyCardFormatting();
+    setTimeout(applyCardFormatting, 500);
+    setTimeout(applyCardFormatting, 1500);
+
+    const target = document.body;
+    if (target) {
+      new MutationObserver(() => applyCardFormatting()).observe(target, {
+        childList: true,
+        subtree: true
+      });
+    }
+  });
 })();
 </script>
 </body>
