@@ -1339,50 +1339,48 @@ document.addEventListener("DOMContentLoaded", function () {
       throw new Error("Please enter both registered Email ID and Password.");
     }
 
-    // Agar Firebase Auth available hai to sign-in se verify karein
     if (window.firebase && firebase.auth) {
       const cred = await firebase.auth().signInWithEmailAndPassword(cleanEmail, password);
       const user = cred.user;
 
       if (firebase.firestore) {
-        const snap = await firebase.firestore().collection("students").doc(user.uid).get();
-        if (!snap.exists) {
-          throw new Error("This account is not registered in the Reseller/Student portal.");
+        const db = firebase.firestore();
+
+        // 1. Pehle students / reseller portal mein check karein
+        const studentSnap = await db.collection("students").doc(user.uid).get();
+        if (studentSnap.exists) {
+          const data = studentSnap.data() || {};
+          return {
+            uid: user.uid,
+            email: user.email || cleanEmail,
+            resellerName: data.name || data.studentName || data.businessName || cleanEmail,
+            role: "reseller",
+            status: data.status || "active"
+          };
         }
-        const data = snap.data() || {};
-        return {
-          uid: user.uid,
-          email: user.email || cleanEmail,
-          resellerName: data.name || data.studentName || data.businessName || cleanEmail,
-          status: data.status || "active"
-        };
+
+        // 2. Agar students mein nahi hai to admins collection check karein
+        const adminSnap = await db.collection("admins").doc(user.uid).get();
+        if (adminSnap.exists || cleanEmail.startsWith("admin@")) {
+          const adminData = adminSnap.exists ? (adminSnap.data() || {}) : {};
+          return {
+            uid: user.uid,
+            email: user.email || cleanEmail,
+            resellerName: adminData.name || "Admin (" + cleanEmail + ")",
+            role: "admin",
+            status: "active"
+          };
+        }
+
+        throw new Error("This account is not registered in the Reseller/Student portal.");
       }
 
       return {
         uid: user.uid,
         email: user.email || cleanEmail,
         resellerName: user.displayName || cleanEmail,
+        role: cleanEmail.startsWith("admin@") ? "admin" : "reseller",
         status: "active"
-      };
-    }
-
-    // Fallback: agar sirf Firestore students collection available hai
-    if (window.firebase && firebase.firestore) {
-      const q = await firebase.firestore()
-        .collection("students")
-        .where("email", "==", cleanEmail)
-        .limit(1)
-        .get();
-      if (q.empty) {
-        throw new Error("No registered reseller account found with this Email ID.");
-      }
-      const doc = q.docs[0];
-      const data = doc.data() || {};
-      return {
-        uid: doc.id,
-        email: cleanEmail,
-        resellerName: data.name || data.studentName || data.businessName || cleanEmail,
-        status: data.status || "active"
       };
     }
 
