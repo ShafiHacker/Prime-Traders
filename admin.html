@@ -1,5 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
+    <!-- Baqi head links / styles yahan honge -->
+
+<style id="ptLightThemeOverride">
+  :root {
+    --pt-bg: #f8fafc;
+    --pt-surface: #ffffff;
+    --pt-card: #f8fafc;
+    --pt-border: #e2e8f0;
+    --pt-text: #0f172a;
+    --pt-muted: #64748b;
+    --pt-active-bg: #0f172a;
+    --pt-active-text: #ffffff;
+  }
+
+  html, body {
+    background-color: var(--pt-bg) !important;
+    color: var(--pt-text) !important;
+  }
+
+  aside, nav, [class*="sidebar"] {
+    background-color: var(--pt-surface) !important;
+    border-color: var(--pt-border) !important;
+    color: var(--pt-text) !important;
+  }
+
+  main, [class*="main"], [class*="content"] {
+    background-color: var(--pt-bg) !important;
+    color: var(--pt-text) !important;
+  }
+
+  .bg-slate-950, .bg-slate-900, .bg-slate-800, .bg-gray-900, .bg-gray-800,
+  [class*="card"], [class*="panel"], [class*="box"] {
+    background-color: var(--pt-surface) !important;
+    border-color: var(--pt-border) !important;
+    color: var(--pt-text) !important;
+  }
+
+  main .grid > div,
+  main [class*="grid"] > div,
+  [class*="category"] {
+    background-color: var(--pt-card) !important;
+    border: 1px solid var(--pt-border) !important;
+    color: var(--pt-text) !important;
+  }
+
+  h1, h2, h3, h4, strong {
+    color: var(--pt-text) !important;
+  }
+
+  p, span, small, label, [class*="muted"] {
+    color: var(--pt-muted) !important;
+  }
+
+  aside a.active, aside button.active,
+  nav a.active, nav button.active,
+  [aria-current="page"] {
+    background-color: var(--pt-active-bg) !important;
+    color: var(--pt-active-text) !important;
+    font-weight: 700 !important;
+  }
+
+  input, select, textarea {
+    background-color: var(--pt-surface) !important;
+    color: var(--pt-text) !important;
+    border-color: #cbd5e1 !important;
+  }
+</style>
+</head>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
