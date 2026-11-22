@@ -1323,5 +1323,23 @@ document.addEventListener("DOMContentLoaded", function () {
   window.addEventListener("load", applyCardFormatting);
 })();
 </script>
+    <script id="ptDropshipPublicNaDisplay">
+(function formatPublicDropshipCards() {
+  function applyCardFormatting() {
+    document.querySelectorAll("div, span, p, strong, b").forEach((el) => {
+      if (el.children.length > 0) return;
+      const txt = (el.textContent || "").trim();
+
+      if (/^PRIME RATE:?$/i.test(txt)) {
+        el.textContent = txt.replace(/PRIME RATE/i, "OUR RATE");
+      } else if (/^PKR\s*0(\.0+)?$/i.test(txt) || /^N\/A$/i.test(txt)) {
+        el.textContent = "N/A";
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", applyCardFormatting);
+})();
+</script>
 </body>
 </html>
