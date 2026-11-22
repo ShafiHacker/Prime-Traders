@@ -369,5 +369,132 @@
     </main>
 
     <script type="module" src="js/dropship-admin.js"></script>
+    <style id="ptDropshipRateControlsStyle">
+  .pt-rate-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .pt-na-btn {
+    background: #1e293b;
+    color: #cbd5e1;
+    border: 1px solid #334155;
+    border-radius: 7px;
+    padding: 5px 8px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    line-height: 1;
+    transition: 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .pt-na-btn:hover {
+    background: #334155;
+    color: #ffffff;
+  }
+
+  .pt-na-btn.is-na {
+    background: rgba(245, 158, 11, 0.18);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.45);
+  }
+</style>
+
+<script id="ptDropshipRateControlsScript">
+(function initDropshipRateEnhancements() {
+  function renamePrimeRateHeader() {
+    document.querySelectorAll("th").forEach((th) => {
+      const txt = (th.textContent || "").trim().toLowerCase();
+      if (txt === "prime rate") {
+        th.textContent = "OUR RATE";
+      }
+    });
+  }
+
+  function enhanceZeroRateInputs() {
+    const tbody = document.getElementById("dropshipAdminTableBody");
+    if (!tbody) return;
+
+    const inputs = tbody.querySelectorAll("input");
+    inputs.forEach((input) => {
+      if (input.dataset.ptEnhanced === "1") {
+        syncNaButtonState(input);
+        return;
+      }
+
+      input.dataset.ptEnhanced = "1";
+
+      // Agar input type="number" hai to "N/A" text dikhane ke liye type ko "text" karein
+      if (input.type === "number") {
+        input.type = "text";
+        input.inputMode = "decimal";
+      }
+
+      const wrapper = document.createElement("span");
+      wrapper.className = "pt-rate-wrap";
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "pt-na-btn";
+      btn.title = "Set N/A when rate is not available";
+      btn.textContent = "N/A";
+
+      input.parentNode.insertBefore(wrapper, input);
+      wrapper.appendChild(input);
+      wrapper.appendChild(btn);
+
+      input.dataset.ptNaBtnId = "pt_na_" + Math.random().toString(36).slice(2, 8);
+      btn.id = input.dataset.ptNaBtnId;
+
+      btn.addEventListener("click", () => {
+        const currentVal = (input.value || "").trim().toUpperCase();
+        if (currentVal === "N/A") {
+          input.value = "0";
+        } else {
+          input.value = "N/A";
+        }
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+        syncNaButtonState(input);
+      });
+
+      input.addEventListener("input", () => {
+        syncNaButtonState(input);
+      });
+
+      syncNaButtonState(input);
+    });
+  }
+
+  function syncNaButtonState(input) {
+    const btn = input.dataset.ptNaBtnId ? document.getElementById(input.dataset.ptNaBtnId) : null;
+    if (!btn) return;
+    const val = (input.value || "").trim().toUpperCase();
+    const isZeroOrEmpty = val === "" || val === "0";
+    const isNa = val === "N/A";
+
+    btn.classList.toggle("is-na", isNa);
+    btn.style.display = (isZeroOrEmpty || isNa) ? "inline-flex" : "none";
+  }
+
+  function runEnhancements() {
+    renamePrimeRateHeader();
+    enhanceZeroRateInputs();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    runEnhancements();
+    const tbody = document.getElementById("dropshipAdminTableBody");
+    if (tbody) {
+      const obs = new MutationObserver(() => {
+        runEnhancements();
+      });
+      obs.observe(tbody, { childList: true, subtree: true });
+    }
+  });
+})();
+</script>
 </body>
 </html>
