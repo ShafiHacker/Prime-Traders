@@ -1715,16 +1715,48 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
   document.addEventListener("DOMContentLoaded", injectResellerMenu);
 })();
 </script>
-          </body>
-          </html>
-        `);
-      });
-      cells[2].appendChild(document.createElement('br'));
-      cells[2].appendChild(btn);
-    }
+    <script id="ptStudentDeleteBtnFix">
+(function attachStudentDeleteButtons() {
+  function addDeleteButtons() {
+    const rows = document.querySelectorAll("table tbody tr");
+    rows.forEach((tr) => {
+      const cells = tr.querySelectorAll("td");
+      if (cells.length < 2) return;
+      const lastCell = cells[cells.length - 1];
+      if (!lastCell || lastCell.querySelector(".pt-del-student-btn")) return;
 
-    // Delete button in Admin Controls column (last cell)
-    const lastCell = cells[cells.length - 1];
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "pt-del-student-btn bg-red-700 hover:bg-red-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition ml-2";
+      delBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+
+      delBtn.addEventListener("click", async () => {
+        if (!confirm("Kya aap is student record ko permanently delete karna chahte hain?")) return;
+        try {
+          const docId = tr.dataset.id || tr.getAttribute("data-id") || "";
+          if (typeof db !== "undefined" && db && docId) {
+            await db.collection("students").doc(docId).delete();
+          }
+          tr.remove();
+        } catch (e) {
+          alert("Delete error: " + e.message);
+        }
+      });
+
+      lastCell.appendChild(delBtn);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    addDeleteButtons();
+    const tbody = document.querySelector("table tbody");
+    if (tbody) {
+      new MutationObserver(addDeleteButtons).observe(tbody, { childList: true, subtree: true });
+    }
+  });
+})();
+</script>
+         const lastCell = cells[cells.length - 1];
     if (!lastCell.querySelector('.pt-del-student-btn')) {
       const delBtn = document.createElement('button');
       delBtn.type = 'button';
@@ -2714,3 +2746,5 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
         }
     };
     </script>
+ </body>
+          </html>
