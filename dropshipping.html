@@ -1302,5 +1302,138 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 })();
 </script>
+    <script id="ptOrderResellerVerify">
+(function attachOrderResellerVerification() {
+  const UI_ID = "ptResellerOrderAuthBox";
+
+  function ensureAuthFields() {
+    const submitBtn = Array.from(document.querySelectorAll("button")).find((b) =>
+      /submit order to main dashboard/i.test((b.textContent || "").trim())
+    );
+    if (!submitBtn || document.getElementById(UI_ID)) return;
+
+    const box = document.createElement("div");
+    box.id = UI_ID;
+    box.style.cssText =
+      "margin-top:14px;padding:12px;border-radius:10px;background:#0f172a;border:1px solid #334155;";
+
+    box.innerHTML = `
+      <div style="font-size:11px;font-weight:800;color:#f59e0b;text-transform:uppercase;margin-bottom:8px;">
+        Reseller Verification Required
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <input id="ptVerifyEmail" type="email" placeholder="Registered Email ID"
+          style="padding:8px 10px;border-radius:8px;border:1px solid #334155;background:#020617;color:#fff;font-size:12px;" />
+        <input id="ptVerifyPassword" type="password" placeholder="Account Password"
+          style="padding:8px 10px;border-radius:8px;border:1px solid #334155;background:#020617;color:#fff;font-size:12px;" />
+      </div>
+      <div id="ptVerifyStatus" style="font-size:11px;color:#94a3b8;margin-top:6px;"></div>
+    `;
+
+    submitBtn.parentNode.insertBefore(box, submitBtn);
+  }
+
+  async function verifyRegisteredReseller(email, password) {
+    const cleanEmail = (email || "").trim().toLowerCase();
+    if (!cleanEmail || !password) {
+      throw new Error("Please enter both registered Email ID and Password.");
+    }
+
+    // Agar Firebase Auth available hai to sign-in se verify karein
+    if (window.firebase && firebase.auth) {
+      const cred = await firebase.auth().signInWithEmailAndPassword(cleanEmail, password);
+      const user = cred.user;
+
+      if (firebase.firestore) {
+        const snap = await firebase.firestore().collection("students").doc(user.uid).get();
+        if (!snap.exists) {
+          throw new Error("This account is not registered in the Reseller/Student portal.");
+        }
+        const data = snap.data() || {};
+        return {
+          uid: user.uid,
+          email: user.email || cleanEmail,
+          resellerName: data.name || data.studentName || data.businessName || cleanEmail,
+          status: data.status || "active"
+        };
+      }
+
+      return {
+        uid: user.uid,
+        email: user.email || cleanEmail,
+        resellerName: user.displayName || cleanEmail,
+        status: "active"
+      };
+    }
+
+    // Fallback: agar sirf Firestore students collection available hai
+    if (window.firebase && firebase.firestore) {
+      const q = await firebase.firestore()
+        .collection("students")
+        .where("email", "==", cleanEmail)
+        .limit(1)
+        .get();
+      if (q.empty) {
+        throw new Error("No registered reseller account found with this Email ID.");
+      }
+      const doc = q.docs[0];
+      const data = doc.data() || {};
+      return {
+        uid: doc.id,
+        email: cleanEmail,
+        resellerName: data.name || data.studentName || data.businessName || cleanEmail,
+        status: data.status || "active"
+      };
+    }
+
+    throw new Error("Verification service is not initialized.");
+  }
+
+  document.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button");
+    if (!btn || !/submit order to main dashboard/i.test((btn.textContent || "").trim())) return;
+    if (btn.dataset.ptVerifiedPass === "1") {
+      delete btn.dataset.ptVerifiedPass;
+      return;
+    }
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    const statusEl = document.getElementById("ptVerifyStatus");
+    const emailVal = (document.getElementById("ptVerifyEmail")?.value || "").trim();
+    const passVal = document.getElementById("ptVerifyPassword")?.value || "";
+
+    try {
+      if (statusEl) {
+        statusEl.style.color = "#fbbf24";
+        statusEl.textContent = "Verifying registered reseller account...";
+      }
+
+      const reseller = await verifyRegisteredReseller(emailVal, passVal);
+      window.__PT_VERIFIED_RESELLER__ = reseller;
+
+      if (window.ptTraceResellerOrder) {
+        window.ptTraceResellerOrder(reseller, btn.closest("[role='dialog'], .modal, form, main") || document.body);
+      }
+
+      if (statusEl) {
+        statusEl.style.color = "#34d399";
+        statusEl.textContent = "Verified: " + reseller.resellerName + " (" + reseller.email + ")";
+      }
+
+      btn.dataset.ptVerifiedPass = "1";
+      btn.click();
+    } catch (err) {
+      if (statusEl) {
+        statusEl.style.color = "#f87171";
+        statusEl.textContent = err.message || "Verification failed. Only registered users can submit.";
+      }
+    }
+  }, true);
+
+  setInterval(ensureAuthFields, 400);
+})();
+</script>
 </body>
 </html>
