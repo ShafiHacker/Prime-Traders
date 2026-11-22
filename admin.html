@@ -1619,6 +1619,223 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
   });
 };
 </script>
+    <script>
+(function applyPrimeTradersAdminUpdates() {
+  const KEEP_METRIC_TITLES = [
+    "total shipments",
+    "active users",
+    "deleted archive",
+    "wholeseller orders",
+    "reseller portal",
+    "e-commerce student portal",
+    "tickets & complaints",
+    "commission",
+    "yousaf ansari payment"
+  ];
+
+  const REMOVE_CARD_TITLES = [
+    "in transit",
+    "delivered today",
+    "failed deliveries",
+    "pending approval",
+    "top riders today",
+    "pending deliveries",
+    "recent bookings",
+    "today's revenue",
+    "todays revenue"
+  ];
+
+  function renamePortalLabels() {
+    document.querySelectorAll("a, button, span, h1, h2, h3, h4, p, div, li").forEach((el) => {
+      if (el.children.length > 0) return;
+      const txt = (el.textContent || "").trim();
+      if (/^e-?commerce student portal$/i.test(txt)) {
+        el.textContent = txt.replace(/e-?commerce student portal/i, "Reseller Portal");
+      }
+    });
+  }
+
+  function removeUnwantedMenusAndButtons() {
+    document.querySelectorAll("a, button, div, li, span").forEach((el) => {
+      const txt = (el.textContent || "").trim().toLowerCase();
+      if (!txt) return;
+
+      if (
+        txt === "daily petrol rate" ||
+        txt === "dc km settings" ||
+        txt === "manual parcel entry"
+      ) {
+        const container = el.closest("li, a, button") || el;
+        container.remove();
+      }
+    });
+
+    // Remove legacy petrol / dc km panels if present
+    document.querySelectorAll("[id*='petrol' i], [id*='dckm' i], [id*='dc-km' i], [id*='manualParcel' i]").forEach((node) => {
+      if (node.tagName !== "BODY" && node.tagName !== "HTML") {
+        node.remove();
+      }
+    });
+  }
+
+  function moveTopActionsToSidebarMenu() {
+    const sidebar =
+      document.querySelector("aside nav") ||
+      document.querySelector("aside ul") ||
+      document.querySelector("aside") ||
+      document.querySelector("[class*='sidebar']");
+    if (!sidebar) return;
+
+    let menuGroup = document.getElementById("ptMovedMenuActions");
+    if (!menuGroup) {
+      menuGroup = document.createElement("div");
+      menuGroup.id = "ptMovedMenuActions";
+      menuGroup.style.cssText = "display:flex;flex-direction:column;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(148,163,184,0.18);";
+      sidebar.appendChild(menuGroup);
+    }
+
+    const allBtns = Array.from(document.querySelectorAll("button, a"));
+    const editBtn = allBtns.find((b) => (b.textContent || "").trim().toLowerCase() === "edit profile");
+    const newShipBtn = allBtns.find((b) => (b.textContent || "").trim().replace(/^\+\s*/, "").toLowerCase() === "new shipment");
+
+    [editBtn, newShipBtn].forEach((btn) => {
+      if (!btn) return;
+      if (btn.parentElement === menuGroup) return;
+      btn.classList.add("w-full", "justify-start", "text-left");
+      menuGroup.appendChild(btn);
+    });
+  }
+
+  function cleanOverviewCardsAndAddRequestedBoxes() {
+    // Remove unwanted cards/sections on overview
+    document.querySelectorAll("section, div, article").forEach((card) => {
+      const heading = card.querySelector("h1, h2, h3, h4, p, span");
+      if (!heading) return;
+      const titleText = (heading.textContent || "").trim().toLowerCase();
+      if (!titleText) return;
+
+      const isUnwanted = REMOVE_CARD_TITLES.some((k) => titleText === k || titleText.startsWith(k + " "));
+      if (isUnwanted && card.getBoundingClientRect().width > 120 && card.getBoundingClientRect().height > 60) {
+        card.remove();
+      }
+    });
+
+    const overviewContainer =
+      document.getElementById("overviewCardsGrid") ||
+      Array.from(document.querySelectorAll("div")).find((d) => {
+        const t = (d.textContent || "").toLowerCase();
+        return t.includes("total shipments") && t.includes("active users");
+      });
+
+    if (!overviewContainer) return;
+
+    const existingTitles = Array.from(overviewContainer.querySelectorAll("h1, h2, h3, h4, p, span")).map((el) =>
+      (el.textContent || "").trim().toLowerCase()
+    );
+
+    const requiredBoxes = [
+      { key: "wholeseller orders", title: "Wholeseller Orders", accent: "#38bdf8", count: "0" },
+      { key: "reseller portal", title: "Reseller Portal", accent: "#a855f7", count: "0" },
+      { key: "tickets & complaints", title: "Tickets & Complaints", accent: "#f59e0b", count: "0" },
+      { key: "commission", title: "Commission", accent: "#4ade80", count: "0" }
+    ];
+
+    requiredBoxes.forEach((box) => {
+      const alreadyExists = existingTitles.some((t) => t === box.key);
+      if (alreadyExists) return;
+
+      const card = document.createElement("div");
+      card.setAttribute("data-pt-overview-card", box.key);
+      card.style.cssText =
+        "background:#0b1220;border:1px solid #1e293b;border-radius:16px;padding:18px;display:flex;flex-direction:column;justify-content:space-between;min-height:110px;";
+      card.innerHTML = `
+        <div style="font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;color:#94a3b8;">${box.title}</div>
+        <div id="ptCardVal_${box.key.replace(/[^a-z0-9]/gi, "_")}" style="font-size:26px;font-weight:900;color:${box.accent};margin-top:8px;">${box.count}</div>
+      `;
+      overviewContainer.appendChild(card);
+    });
+  }
+
+  function syncParcelActivityWithShipments() {
+    const parcelSection = Array.from(document.querySelectorAll("div, section")).find((el) =>
+      (el.textContent || "").toUpperCase().includes("PARCEL ACTIVITY") &&
+      (el.textContent || "").toLowerCase().includes("mon") &&
+      (el.textContent || "").toLowerCase().includes("sun")
+    );
+    if (!parcelSection) return;
+
+    // Pull shipments from localStorage/window if available
+    let shipments = [];
+    if (Array.isArray(window.shipmentsData)) {
+      shipments = window.shipmentsData;
+    } else {
+      for (const k of ["shipments", "parcels", "bookings", "orders"]) {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(k) || "[]");
+          if (Array.isArray(parsed) && parsed.length) {
+            shipments = parsed;
+            break;
+          }
+        } catch (_) {}
+      }
+    }
+
+    const dayBuckets = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    shipments.forEach((s) => {
+      const rawDate = s.date || s.createdAt || s.bookingDate || s.timestamp;
+      let d = rawDate ? new Date(rawDate) : new Date();
+      if (isNaN(d.getTime())) d = new Date();
+      const dayLabel = dayNames[d.getDay()] || "Sun";
+      dayBuckets[dayLabel] = (dayBuckets[dayLabel] || 0) + 1;
+    });
+
+    const totalCount = shipments.length;
+    const maxVal = Math.max(1, ...Object.values(dayBuckets));
+
+    // Update bar heights if bar elements exist near Mon-Sun labels
+    Object.entries(dayBuckets).forEach(([day, count]) => {
+      const labelEl = Array.from(parcelSection.querySelectorAll("span, div, p")).find(
+        (n) => n.children.length === 0 && (n.textContent || "").trim() === day
+      );
+      if (!labelEl) return;
+      const bar = labelEl.previousElementSibling || labelEl.parentElement?.querySelector("[style*='height']");
+      if (bar && bar !== labelEl) {
+        const pct = totalCount > 0 ? Math.max(12, Math.round((count / maxVal) * 100)) : 12;
+        bar.style.height = pct + "%";
+        bar.title = `${day}: ${count} shipments`;
+      }
+    });
+
+    // Update Total Volume text if present
+    Array.from(parcelSection.querySelectorAll("div, p, span")).forEach((el) => {
+      if (el.children.length === 0 && /parcels$/i.test((el.textContent || "").trim())) {
+        el.textContent = `${totalCount} parcels`;
+      }
+    });
+  }
+
+  function runAllUpdates() {
+    renamePortalLabels();
+    removeUnwantedMenusAndButtons();
+    moveTopActionsToSidebarMenu();
+    cleanOverviewCardsAndAddRequestedBoxes();
+    syncParcelActivityWithShipments();
+  }
+
+  document.addEventListener("DOMContentLoaded", runAllUpdates);
+  setTimeout(runAllUpdates, 300);
+
+  const observer = new MutationObserver(() => {
+    clearTimeout(window.__ptUpdateTimer);
+    window.__ptUpdateTimer = setTimeout(runAllUpdates, 120);
+  });
+  if (document.body) {
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+})();
+</script>
 </body>
 <script>
     // Fetch Students for Main Admin
