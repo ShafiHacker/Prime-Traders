@@ -318,7 +318,8 @@ auth.onAuthStateChanged(async (user) => {
     <!-- Inside Payment Details section in yousaf-dashboard.html -->
 <div id="yousafReadOnlyPaymentBox" style="margin-top:12px;"></div>
 <script>
-(function initYousafReadOnlyPaymentReview() {
+<script>
+(function initYousafPaymentDetailsTabOnly() {
   const COLLECTION_NAME = "yousafPayments";
   const DOC_ID = "yousafansari_ledger";
 
@@ -326,21 +327,19 @@ auth.onAuthStateChanged(async (user) => {
     const qty = parseFloat(r.qty) || 0;
     const rate = parseFloat(r.rate) || 0;
     const totalReceived = qty * rate;
-    const gst18 = (totalReceived / 100) * 18;
-    const sst15 = (totalReceived / 100) * 15;
-    const deduction33 = gst18 + sst15;
-    const cod4 = (totalReceived / 100) * 4;
-    const totalDeduction = deduction33 + cod4;
-    const commUnit = parseFloat(r.commissionUnitRate) || 0;
-    const commTotal = commUnit * qty;
-    const comm2 = (commTotal / 100) * 2;
-    const pay = commTotal + comm2;
-    return { totalReceived, gst18, sst15, deduction33, cod4, totalDeduction, commTotal, comm2, pay };
+
+    const commRate = parseFloat(r.commRate) || 0;
+    const twoPctAdd = (commRate / 100) * 2;
+    const commTotal = commRate + twoPctAdd;
+    const bank2Pct = (commTotal / 100) * 2;
+    const pay = commTotal - bank2Pct;
+
+    return { totalReceived, twoPctAdd, commTotal, bank2Pct, pay };
   }
 
   function fmtNum(n) {
     if (!isFinite(n)) return "0";
-    return Number.isInteger(n) ? n.toLocaleString() : n.toFixed(2).replace(/\.?0+$/, "");
+    return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
   }
 
   function openSlip(dataUrl, title) {
@@ -359,7 +358,30 @@ auth.onAuthStateChanged(async (user) => {
     `);
   }
 
-  function findPaymentDetailsCard() {
+  function isPaymentDetailsActive() {
+    // Check if Payment Details nav item is active or Payment Details section is visible
+    const navItems = Array.from(document.querySelectorAll("button, a, div, li"));
+    const paymentNav = navItems.find((el) => (el.textContent || "").trim().toLowerCase() === "payment details");
+    if (paymentNav) {
+      const cls = (paymentNav.className || "").toLowerCase();
+      const bg = window.getComputedStyle(paymentNav).backgroundColor;
+      if (cls.includes("active") || bg.includes("245, 158, 11") || bg.includes("251, 191, 36")) {
+        return true;
+      }
+    }
+
+    const headings = Array.from(document.querySelectorAll("h1, h2, h3, h4, p, div"));
+    const pdHeading = headings.find((el) =>
+      el.children.length === 0 && (el.textContent || "").trim().toLowerCase() === "payment details"
+    );
+    if (pdHeading) {
+      const r = pdHeading.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    }
+    return false;
+  }
+
+  function findPaymentDetailsContainer() {
     let box = document.getElementById("yousafReadOnlyPaymentBox");
     if (box) return box;
 
@@ -372,7 +394,7 @@ auth.onAuthStateChanged(async (user) => {
     let card = titleEl;
     for (let i = 0; i < 4 && card && card.parentElement !== document.body; i++) {
       const r = card.getBoundingClientRect();
-      if (r.width >= 300 && r.height >= 80) break;
+      if (r.width >= 300 && r.height >= 70) break;
       card = card.parentElement;
     }
 
@@ -383,9 +405,17 @@ auth.onAuthStateChanged(async (user) => {
     return box;
   }
 
-  async function renderReadOnlyTable() {
-    const box = findPaymentDetailsCard();
+  async function syncPaymentDetailsView() {
+    const box = findPaymentDetailsContainer();
     if (!box) return;
+
+    if (!isPaymentDetailsActive()) {
+      box.innerHTML = "";
+      box.style.display = "none";
+      return;
+    }
+
+    box.style.display = "block";
 
     let rows = [];
     try {
@@ -404,52 +434,28 @@ auth.onAuthStateChanged(async (user) => {
     }
 
     if (!rows.length) {
-      box.innerHTML = `<p style="color:#94a3b8;font-size:13px;margin:4px 0 0;">Abhi koi payment record review ke liye available nahi hai.</p>`;
+      box.innerHTML = `<p style="color:#94a3b8;font-size:13px;margin:4px 0 0;">Abhi koi payment record available nahi hai.</p>`;
       return;
     }
 
-    let grandReceived = 0;
-    let grandDeduction = 0;
-    let grandPay = 0;
-
+    let totalPaySum = 0;
     rows.forEach((r) => {
-      const c = calcRow(r);
-      grandReceived += c.totalReceived;
-      grandDeduction += c.totalDeduction;
-      grandPay += c.pay;
+      totalPaySum += calcRow(r).pay;
     });
 
     let html = `
-      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;background:#0b1220;border:1px solid #1e293b;border-radius:12px;padding:12px 14px;margin-bottom:12px;">
-        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;">
-          <div>
-            <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;">Total Received</div>
-            <div style="font-size:16px;font-weight:800;color:#93c5fd;">Rs. ${fmtNum(grandReceived)}</div>
-          </div>
-          <div>
-            <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;">Total Deduction</div>
-            <div style="font-size:16px;font-weight:800;color:#fda4af;">Rs. ${fmtNum(grandDeduction)}</div>
-          </div>
-          <div>
-            <div style="font-size:11px;color:#fbbf24;text-transform:uppercase;">Total Payment (Pay)</div>
-            <div style="font-size:18px;font-weight:900;color:#4ade80;">Rs. ${fmtNum(grandPay)}</div>
-          </div>
-        </div>
-        <span style="background:rgba(251,191,36,0.14);color:#fbbf24;border:1px solid rgba(251,191,36,0.35);padding:5px 10px;border-radius:8px;font-size:11px;font-weight:800;">
-          👁 Review Only
-        </span>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;background:#0b1220;border:1px solid #1e293b;border-radius:10px;padding:10px 14px;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:800;color:#4ade80;">Total Pay: Rs. ${fmtNum(totalPaySum)}</div>
+        <span style="background:rgba(251,191,36,0.14);color:#fbbf24;border:1px solid rgba(251,191,36,0.35);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:800;">Review Only</span>
       </div>
 
       <div style="overflow-x:auto;border:1px solid #1e293b;border-radius:12px;background:#0f172a;">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:1620px;color:#f8fafc;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:1520px;color:#f8fafc;">
           <thead>
             <tr style="background:#1e293b;text-align:center;">
               <th colspan="4" style="padding:7px;border:1px solid #334155;">Student Details</th>
-              <th colspan="4" style="padding:7px;border:1px solid #334155;">Product Details</th>
-              <th colspan="3" style="padding:7px;border:1px solid #334155;">FBR Deduction</th>
-              <th style="padding:7px;border:1px solid #334155;">COD</th>
-              <th style="padding:7px;border:1px solid #334155;">Total Deduction</th>
-              <th colspan="4" style="padding:7px;border:1px solid #334155;">Commission</th>
+              <th colspan="5" style="padding:7px;border:1px solid #334155;">Product Details</th>
+              <th colspan="5" style="padding:7px;border:1px solid #334155;">Commission</th>
               <th colspan="3" style="padding:7px;border:1px solid #334155;">Payment Status</th>
             </tr>
             <tr style="background:#0b1220;color:#cbd5e1;font-size:11px;text-align:center;">
@@ -462,18 +468,14 @@ auth.onAuthStateChanged(async (user) => {
               <th style="padding:6px;border:1px solid #1e293b;">Qty</th>
               <th style="padding:6px;border:1px solid #1e293b;">Rate</th>
               <th style="padding:6px;border:1px solid #1e293b;">Total Received</th>
-              <th style="padding:6px;border:1px solid #1e293b;">18% GST</th>
-              <th style="padding:6px;border:1px solid #1e293b;">15% SST</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Deduction 33%</th>
-              <th style="padding:6px;border:1px solid #1e293b;">COD 4%</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Total Deduction</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Under 500 (Rs.80) / Above 500 (Rs.100)</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Rate</th>
+              <th style="padding:6px;border:1px solid #1e293b;">2% Add</th>
               <th style="padding:6px;border:1px solid #1e293b;">Total</th>
-              <th style="padding:6px;border:1px solid #1e293b;">2%</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Bank 2%</th>
               <th style="padding:6px;border:1px solid #1e293b;">Pay</th>
               <th style="padding:6px;border:1px solid #1e293b;">Date</th>
               <th style="padding:6px;border:1px solid #1e293b;">Return / Charged</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Prof (Review)</th>
+              <th style="padding:6px;border:1px solid #1e293b;">Prof</th>
             </tr>
           </thead>
           <tbody>
@@ -492,21 +494,17 @@ auth.onAuthStateChanged(async (user) => {
           <td style="padding:6px;border:1px solid #1e293b;">${r.qty || ""}</td>
           <td style="padding:6px;border:1px solid #1e293b;">${r.rate || ""}</td>
           <td style="padding:6px;border:1px solid #1e293b;font-weight:700;color:#93c5fd;">${fmtNum(c.totalReceived)}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${fmtNum(c.gst18)}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${fmtNum(c.sst15)}</td>
-          <td style="padding:6px;border:1px solid #1e293b;font-weight:700;color:#fde047;">${fmtNum(c.deduction33)}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${fmtNum(c.cod4)}</td>
-          <td style="padding:6px;border:1px solid #1e293b;font-weight:700;color:#fda4af;">${fmtNum(c.totalDeduction)}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${r.commissionUnitRate || ""}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${r.commRate || ""}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${fmtNum(c.twoPctAdd)}</td>
           <td style="padding:6px;border:1px solid #1e293b;font-weight:700;color:#86efac;">${fmtNum(c.commTotal)}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${fmtNum(c.comm2)}</td>
+          <td style="padding:6px;border:1px solid #1e293b;">${fmtNum(c.bank2Pct)}</td>
           <td style="padding:6px;border:1px solid #1e293b;font-weight:800;color:#4ade80;">${fmtNum(c.pay)}</td>
           <td style="padding:6px;border:1px solid #1e293b;">${r.date || ""}</td>
           <td style="padding:6px;border:1px solid #1e293b;">${r.returnOrCharged || ""}</td>
           <td style="padding:6px;border:1px solid #1e293b;">
             ${r.proofDataUrl
-              ? `<button type="button" data-review-slip="${i}" style="background:#0284c7;color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">Review Slip</button>`
-              : `<span style="color:#64748b;font-size:11px;">Pending</span>`}
+              ? `<button type="button" data-review-slip="${i}" style="background:#0284c7;color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">View</button>`
+              : `<span style="color:#64748b;font-size:11px;">—</span>`}
           </td>
         </tr>
       `;
@@ -523,11 +521,12 @@ auth.onAuthStateChanged(async (user) => {
     });
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => setTimeout(renderReadOnlyTable, 250));
-  } else {
-    setTimeout(renderReadOnlyTable, 250);
+  document.addEventListener("click", () => setTimeout(syncPaymentDetailsView, 80));
+  const obs = new MutationObserver(() => setTimeout(syncPaymentDetailsView, 80));
+  if (document.body) {
+    obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
   }
+  setTimeout(syncPaymentDetailsView, 250);
 })();
 </script>
 </body>
