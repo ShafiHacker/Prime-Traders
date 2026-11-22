@@ -5,16 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dropshipping Management Hub | Prime Traders</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --bg-body: #0b132b;
+            --bg-body: #020617;
             --sidebar-bg: #0f172a;
-            --card-bg: #111827;
-            --border-color: #1f2937;
-            --accent-orange: #f59e0b;
-            --text-main: #f8fafc;
+            --card-bg: #0f172a;
+            --surface-dark: #020617;
+            --border-color: #1e293b;
+            --accent-purple: #9333ea;
+            --accent-purple-soft: rgba(147, 51, 234, 0.18);
+            --accent-purple-border: rgba(168, 85, 247, 0.35);
+            --accent-purple-text: #c084fc;
+            --accent-amber: #f59e0b;
+            --text-main: #f1f5f9;
             --text-muted: #94a3b8;
         }
 
@@ -32,20 +37,23 @@
             min-height: 100vh;
         }
 
-        /* Sidebar Styling (Exact match with admin.html) */
+        /* Sidebar Styling (Matching admin.html) */
         aside {
-            width: 260px;
+            width: 256px;
             background-color: var(--sidebar-bg);
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             position: fixed;
+            top: 0;
+            left: 0;
             height: 100vh;
             overflow-y: auto;
+            z-index: 30;
         }
 
         .sidebar-brand {
-            padding: 20px;
+            padding: 16px;
             display: flex;
             align-items: center;
             gap: 12px;
@@ -53,72 +61,83 @@
         }
 
         .brand-icon {
-            width: 38px;
-            height: 38px;
-            background: var(--accent-orange);
-            color: #0b132b;
-            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            background: var(--accent-purple);
+            color: #ffffff;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 800;
+            font-weight: 900;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
         }
 
         .brand-title h2 {
             font-size: 14px;
-            font-weight: 800;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #ffffff;
+            line-height: 1;
         }
 
         .brand-title p {
-            font-size: 10px;
-            color: var(--accent-orange);
+            font-size: 9px;
+            color: var(--accent-purple-text);
             font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 2px;
         }
 
         .menu-section {
-            padding: 15px 15px 5px 15px;
+            padding: 16px 12px 8px 12px;
             font-size: 10px;
             text-transform: uppercase;
             color: #64748b;
             font-weight: 700;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.05em;
         }
 
         .menu-list {
             list-style: none;
-            padding: 0 10px;
+            padding: 0 12px;
         }
 
         .menu-item a {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 15px;
-            color: var(--text-muted);
+            gap: 10px;
+            padding: 10px 12px;
+            color: #cbd5e1;
             text-decoration: none;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
-            border-radius: 8px;
+            border-radius: 12px;
             transition: 0.2s;
             margin-bottom: 4px;
         }
 
         .menu-item a:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--border-color);
             color: #ffffff;
         }
 
         .menu-item.active a {
-            background: var(--accent-orange);
-            color: #0b132b;
+            background: var(--accent-purple-soft);
+            color: var(--accent-purple-text);
+            border: 1px solid var(--accent-purple-border);
             font-weight: 700;
         }
 
         /* Main Content Area */
         main {
-            margin-left: 260px;
+            margin-left: 256px;
             flex: 1;
-            padding: 30px;
+            padding: 24px;
+            max-width: 1280px;
         }
 
         .top-header-bar {
@@ -127,35 +146,41 @@
             align-items: center;
             background: var(--card-bg);
             border: 1px solid var(--border-color);
-            padding: 20px 25px;
-            border-radius: 12px;
-            margin-bottom: 25px;
+            padding: 20px 24px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.35);
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
         .top-header-bar h1 {
-            font-size: 20px;
-            font-weight: 800;
+            font-size: 18px;
+            font-weight: 900;
             color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
         }
 
         .top-header-bar p {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text-muted);
-            margin-top: 3px;
+            margin-top: 4px;
         }
 
         .btn-live-web {
-            background: var(--accent-orange);
-            color: #0b132b;
+            background: var(--accent-amber);
+            color: var(--bg-body);
             text-decoration: none;
-            padding: 10px 18px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 13px;
-            display: flex;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-weight: 900;
+            font-size: 12px;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
             transition: 0.2s;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.35);
         }
 
         .btn-live-web:hover {
@@ -166,8 +191,9 @@
         .pricing-section-card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 25px;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.35);
         }
 
         .section-title-row {
@@ -175,25 +201,29 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            padding-bottom: 15px;
+            padding-bottom: 16px;
             border-bottom: 1px solid var(--border-color);
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
         .section-title-row h3 {
-            font-size: 16px;
-            font-weight: 800;
-            color: var(--accent-orange);
+            font-size: 14px;
+            font-weight: 900;
+            color: var(--accent-amber);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
         .total-badge {
-            background: #1e293b;
+            background: var(--surface-dark);
             color: #f8fafc;
             padding: 6px 14px;
-            border-radius: 8px;
-            font-size: 13px;
+            border-radius: 10px;
+            font-size: 12px;
             font-weight: 700;
             border: 1px solid var(--border-color);
         }
@@ -210,56 +240,66 @@
         }
 
         th {
-            background: #0f172a;
+            background: var(--surface-dark);
             color: var(--text-muted);
             font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.05em;
             padding: 12px 15px;
-            border-bottom: 2px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
         }
 
         td {
             padding: 14px 15px;
             border-bottom: 1px solid var(--border-color);
-            font-size: 14px;
+            font-size: 13px;
             vertical-align: middle;
         }
 
         tr:hover {
-            background: rgba(255, 255, 255, 0.01);
+            background: rgba(30, 41, 59, 0.45);
         }
 
         .price-input {
             width: 120px;
             padding: 8px 12px;
-            border-radius: 6px;
+            border-radius: 10px;
             border: 1px solid #334155;
-            background: #0f172a;
+            background: var(--surface-dark);
             color: #ffffff;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .price-input:focus {
-            border-color: var(--accent-orange);
+            border-color: var(--accent-purple-text);
             outline: none;
         }
 
         .btn-save-rate {
-            background: var(--accent-orange);
-            color: #0b132b;
+            background: var(--accent-amber);
+            color: var(--bg-body);
             border: none;
             padding: 8px 16px;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 13px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 12px;
             cursor: pointer;
             transition: 0.2s;
         }
 
         .btn-save-rate:hover {
             background: #d97706;
+        }
+
+        @media (max-width: 767px) {
+            aside {
+                display: none;
+            }
+            main {
+                margin-left: 0;
+                padding: 16px;
+            }
         }
     </style>
 </head>
@@ -271,7 +311,7 @@
             <div class="brand-icon">P</div>
             <div class="brand-title">
                 <h2>PRIME TRADERS</h2>
-                <p>ADMIN PANEL</p>
+                <p>Admin Panel</p>
             </div>
         </div>
 
@@ -284,12 +324,6 @@
             <li class="menu-item"><a href="admin.html"><i class="fas fa-box-open"></i> Wholesaler Orders</a></li>
             <li class="menu-item"><a href="admin.html"><i class="fas fa-graduation-cap"></i> E-Commerce Student Portal</a></li>
             <li class="menu-item active"><a href="admin-dropshipping.html"><i class="fas fa-store"></i> Dropshipping Hub</a></li>
-        </ul>
-
-        <div class="menu-section" style="margin-top: 15px;">Operations & Logistics</div>
-        <ul class="menu-list">
-            <li class="menu-item"><a href="admin.html"><i class="fas fa-gas-pump"></i> Daily Petrol Rate</a></li>
-            <li class="menu-item"><a href="admin.html"><i class="fas fa-route"></i> DC KM Settings</a></li>
         </ul>
     </aside>
 
