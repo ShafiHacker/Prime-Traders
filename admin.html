@@ -1286,14 +1286,12 @@
   });
 })();
 </script>
-</body>
-</html>
-<!-- VIEW FOR E-COMMERCE STUDENTS VERIFICATION -->
+    <!-- VIEW FOR E-COMMERCE STUDENTS VERIFICATION -->
 <div id="ecommerceStudentsView" class="admin-view-section hidden space-y-4 px-2 md:px-0">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl w-full">
         <div class="p-4 border-b border-slate-800 font-bold text-sm text-white flex justify-between items-center">
             <span class="flex items-center gap-2"><i class="fa-solid fa-user-check text-amber-400"></i> E-Commerce Student Account Verifications</span>
-            <button onclick="loadAdminStudentsList()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
+            <button onclick="loadAdminStudentRequests()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
                 <i class="fa-solid fa-rotate"></i> Refresh List
             </button>
         </div>
@@ -1317,32 +1315,122 @@
     </div>
 </div>
 <script>
+    const STUDENT_STORAGE_KEYS = ['studentRegistrations', 'students', 'studentData', 'registeredStudents', 'users'];
+
+    function findStudentsStorageKey() {
+        for (const key of STUDENT_STORAGE_KEYS) {
+            const raw = localStorage.getItem(key);
+            if (!raw) continue;
+            try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length > 0) return key;
+                if (parsed && typeof parsed === 'object') return key;
+            } catch (_) {}
+        }
+        return 'studentRegistrations';
+    }
+
+    function extractStudentCnicImages(student) {
+        const imgs = [];
+        if (!student || typeof student !== 'object') return imgs;
+
+        const keysToCheck = [
+            'cnicFront', 'cnicBack', 'cnicImage', 'cnicUrl', 'cnicPhoto',
+            'cnicImg', 'frontImage', 'backImage', 'documentUrl', 'docUrl',
+            'idCardUrl', 'imageUrl', 'photoUrl', 'attachmentUrl', 'proofUrl'
+        ];
+
+        function pushValid(val, label) {
+            if (!val) return;
+            if (typeof val === 'string') {
+                const t = val.trim();
+                if (t.startsWith('data:image/') || t.startsWith('http://') || t.startsWith('https://')) {
+                    if (!imgs.some((x) => x.url === t)) imgs.push({ label, url: t });
+                }
+            } else if (typeof val === 'object') {
+                const u = val.url || val.dataUrl || val.src || val.downloadUrl || '';
+                if (typeof u === 'string' && (u.startsWith('data:image/') || u.startsWith('http://') || u.startsWith('https://'))) {
+                    if (!imgs.some((x) => x.url === u)) imgs.push({ label: val.name || label, url: u });
+                }
+            }
+        }
+
+        keysToCheck.forEach((k) => {
+            if (k in student) pushValid(student[k], k);
+        });
+
+        if (Array.isArray(student.documents)) {
+            student.documents.forEach((d, idx) => pushValid(d, `Document ${idx + 1}`));
+        }
+        if (Array.isArray(student.images)) {
+            student.images.forEach((d, idx) => pushValid(d, `Image ${idx + 1}`));
+        }
+
+        Object.entries(student).forEach(([k, v]) => {
+            if (/cnic|card|doc|img|photo|id/i.test(k)) {
+                pushValid(v, k);
+            }
+        });
+
+        return imgs;
+    }
+
+    window.viewStudentCnicImage = function(index) {
+        const key = findStudentsStorageKey();
+        let students = [];
+        try {
+            const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+            students = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+        } catch (_) {
+            students = [];
+        }
+
+        const student = students[index];
+        const imgs = extractStudentCnicImages(student);
+
+        if (!imgs.length) {
+            alert("Is student ke record mein CNIC image data/URL nahi mila.");
+            return;
+        }
+
+        const win = window.open("", "_blank");
+        if (!win) {
+            alert("Pop-up block hai, please allow pop-ups to view CNIC image.");
+            return;
+        }
+
+        const cardsHtml = imgs.map((img) => `
+            <div style="margin-bottom:20px;text-align:center;">
+                <div style="color:#fbbf24;font-family:sans-serif;font-size:13px;font-weight:700;margin-bottom:8px;">${img.label}</div>
+                <img src="${img.url}" style="max-width:92vw;max-height:80vh;border-radius:10px;border:1px solid #334155;box-shadow:0 12px 30px rgba(0,0,0,0.6);" />
+            </div>
+        `).join("");
+
+        win.document.write(`
+            <html><head><title>CNIC - ${student.name || student.studentName || 'Student'}</title></head>
+            <body style="margin:0;padding:24px;background:#090d16;display:flex;flex-direction:column;align-items:center;">
+                ${cardsHtml}
+            </body></html>
+        `);
+    };
+
     function loadAdminStudentRequests() {
         const tableBody = document.getElementById('adminStudentsTableBody');
         if (!tableBody) return;
 
-        // Hum saari possible keys check kar lete hain taake data foran mil jaye
         let students = [];
-        const possibleKeys = ['studentRegistrations', 'students', 'studentData', 'registeredStudents', 'users'];
-        
-        for (let key of possibleKeys) {
-            let data = localStorage.getItem(key);
-            if (data) {
-                try {
-                    let parsed = JSON.parse(data);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        students = parsed;
-                        break;
-                    } else if (!Array.isArray(parsed) && parsed) {
-                        // Agar single object ho toh array bana lein
-                        students = [parsed];
-                        break;
-                    }
-                } catch(e) {}
-            }
+        const activeKey = findStudentsStorageKey();
+        const raw = localStorage.getItem(activeKey);
+        if (raw) {
+            try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) {
+                    students = parsed;
+                } else if (parsed && typeof parsed === 'object') {
+                    students = [parsed];
+                }
+            } catch (_) {}
         }
-
-        console.log("Found students data:", students);
 
         if (students.length === 0) {
             tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">No student registration requests found in local database. (Check localStorage key)</td></tr>`;
@@ -1361,6 +1449,11 @@
                 statusBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-full text-xs font-bold">PENDING VERIFICATION</span>`;
             }
 
+            const cnicImgs = extractStudentCnicImages(student);
+            const cnicBtnHtml = cnicImgs.length
+                ? `<button type="button" onclick="viewStudentCnicImage(${index})" class="mt-1 bg-sky-600 hover:bg-sky-700 text-white px-2.5 py-1 rounded-md text-[10px] font-bold transition inline-flex items-center gap-1"><i class="fa-solid fa-id-card"></i> View CNIC (${cnicImgs.length})</button>`
+                : `<button type="button" onclick="viewStudentCnicImage(${index})" class="mt-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-md text-[10px] font-bold transition inline-flex items-center gap-1"><i class="fa-solid fa-id-card"></i> CNIC Image</button>`;
+
             const row = document.createElement('tr');
             row.className = "border-b border-slate-800 hover:bg-slate-900/50 transition";
             row.innerHTML = `
@@ -1375,6 +1468,7 @@
                 <td class="p-3">
                     <p class="text-white">${student.cnic || '422451454623'}</p>
                     <p class="text-[11px] text-slate-400">Batch: ${student.batch || '001'}</p>
+                    ${cnicBtnHtml}
                 </td>
                 <td class="p-3 text-slate-300">
                     ${student.bankDetails || student.bank || 'N/A'}
@@ -1383,11 +1477,14 @@
                     ${statusBadge}
                 </td>
                 <td class="p-3 text-center space-x-2">
-                    <button onclick="updateStudentStatus(${index}, 'APPROVED')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
+                    <button type="button" onclick="updateStudentStatus(${index}, 'APPROVED')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
                         <i class="fa-solid fa-check mr-1"></i> Approve
                     </button>
-                    <button onclick="updateStudentStatus(${index}, 'REJECTED')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
+                    <button type="button" onclick="updateStudentStatus(${index}, 'REJECTED')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
                         <i class="fa-solid fa-xmark mr-1"></i> Reject
+                    </button>
+                    <button type="button" onclick="deleteStudentRequest(${index})" class="bg-red-700 hover:bg-red-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
+                        <i class="fa-solid fa-trash mr-1"></i> Delete
                     </button>
                 </td>
             `;
@@ -1396,18 +1493,45 @@
     }
 
     window.updateStudentStatus = function(index, newStatus) {
-        let students = JSON.parse(localStorage.getItem('studentRegistrations') || localStorage.getItem('students') || '[]');
+        const key = findStudentsStorageKey();
+        let students = [];
+        try {
+            const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+            students = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+        } catch (_) {
+            students = [];
+        }
         if (students[index]) {
             students[index].status = newStatus;
-            localStorage.setItem('studentRegistrations', JSON.stringify(students));
+            localStorage.setItem(key, JSON.stringify(students));
             loadAdminStudentRequests();
         }
     };
+
+    window.deleteStudentRequest = function(index) {
+        if (!confirm("Kya aap is student record ko delete karna chahte hain?")) return;
+        const key = findStudentsStorageKey();
+        let students = [];
+        try {
+            const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+            students = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+        } catch (_) {
+            students = [];
+        }
+        if (students[index]) {
+            students.splice(index, 1);
+            localStorage.setItem(key, JSON.stringify(students));
+            loadAdminStudentRequests();
+        }
+    };
+
+    window.loadAdminStudentsList = loadAdminStudentRequests;
 
     document.addEventListener("DOMContentLoaded", function() {
         loadAdminStudentRequests();
     });
 </script>
+</body>
 <script>
     // Fetch Students for Main Admin
     async function loadAdminStudentsList() {
