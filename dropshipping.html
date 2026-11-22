@@ -357,16 +357,25 @@
     box.classList.toggle("lumiere-form-glow", isLightOn);
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => setTimeout(refreshStage, 120));
-  } else {
-    setTimeout(refreshStage, 120);
+ let isSyncing = false;
+  const origRefresh = refreshStage;
+  function safeRefreshStage() {
+    if (isSyncing) return;
+    isSyncing = true;
+    try {
+      origRefresh();
+    } finally {
+      setTimeout(() => { isSyncing = false; }, 120);
+    }
   }
 
-  document.addEventListener("click", () => setTimeout(refreshStage, 80));
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => setTimeout(safeRefreshStage, 150));
+  } else {
+    setTimeout(safeRefreshStage, 150);
+  }
 
-  const obs = new MutationObserver(() => setTimeout(refreshStage, 60));
-  obs.observe(document.body, {
+  document.addEventListener("click", () => setTimeout(safeRefreshStage, 120));
     childList: true,
     subtree: true,
     attributes: true,
@@ -393,11 +402,11 @@
         }
 
         * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
 
         body {
             background-color: var(--bg-body);
