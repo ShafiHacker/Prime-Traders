@@ -131,9 +131,10 @@
                     <h2 class="text-base font-extrabold text-white flex items-center gap-2 mb-2">
                         <i class="fa-solid fa-wallet text-emerald-400"></i> Payment Details
                     </h2>
-                    <p class="text-xs text-slate-400">
-                        Payment details section ready hai. Jab aap batayenge toh yahan payment ki complete details add kar denge.
+                    <p class="text-xs text-slate-400 mb-4">
+                        Yahan aapki approved/recorded payment ledger details sirf review ke liye show ho rahi hain.
                     </p>
+                    <div id="yousafReadOnlyPaymentBox"></div>
                 </div>
             </section>
 
@@ -218,6 +219,9 @@
             } else if (tab === 'payments') {
                 secPayments.classList.remove('hidden');
                 btnPayments.className = activeClass;
+                if (typeof window.renderYousafPaymentReview === 'function') {
+                    window.renderYousafPaymentReview();
+                }
             }
         }
 
@@ -277,37 +281,37 @@
         }
 
         let authCheckedOnce = false;
-auth.onAuthStateChanged(async (user) => {
-    if (!user) {
-        if (!authCheckedOnce) {
-            authCheckedOnce = true;
-            setTimeout(() => {
-                if (!auth.currentUser) {
-                    window.location.replace('dropshipping.html');
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                if (!authCheckedOnce) {
+                    authCheckedOnce = true;
+                    setTimeout(() => {
+                        if (!auth.currentUser) {
+                            window.location.replace('dropshipping.html');
+                        }
+                    }, 800);
                 }
-            }, 800);
-        }
-        return;
-    }
+                return;
+            }
 
-    if ((user.email || '').trim().toLowerCase() !== 'yousafansari@primetraders.com') {
-        window.location.replace('dropshipping.html');
-        return;
-    }
+            if ((user.email || '').trim().toLowerCase() !== 'yousafansari@primetraders.com') {
+                window.location.replace('dropshipping.html');
+                return;
+            }
 
-    setTimeGreeting();
-    document.getElementById('headerUserEmail').innerText = user.email;
+            setTimeGreeting();
+            document.getElementById('headerUserEmail').innerText = user.email;
 
-    try {
-        const doc = await db.collection('students').doc(user.uid).get();
-        const displayName = (doc.exists && (doc.data().fullName || doc.data().name))
-            ? (doc.data().fullName || doc.data().name)
-            : 'Yousaf Ansari';
-        document.getElementById('loggedInUserName').innerText = displayName;
-    } catch (_) {
-        document.getElementById('loggedInUserName').innerText = 'Yousaf Ansari';
-    }
-});
+            try {
+                const doc = await db.collection('students').doc(user.uid).get();
+                const displayName = (doc.exists && (doc.data().fullName || doc.data().name))
+                    ? (doc.data().fullName || doc.data().name)
+                    : 'Yousaf Ansari';
+                document.getElementById('loggedInUserName').innerText = displayName;
+            } catch (_) {
+                document.getElementById('loggedInUserName').innerText = 'Yousaf Ansari';
+            }
+        });
 
         function logoutYousaf() {
             auth.signOut().then(() => {
@@ -315,219 +319,169 @@ auth.onAuthStateChanged(async (user) => {
             });
         }
     </script>
-    <!-- Inside Payment Details section in yousaf-dashboard.html -->
-<div id="yousafReadOnlyPaymentBox" style="margin-top:12px;"></div>
-<script>
-<script>
-(function initYousafPaymentDetailsTabOnly() {
-  const COLLECTION_NAME = "yousafPayments";
-  const DOC_ID = "yousafansari_ledger";
 
-  function calcRow(r) {
-    const qty = parseFloat(r.qty) || 0;
-    const rate = parseFloat(r.rate) || 0;
-    const totalReceived = qty * rate;
+    <script>
+    (function initYousafPaymentDetailsTabOnly() {
+      const COLLECTION_NAME = "yousafPayments";
+      const DOC_ID = "yousafansari_ledger";
 
-    const commRate = parseFloat(r.commRate) || 0;
-    const twoPctAdd = (commRate / 100) * 2;
-    const commTotal = commRate + twoPctAdd;
-    const bank2Pct = (commTotal / 100) * 2;
-    const pay = commTotal - bank2Pct;
+      function getCommissionRateByProductRate(productRate) {
+        const pRate = parseFloat(productRate);
+        if (!isFinite(pRate) || pRate <= 0) return 0;
+        if (pRate <= 100) return 10;
+        if (pRate <= 200) return 20;
+        if (pRate <= 300) return 30;
+        if (pRate <= 400) return 40;
+        if (pRate <= 500) return 50;
+        return 80;
+      }
 
-    return { totalReceived, twoPctAdd, commTotal, bank2Pct, pay };
-  }
+      function calcRow(r) {
+        const qty = parseFloat(r.qty) || 0;
+        const rate = parseFloat(r.rate) || 0;
+        const totalReceived = qty * rate;
 
-  function fmtNum(n) {
-    if (!isFinite(n)) return "0";
-    return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
-  }
+        const commRate = getCommissionRateByProductRate(rate);
+        const twoPctAdd = (commRate / 100) * 2;
+        const commTotal = commRate + twoPctAdd;
+        const bank2Pct = (commTotal / 100) * 2;
+        const pay = commTotal - bank2Pct;
 
-  function openSlip(dataUrl, title) {
-    if (!dataUrl) return;
-    const w = window.open("", "_blank");
-    if (!w) return;
-    const isPdf = dataUrl.startsWith("data:application/pdf");
-    w.document.write(`
-      <html><head><title>${title || "Bank Slip Review"}</title></head>
-      <body style="margin:0;background:#090d16;display:flex;align-items:center;justify-content:center;min-height:100vh;">
-        ${isPdf
-          ? `<iframe src="${dataUrl}" style="width:95vw;height:95vh;border:none;"></iframe>`
-          : `<img src="${dataUrl}" style="max-width:95vw;max-height:95vh;border-radius:8px;" />`
+        return { totalReceived, commRate, twoPctAdd, commTotal, bank2Pct, pay };
+      }
+
+      function fmtNum(n) {
+        if (!isFinite(n)) return "0";
+        return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
+      }
+
+      function openSlip(dataUrl, title) {
+        if (!dataUrl) return;
+        const w = window.open("", "_blank");
+        if (!w) return;
+        const isPdf = dataUrl.startsWith("data:application/pdf");
+        w.document.write(`
+          <html><head><title>${title || "Bank Slip Review"}</title></head>
+          <body style="margin:0;background:#090d16;display:flex;align-items:center;justify-content:center;min-height:100vh;">
+            ${isPdf
+              ? `<iframe src="${dataUrl}" style="width:95vw;height:95vh;border:none;"></iframe>`
+              : `<img src="${dataUrl}" style="max-width:95vw;max-height:95vh;border-radius:8px;" />`
+            }
+          </body></html>
+        `);
+      }
+
+      async function renderYousafPaymentReview() {
+        const box = document.getElementById("yousafReadOnlyPaymentBox");
+        const secPayments = document.getElementById("secPayments");
+        if (!box || !secPayments || secPayments.classList.contains("hidden")) return;
+
+        let rows = [];
+        try {
+          if (typeof db !== "undefined" && db) {
+            const doc = await db.collection(COLLECTION_NAME).doc(DOC_ID).get();
+            if (doc.exists && Array.isArray(doc.data().rows)) rows = doc.data().rows;
+          }
+        } catch (_) {}
+
+        if (!rows.length) {
+          try {
+            rows = JSON.parse(localStorage.getItem("pt_yousaf_payment_rows")) || [];
+          } catch (_) {
+            rows = [];
+          }
         }
-      </body></html>
-    `);
-  }
 
-  function isPaymentDetailsActive() {
-    // Check if Payment Details nav item is active or Payment Details section is visible
-    const navItems = Array.from(document.querySelectorAll("button, a, div, li"));
-    const paymentNav = navItems.find((el) => (el.textContent || "").trim().toLowerCase() === "payment details");
-    if (paymentNav) {
-      const cls = (paymentNav.className || "").toLowerCase();
-      const bg = window.getComputedStyle(paymentNav).backgroundColor;
-      if (cls.includes("active") || bg.includes("245, 158, 11") || bg.includes("251, 191, 36")) {
-        return true;
-      }
-    }
+        if (!rows.length) {
+          box.innerHTML = `<p style="color:#94a3b8;font-size:13px;margin:4px 0 0;">Abhi koi payment record available nahi hai.</p>`;
+          return;
+        }
 
-    const headings = Array.from(document.querySelectorAll("h1, h2, h3, h4, p, div"));
-    const pdHeading = headings.find((el) =>
-      el.children.length === 0 && (el.textContent || "").trim().toLowerCase() === "payment details"
-    );
-    if (pdHeading) {
-      const r = pdHeading.getBoundingClientRect();
-      return r.width > 0 && r.height > 0;
-    }
-    return false;
-  }
+        let totalPaySum = 0;
+        rows.forEach((r) => {
+          totalPaySum += calcRow(r).pay;
+        });
 
-  function findPaymentDetailsContainer() {
-    let box = document.getElementById("yousafReadOnlyPaymentBox");
-    if (box) return box;
+        let html = `
+          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;background:#0b1220;border:1px solid #1e293b;border-radius:10px;padding:10px 14px;margin-bottom:12px;">
+            <div style="font-size:13px;font-weight:800;color:#4ade80;">Total Pay: Rs. ${fmtNum(totalPaySum)}</div>
+            <span style="background:rgba(251,191,36,0.14);color:#fbbf24;border:1px solid rgba(251,191,36,0.35);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:800;">Review Only</span>
+          </div>
 
-    const headings = Array.from(document.querySelectorAll("h1, h2, h3, h4, p, div, span"));
-    const titleEl = headings.find((el) =>
-      (el.textContent || "").trim().toLowerCase().includes("payment details")
-    );
-    if (!titleEl) return null;
+          <div style="overflow-x:auto;border:1px solid #1e293b;border-radius:12px;background:#0f172a;">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:1520px;color:#f8fafc;">
+              <thead>
+                <tr style="background:#1e293b;text-align:center;">
+                  <th colspan="4" style="padding:7px;border:1px solid #334155;">Student Details</th>
+                  <th colspan="5" style="padding:7px;border:1px solid #334155;">Product Details</th>
+                  <th colspan="5" style="padding:7px;border:1px solid #334155;">Commission</th>
+                  <th colspan="3" style="padding:7px;border:1px solid #334155;">Payment Status</th>
+                </tr>
+                <tr style="background:#0b1220;color:#cbd5e1;font-size:11px;text-align:center;">
+                  <th style="padding:6px;border:1px solid #1e293b;">Referral Code</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">Student Name</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">Contact</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">Batch</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">Order #</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">Product Description</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">Qty</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">Rate</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">Total Received</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">Rate</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">2% Add</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">Total</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">Bank 2%</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">Pay</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">Date</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">Return / Charged</th>
+                  <th style="padding:6px;border:1px solid #1e293b;">Prof</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
 
-    let card = titleEl;
-    for (let i = 0; i < 4 && card && card.parentElement !== document.body; i++) {
-      const r = card.getBoundingClientRect();
-      if (r.width >= 300 && r.height >= 70) break;
-      card = card.parentElement;
-    }
-
-    box = document.createElement("div");
-    box.id = "yousafReadOnlyPaymentBox";
-    box.style.marginTop = "14px";
-    card.appendChild(box);
-    return box;
-  }
-
-  async function syncPaymentDetailsView() {
-    const box = findPaymentDetailsContainer();
-    if (!box) return;
-
-    if (!isPaymentDetailsActive()) {
-      box.innerHTML = "";
-      box.style.display = "none";
-      return;
-    }
-
-    box.style.display = "block";
-
-    let rows = [];
-    try {
-      if (window.db) {
-        const doc = await window.db.collection(COLLECTION_NAME).doc(DOC_ID).get();
-        if (doc.exists && Array.isArray(doc.data().rows)) rows = doc.data().rows;
-      }
-    } catch (_) {}
-
-    if (!rows.length) {
-      try {
-        rows = JSON.parse(localStorage.getItem("pt_yousaf_payment_rows")) || [];
-      } catch (_) {
-        rows = [];
-      }
-    }
-
-    if (!rows.length) {
-      box.innerHTML = `<p style="color:#94a3b8;font-size:13px;margin:4px 0 0;">Abhi koi payment record available nahi hai.</p>`;
-      return;
-    }
-
-    let totalPaySum = 0;
-    rows.forEach((r) => {
-      totalPaySum += calcRow(r).pay;
-    });
-
-    let html = `
-      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;background:#0b1220;border:1px solid #1e293b;border-radius:10px;padding:10px 14px;margin-bottom:12px;">
-        <div style="font-size:13px;font-weight:800;color:#4ade80;">Total Pay: Rs. ${fmtNum(totalPaySum)}</div>
-        <span style="background:rgba(251,191,36,0.14);color:#fbbf24;border:1px solid rgba(251,191,36,0.35);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:800;">Review Only</span>
-      </div>
-
-      <div style="overflow-x:auto;border:1px solid #1e293b;border-radius:12px;background:#0f172a;">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:1520px;color:#f8fafc;">
-          <thead>
-            <tr style="background:#1e293b;text-align:center;">
-              <th colspan="4" style="padding:7px;border:1px solid #334155;">Student Details</th>
-              <th colspan="5" style="padding:7px;border:1px solid #334155;">Product Details</th>
-              <th colspan="5" style="padding:7px;border:1px solid #334155;">Commission</th>
-              <th colspan="3" style="padding:7px;border:1px solid #334155;">Payment Status</th>
+        rows.forEach((r, i) => {
+          const c = calcRow(r);
+          html += `
+            <tr style="background:${i % 2 === 0 ? "#0f172a" : "#111b2e"};text-align:center;">
+              <td style="padding:6px;border:1px solid #1e293b;">${r.referralCode || "143256"}</td>
+              <td style="padding:6px;border:1px solid #1e293b;">${r.studentName || ""}</td>
+              <td style="padding:6px;border:1px solid #1e293b;">${r.contact || ""}</td>
+              <td style="padding:6px;border:1px solid #1e293b;">${r.batch || ""}</td>
+              <td style="padding:6px;border:1px solid #1e293b;">${r.orderNo || ""}</td>
+              <td style="padding:6px;border:1px solid #1e293b;">${r.productDescription || ""}</td>
+              <td style="padding:6px;border:1px solid #1e293b;">${r.qty || ""}</td>
+              <td style="padding:6px;border:1px solid #1e293b;">${r.rate || ""}</td>
+              <td style="padding:6px;border:1px solid #1e293b;font-weight:700;color:#93c5fd;">${fmtNum(c.totalReceived)}</td>
+              <td style="padding:6px;border:1px solid #1e293b;font-weight:700;color:#fde047;">${fmtNum(c.commRate)}</td>
+              <td style="padding:6px;border:1px solid #1e293b;">${fmtNum(c.twoPctAdd)}</td>
+              <td style="padding:6px;border:1px solid #1e293b;font-weight:700;color:#86efac;">${fmtNum(c.commTotal)}</td>
+              <td style="padding:6px;border:1px solid #1e293b;">${fmtNum(c.bank2Pct)}</td>
+              <td style="padding:6px;border:1px solid #1e293b;font-weight:800;color:#4ade80;">${fmtNum(c.pay)}</td>
+              <td style="padding:6px;border:1px solid #1e293b;">${r.date || ""}</td>
+              <td style="padding:6px;border:1px solid #1e293b;">${r.returnOrCharged || ""}</td>
+              <td style="padding:6px;border:1px solid #1e293b;">
+                ${r.proofDataUrl
+                  ? `<button type="button" data-review-slip="${i}" style="background:#0284c7;color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">View</button>`
+                  : `<span style="color:#64748b;font-size:11px;">—</span>`}
+              </td>
             </tr>
-            <tr style="background:#0b1220;color:#cbd5e1;font-size:11px;text-align:center;">
-              <th style="padding:6px;border:1px solid #1e293b;">Referral Code</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Student Name</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Contact</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Batch</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Order #</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Product Description</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Qty</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Rate</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Total Received</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Rate</th>
-              <th style="padding:6px;border:1px solid #1e293b;">2% Add</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Total</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Bank 2%</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Pay</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Date</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Return / Charged</th>
-              <th style="padding:6px;border:1px solid #1e293b;">Prof</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
+          `;
+        });
 
-    rows.forEach((r, i) => {
-      const c = calcRow(r);
-      html += `
-        <tr style="background:${i % 2 === 0 ? "#0f172a" : "#111b2e"};text-align:center;">
-          <td style="padding:6px;border:1px solid #1e293b;">${r.referralCode || "143256"}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${r.studentName || ""}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${r.contact || ""}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${r.batch || ""}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${r.orderNo || ""}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${r.productDescription || ""}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${r.qty || ""}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${r.rate || ""}</td>
-          <td style="padding:6px;border:1px solid #1e293b;font-weight:700;color:#93c5fd;">${fmtNum(c.totalReceived)}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${r.commRate || ""}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${fmtNum(c.twoPctAdd)}</td>
-          <td style="padding:6px;border:1px solid #1e293b;font-weight:700;color:#86efac;">${fmtNum(c.commTotal)}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${fmtNum(c.bank2Pct)}</td>
-          <td style="padding:6px;border:1px solid #1e293b;font-weight:800;color:#4ade80;">${fmtNum(c.pay)}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${r.date || ""}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">${r.returnOrCharged || ""}</td>
-          <td style="padding:6px;border:1px solid #1e293b;">
-            ${r.proofDataUrl
-              ? `<button type="button" data-review-slip="${i}" style="background:#0284c7;color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">View</button>`
-              : `<span style="color:#64748b;font-size:11px;">—</span>`}
-          </td>
-        </tr>
-      `;
-    });
+        html += `</tbody></table></div>`;
+        box.innerHTML = html;
 
-    html += `</tbody></table></div>`;
-    box.innerHTML = html;
+        box.querySelectorAll("button[data-review-slip]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const idx = Number(btn.dataset.reviewSlip);
+            openSlip(rows[idx].proofDataUrl, rows[idx].proofName);
+          });
+        });
+      }
 
-    box.querySelectorAll("button[data-review-slip]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const idx = Number(btn.dataset.reviewSlip);
-        openSlip(rows[idx].proofDataUrl, rows[idx].proofName);
-      });
-    });
-  }
-
-  document.addEventListener("click", () => setTimeout(syncPaymentDetailsView, 80));
-  const obs = new MutationObserver(() => setTimeout(syncPaymentDetailsView, 80));
-  if (document.body) {
-    obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
-  }
-  setTimeout(syncPaymentDetailsView, 250);
-})();
-</script>
+      window.renderYousafPaymentReview = renderYousafPaymentReview;
+    })();
+    </script>
 </body>
 </html>
