@@ -1287,44 +1287,59 @@
   });
 })();
         <style id="ptStudentTableAlignmentFix">
+  #ecommerceStudentsView {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    box-sizing: border-box !important;
+  }
+
+  @media (min-width: 768px) {
+    #ecommerceStudentsView {
+      padding-left: 24px !important;
+      padding-right: 24px !important;
+    }
+  }
+
+  #ecommerceStudentsView > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+  }
+
   #ecommerceStudentsView table {
-    width: 100%;
+    width: 100% !important;
     border-collapse: collapse;
-    table-layout: auto;
   }
 
   #ecommerceStudentsView th,
   #ecommerceStudentsView td {
     vertical-align: middle !important;
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
   }
 
-  #ecommerceStudentsView td:last-child,
-  #ecommerceStudentsView th:last-child {
+  #ecommerceStudentsView th:last-child,
+  #ecommerceStudentsView td:last-child {
     text-align: center !important;
     white-space: nowrap !important;
   }
 
+  #ecommerceStudentsView td:last-child > div,
   #ecommerceStudentsView td:last-child {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding-top: 18px !important;
-    padding-bottom: 18px !important;
+    vertical-align: middle !important;
   }
 
-  /* Agar td flex ho jaye to border-b ko row/cell par clean rakhne ke liye */
-  #ecommerceStudentsView tbody tr {
-    border-bottom: 1px solid #1e293b;
-  }
-
-  #ecommerceStudentsView td:last-child button {
-    margin: 0 !important;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    line-height: 1.2;
+  #ecommerceStudentsView td:last-child button,
+  #ecommerceStudentsView td:last-child a {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    vertical-align: middle !important;
   }
 </style>
 </script>
