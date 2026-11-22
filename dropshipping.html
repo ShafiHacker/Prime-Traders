@@ -1263,32 +1263,40 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
     <script id="ptDropshipPublicNaDisplay">
 (function formatPublicDropshipCards() {
-  function applyCardFormatting() {
-    document.querySelectorAll("div, span, p, strong, b").forEach((el) => {
-      if (el.children.length > 0) return;
-      const txt = (el.textContent || "").trim();
+  let isRunning = false;
 
-      if (/^PRIME RATE:?$/i.test(txt)) {
-        el.textContent = txt.replace(/PRIME RATE/i, "OUR RATE");
-      } else if (/^PKR\s*0(\.0+)?$/i.test(txt) || /^N\/A$/i.test(txt)) {
-        el.textContent = "N/A";
-      }
-    });
+  function applyCardFormatting() {
+    if (isRunning) return;
+    isRunning = true;
+
+    try {
+      document.querySelectorAll("div, span, p, strong, b").forEach((el) => {
+        if (el.children.length > 0) return;
+        const txt = (el.textContent || "").trim();
+
+        if (/^PRIME RATE:?$/i.test(txt)) {
+          const updated = txt.replace(/PRIME RATE/i, "OUR RATE");
+          if (el.textContent !== updated) el.textContent = updated;
+        } else if (/^PKR\s*0(\.0+)?$/i.test(txt) || /^N\/A$/i.test(txt)) {
+          if (el.textContent !== "N/A") el.textContent = "N/A";
+        }
+      });
+    } finally {
+      isRunning = false;
+    }
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      applyCardFormatting();
+      setTimeout(applyCardFormatting, 600);
+      setTimeout(applyCardFormatting, 1600);
+    });
+  } else {
     applyCardFormatting();
-    setTimeout(applyCardFormatting, 500);
-    setTimeout(applyCardFormatting, 1500);
-
-    const target = document.body;
-    if (target) {
-      new MutationObserver(() => applyCardFormatting()).observe(target, {
-        childList: true,
-        subtree: true
-      });
-    }
-  });
+    setTimeout(applyCardFormatting, 600);
+    setTimeout(applyCardFormatting, 1600);
+  }
 })();
 </script>
 </body>
