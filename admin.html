@@ -1621,18 +1621,6 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
 </script>
     <script>
 (function applyPrimeTradersAdminUpdates() {
-  const KEEP_METRIC_TITLES = [
-    "total shipments",
-    "active users",
-    "deleted archive",
-    "wholeseller orders",
-    "reseller portal",
-    "e-commerce student portal",
-    "tickets & complaints",
-    "commission",
-    "yousaf ansari payment"
-  ];
-
   const REMOVE_CARD_TITLES = [
     "in transit",
     "delivered today",
@@ -1670,7 +1658,6 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
       }
     });
 
-    // Remove legacy petrol / dc km panels if present
     document.querySelectorAll("[id*='petrol' i], [id*='dckm' i], [id*='dc-km' i], [id*='manualParcel' i]").forEach((node) => {
       if (node.tagName !== "BODY" && node.tagName !== "HTML") {
         node.remove();
@@ -1699,16 +1686,15 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
     const newShipBtn = allBtns.find((b) => (b.textContent || "").trim().replace(/^\+\s*/, "").toLowerCase() === "new shipment");
 
     [editBtn, newShipBtn].forEach((btn) => {
-      if (!btn) return;
-      if (btn.parentElement === menuGroup) return;
+      if (!btn || btn.parentElement === menuGroup) return;
       btn.classList.add("w-full", "justify-start", "text-left");
       menuGroup.appendChild(btn);
     });
   }
 
   function cleanOverviewCardsAndAddRequestedBoxes() {
-    // Remove unwanted cards/sections on overview
     document.querySelectorAll("section, div, article").forEach((card) => {
+      if (card.hasAttribute("data-pt-overview-card")) return;
       const heading = card.querySelector("h1, h2, h3, h4, p, span");
       if (!heading) return;
       const titleText = (heading.textContent || "").trim().toLowerCase();
@@ -1720,12 +1706,12 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
       }
     });
 
+    // Pehle se add kiye gaye custom cards ko clean karein taake repeat na hon
+    document.querySelectorAll("[data-pt-overview-card]").forEach((el) => el.remove());
+
     const overviewContainer =
       document.getElementById("overviewCardsGrid") ||
-      Array.from(document.querySelectorAll("div")).find((d) => {
-        const t = (d.textContent || "").toLowerCase();
-        return t.includes("total shipments") && t.includes("active users");
-      });
+      document.querySelector("#dashboardOverviewView .grid");
 
     if (!overviewContainer) return;
 
@@ -1741,8 +1727,7 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
     ];
 
     requiredBoxes.forEach((box) => {
-      const alreadyExists = existingTitles.some((t) => t === box.key);
-      if (alreadyExists) return;
+      if (existingTitles.includes(box.key)) return;
 
       const card = document.createElement("div");
       card.setAttribute("data-pt-overview-card", box.key);
@@ -1756,154 +1741,20 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
     });
   }
 
-  function syncParcelActivityWithShipments() {
-    const parcelSection = Array.from(document.querySelectorAll("div, section")).find((el) =>
-      (el.textContent || "").toUpperCase().includes("PARCEL ACTIVITY") &&
-      (el.textContent || "").toLowerCase().includes("mon") &&
-      (el.textContent || "").toLowerCase().includes("sun")
-    );
-    if (!parcelSection) return;
-
-    // Pull shipments from localStorage/window if available
-    let shipments = [];
-    if (Array.isArray(window.shipmentsData)) {
-      shipments = window.shipmentsData;
-    } else {
-      for (const k of ["shipments", "parcels", "bookings", "orders"]) {
-        try {
-          const parsed = JSON.parse(localStorage.getItem(k) || "[]");
-          if (Array.isArray(parsed) && parsed.length) {
-            shipments = parsed;
-            break;
-          }
-        } catch (_) {}
-      }
-    }
-
-    const dayBuckets = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
-    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-    shipments.forEach((s) => {
-      const rawDate = s.date || s.createdAt || s.bookingDate || s.timestamp;
-      let d = rawDate ? new Date(rawDate) : new Date();
-      if (isNaN(d.getTime())) d = new Date();
-      const dayLabel = dayNames[d.getDay()] || "Sun";
-      dayBuckets[dayLabel] = (dayBuckets[dayLabel] || 0) + 1;
-    });
-
-    const totalCount = shipments.length;
-    const maxVal = Math.max(1, ...Object.values(dayBuckets));
-
-    // Update bar heights if bar elements exist near Mon-Sun labels
-    Object.entries(dayBuckets).forEach(([day, count]) => {
-      const labelEl = Array.from(parcelSection.querySelectorAll("span, div, p")).find(
-        (n) => n.children.length === 0 && (n.textContent || "").trim() === day
-      );
-      if (!labelEl) return;
-      const bar = labelEl.previousElementSibling || labelEl.parentElement?.querySelector("[style*='height']");
-      if (bar && bar !== labelEl) {
-        const pct = totalCount > 0 ? Math.max(12, Math.round((count / maxVal) * 100)) : 12;
-        bar.style.height = pct + "%";
-        bar.title = `${day}: ${count} shipments`;
-      }
-    });
-
-    // Update Total Volume text if present
-    Array.from(parcelSection.querySelectorAll("div, p, span")).forEach((el) => {
-      if (el.children.length === 0 && /parcels$/i.test((el.textContent || "").trim())) {
-        el.textContent = `${totalCount} parcels`;
-      }
-    });
-  }
-
+  let hasRun = false;
   function runAllUpdates() {
+    if (hasRun) return;
+    hasRun = true;
     renamePortalLabels();
     removeUnwantedMenusAndButtons();
     moveTopActionsToSidebarMenu();
     cleanOverviewCardsAndAddRequestedBoxes();
-    syncParcelActivityWithShipments();
   }
 
-  document.addEventListener("DOMContentLoaded", runAllUpdates);
-  setTimeout(runAllUpdates, 300);
-
-  const observer = new MutationObserver(() => {
-    clearTimeout(window.__ptUpdateTimer);
-    window.__ptUpdateTimer = setTimeout(runAllUpdates, 120);
+  document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(runAllUpdates, 250);
   });
-  if (document.body) {
-    observer.observe(document.body, { childList: true, subtree: true });
-  }
 })();
-</script>
-</body>
-<script>
-    // Fetch Students for Main Admin
-    async function loadAdminStudentsList() {
-        const tbody = document.getElementById('adminStudentsTableBody');
-        if (!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Fetching student requests...</td></tr>';
-
-        try {
-            // Baghair orderBy ke query chalayenge taaki index missing ka error na aaye
-            const snapshot = await db.collection('students').get();
-            
-            if (snapshot.empty) {
-                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">No student registrations found in database.</td></tr>';
-                return;
-            }
-
-            let html = '';
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const statusBadge = data.status === 'approved' 
-                    ? '<span class="px-2 py-1 bg-emerald-950 text-emerald-400 border border-emerald-500/40 rounded text-[10px] font-bold uppercase">Approved</span>' 
-                    : (data.status === 'rejected'
-                        ? '<span class="px-2 py-1 bg-rose-950 text-rose-400 border border-rose-500/40 rounded text-[10px] font-bold uppercase">Rejected</span>'
-                        : '<span class="px-2 py-1 bg-amber-950 text-amber-400 border border-amber-500/40 rounded text-[10px] font-bold uppercase">Pending</span>');
-
-                html += `
-                    <tr class="border-b border-slate-800 hover:bg-slate-850/50 transition">
-                        <td class="p-3">
-                            <p class="font-bold text-white">${data.fullName || 'N/A'}</p>
-                            <p class="text-amber-400 font-semibold text-[11px]">${data.businessName || 'N/A'}</p>
-                        </td>
-                        <td class="p-3">
-                            <p class="text-slate-300">${data.email || 'N/A'}</p>
-                            <p class="text-slate-400 text-[11px]">${data.phone || 'N/A'}</p>
-                        </td>
-                        <td class="p-3">
-                            <p class="text-slate-300">${data.cnic || 'N/A'}</p>
-                            <p class="text-purple-300 font-semibold text-[11px]">${data.batchNo || 'N/A'}</p>
-                        </td>
-                        <td class="p-3 text-slate-300">${data.bankDetails || 'N/A'}</td>
-                        <td class="p-3">${statusBadge}</td>
-                        <td class="p-3 text-center space-x-1">
-                            <button onclick="adminChangeStudentStatus('${doc.id}', 'approved')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[11px] transition shadow">Approve</button>
-                            <button onclick="adminChangeStudentStatus('${doc.id}', 'rejected')" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded text-[11px] transition shadow">Reject</button>
-                        </td>
-                    </tr>
-                `;
-            });
-            tbody.innerHTML = html;
-        } catch (err) {
-            tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-rose-400">Error loading data: ${err.message}</td></tr>`;
-        }
-    }
-
-    // Approve / Reject Action Execution
-    async function adminChangeStudentStatus(docId, newStatus) {
-        try {
-            await db.collection('students').doc(docId).update({ 
-                status: newStatus,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert(`Student account successfully ${newStatus.toUpperCase()} kar diya gaya hai!`);
-            loadAdminStudentsList();
-        } catch (err) {
-            alert("Status update failed: " + err.message);
-        }
-    }
 </script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -2735,4 +2586,4 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
             }
         }
     };
-    <script>
+    </script>
