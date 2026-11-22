@@ -956,7 +956,6 @@
       productDescription: "",
       qty: "",
       rate: "",
-      commRate: "", // Manual Commission Rate
       date: "",
       returnOrCharged: "",
       proofName: "",
@@ -964,12 +963,23 @@
     };
   }
 
+  function getCommissionRateByProductRate(productRate) {
+    const pRate = parseFloat(productRate);
+    if (!isFinite(pRate) || pRate <= 0) return 0;
+    if (pRate <= 100) return 10;
+    if (pRate <= 200) return 20;
+    if (pRate <= 300) return 30;
+    if (pRate <= 400) return 40;
+    if (pRate <= 500) return 50;
+    return 80;
+  }
+
   function calcRow(r) {
     const qty = parseFloat(r.qty) || 0;
     const rate = parseFloat(r.rate) || 0;
     const totalReceived = qty * rate;
 
-    const commRate = parseFloat(r.commRate) || 0;
+    const commRate = getCommissionRateByProductRate(rate);
     const twoPctAdd = (commRate / 100) * 2;
     const commTotal = commRate + twoPctAdd;
     const bank2Pct = (commTotal / 100) * 2;
@@ -977,6 +987,7 @@
 
     return {
       totalReceived,
+      commRate,
       twoPctAdd,
       commTotal,
       bank2Pct,
@@ -990,7 +1001,6 @@
   }
 
   function findMainContentTarget() {
-    // Keep sidebar visible by placing ledger inside the main content area next to sidebar
     const mainEl =
       document.querySelector("main") ||
       document.querySelector("[class*='main-content']") ||
@@ -1018,7 +1028,7 @@
       <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;border-bottom:1px solid #1e293b;padding-bottom:12px;">
         <div>
           <h2 style="margin:0;font-size:18px;font-weight:800;color:#fbbf24;">Yousaf Ansari Payment Ledger</h2>
-          <p style="margin:3px 0 0;font-size:12px;color:#94a3b8;">Referral default: <strong>143256</strong> • Auto formulas active • Attach slip & save</p>
+          <p style="margin:3px 0 0;font-size:12px;color:#94a3b8;">Referral: <strong>143256</strong> • Rate slabs: ≤100→10, ≤200→20, ≤300→30, ≤400→40, ≤500→50, >500→80</p>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
           <button type="button" id="addYousafRowBtn" style="background:#2563eb;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">+ Add Line</button>
@@ -1030,7 +1040,7 @@
       <div id="yousafSaveStatus" style="font-size:12px;margin-bottom:10px;color:#4ade80;min-height:18px;"></div>
 
       <div style="overflow-x:auto;border:1px solid #1e293b;border-radius:12px;">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:1550px;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:1520px;">
           <thead>
             <tr style="background:#1e293b;color:#f8fafc;text-align:center;">
               <th colspan="4" style="padding:8px;border:1px solid #334155;">Student Details</th>
@@ -1103,21 +1113,21 @@
 
       tr.innerHTML = `
         <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="referralCode" data-idx="${idx}" value="${row.referralCode || "143256"}" style="${inpStyle("85px")}"></td>
-        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="studentName" data-idx="${idx}" value="${row.studentName || ""}" placeholder="" style="${inpStyle("110px")}"></td>
-        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="contact" data-idx="${idx}" value="${row.contact || ""}" placeholder="" style="${inpStyle("115px")}"></td>
-        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="batch" data-idx="${idx}" value="${row.batch || ""}" placeholder="" style="${inpStyle("70px")}"></td>
-        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="orderNo" data-idx="${idx}" value="${row.orderNo || ""}" placeholder="" style="${inpStyle("75px")}"></td>
-        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="productDescription" data-idx="${idx}" value="${row.productDescription || ""}" placeholder="" style="${inpStyle("135px")}"></td>
-        <td style="padding:6px;border:1px solid #1e293b;"><input type="number" step="any" data-field="qty" data-idx="${idx}" value="${row.qty}" placeholder="" style="${inpStyle("65px")}"></td>
-        <td style="padding:6px;border:1px solid #1e293b;"><input type="number" step="any" data-field="rate" data-idx="${idx}" value="${row.rate}" placeholder="" style="${inpStyle("75px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="studentName" data-idx="${idx}" value="${row.studentName || ""}" style="${inpStyle("110px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="contact" data-idx="${idx}" value="${row.contact || ""}" style="${inpStyle("115px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="batch" data-idx="${idx}" value="${row.batch || ""}" style="${inpStyle("70px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="orderNo" data-idx="${idx}" value="${row.orderNo || ""}" style="${inpStyle("75px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="productDescription" data-idx="${idx}" value="${row.productDescription || ""}" style="${inpStyle("135px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="number" step="any" data-field="qty" data-idx="${idx}" value="${row.qty}" style="${inpStyle("65px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="number" step="any" data-field="rate" data-idx="${idx}" value="${row.rate}" style="${inpStyle("75px")}"></td>
         <td style="${calcCellStyle("#172554", "#93c5fd")}">${fmtNum(c.totalReceived)}</td>
-        <td style="padding:6px;border:1px solid #1e293b;"><input type="number" step="any" data-field="commRate" data-idx="${idx}" value="${row.commRate}" placeholder="" style="${inpStyle("75px")}"></td>
+        <td style="${calcCellStyle("#1e293b", "#fde047")}">${fmtNum(c.commRate)}</td>
         <td style="${calcCellStyle()}">${fmtNum(c.twoPctAdd)}</td>
         <td style="${calcCellStyle("#14291e", "#86efac")}">${fmtNum(c.commTotal)}</td>
         <td style="${calcCellStyle()}">${fmtNum(c.bank2Pct)}</td>
         <td style="${calcCellStyle("#052e16", "#4ade80")}">${fmtNum(c.pay)}</td>
-        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="date" data-idx="${idx}" value="${row.date || ""}" placeholder="" style="${inpStyle("95px")}"></td>
-        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="returnOrCharged" data-idx="${idx}" value="${row.returnOrCharged || ""}" placeholder="" style="${inpStyle("105px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="date" data-idx="${idx}" value="${row.date || ""}" style="${inpStyle("95px")}"></td>
+        <td style="padding:6px;border:1px solid #1e293b;"><input type="text" data-field="returnOrCharged" data-idx="${idx}" value="${row.returnOrCharged || ""}" style="${inpStyle("105px")}"></td>
         <td style="padding:6px;border:1px solid #1e293b;white-space:nowrap;">
           <label style="display:inline-block;background:#334155;color:#fff;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:11px;">
             Attach
@@ -1190,6 +1200,7 @@
       const c = calcRow(row);
       const cells = tr.querySelectorAll("td");
       if (cells[8]) cells[8].textContent = fmtNum(c.totalReceived);
+      if (cells[9]) cells[9].textContent = fmtNum(c.commRate);
       if (cells[10]) cells[10].textContent = fmtNum(c.twoPctAdd);
       if (cells[11]) cells[11].textContent = fmtNum(c.commTotal);
       if (cells[12]) cells[12].textContent = fmtNum(c.bank2Pct);
@@ -1275,140 +1286,6 @@
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
     await loadFromFirestore();
   });
-})();
-</script>
-    <script>
-(function initYousafDashboardTotalReviewCard() {
-  const COLLECTION_NAME = "yousafPayments";
-  const DOC_ID = "yousafansari_ledger";
-
-  function calcRowPay(r) {
-    const qty = parseFloat(r.qty) || 0;
-    const rate = parseFloat(r.rate) || 0;
-    const totalReceived = qty * rate;
-    const commUnit = parseFloat(r.commissionUnitRate) || 0;
-    const commTotal = commUnit * qty;
-    const comm2 = (commTotal / 100) * 2;
-    const pay = commTotal + comm2;
-    return { totalReceived, pay };
-  }
-
-  function formatAmount(num) {
-    if (!isFinite(num)) return "0";
-    return Number.isInteger(num) ? num.toLocaleString() : num.toFixed(2).replace(/\.?0+$/, "");
-  }
-
-  function findPendingApprovalCard() {
-    const allEls = Array.from(document.querySelectorAll("h1, h2, h3, h4, p, div, span"));
-    const labelEl = allEls.find(
-      (el) =>
-        el.children.length === 0 &&
-        (el.textContent || "").trim().toUpperCase() === "PENDING APPROVAL"
-    );
-    if (!labelEl) return null;
-
-    let cur = labelEl;
-    for (let i = 0; i < 5 && cur && cur !== document.body; i++) {
-      const rect = cur.getBoundingClientRect();
-      if (rect.width >= 150 && rect.height >= 75 && rect.height <= 240) {
-        return cur;
-      }
-      cur = cur.parentElement;
-    }
-    return labelEl.parentElement;
-  }
-
-  function ensureReviewCardInPendingSlot() {
-    if (document.getElementById("yousafPaymentReviewCard")) {
-      return document.getElementById("yousafPaymentReviewCard");
-    }
-
-    const pendingCard = findPendingApprovalCard();
-    if (!pendingCard || !pendingCard.parentNode) return null;
-
-    const card = document.createElement("div");
-    card.id = "yousafPaymentReviewCard";
-    card.title = "Click to open Yousaf Ansari Payment Ledger";
-    card.className = pendingCard.className || "";
-    card.style.cssText =
-      "background:linear-gradient(135deg,#18181b 0%,#111827 100%);border:1px solid rgba(251,191,36,0.5);border-radius:14px;padding:18px 20px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;min-height:118px;width:100%;box-sizing:border-box;box-shadow:0 10px 28px rgba(0,0,0,0.45);transition:transform 0.18s ease,border-color 0.18s ease;";
-
-    card.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-        <span style="font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#fbbf24;">Yousaf Ansari Payment</span>
-        <span style="background:rgba(251,191,36,0.16);color:#fde047;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:700;">Review</span>
-      </div>
-      <div style="margin:8px 0 2px;">
-        <div id="yousafTotalPayReviewAmount" style="font-size:26px;font-weight:900;color:#ffffff;line-height:1.15;">Rs. 0</div>
-      </div>
-      <div id="yousafTotalPayReviewMeta" style="font-size:12px;color:#94a3b8;">0 record(s) • Received: Rs. 0</div>
-    `;
-
-    card.addEventListener("mouseenter", () => {
-      card.style.transform = "translateY(-2px)";
-      card.style.borderColor = "#fbbf24";
-    });
-    card.addEventListener("mouseleave", () => {
-      card.style.transform = "translateY(0)";
-      card.style.borderColor = "rgba(251,191,36,0.5)";
-    });
-    card.addEventListener("click", () => {
-      const btn = document.getElementById("openYousafPaymentBtn");
-      if (btn) btn.click();
-    });
-
-    pendingCard.parentNode.replaceChild(card, pendingCard);
-    return card;
-  }
-
-  async function refreshYousafPaymentReview() {
-    ensureReviewCardInPendingSlot();
-    const amountEl = document.getElementById("yousafTotalPayReviewAmount");
-    const metaEl = document.getElementById("yousafTotalPayReviewMeta");
-    if (!amountEl || !metaEl) return;
-
-    let rows = [];
-    try {
-      if (window.db) {
-        const snap = await window.db.collection(COLLECTION_NAME).doc(DOC_ID).get();
-        if (snap.exists && Array.isArray(snap.data().rows)) {
-          rows = snap.data().rows;
-        }
-      }
-    } catch (_) {}
-
-    if (!rows.length) {
-      try {
-        rows = JSON.parse(localStorage.getItem("pt_yousaf_payment_rows")) || [];
-      } catch (_) {
-        rows = [];
-      }
-    }
-
-    let totalPay = 0;
-    let totalReceivedSum = 0;
-    rows.forEach((r) => {
-      const calc = calcRowPay(r);
-      totalPay += calc.pay;
-      totalReceivedSum += calc.totalReceived;
-    });
-
-    amountEl.textContent = "Rs. " + formatAmount(totalPay);
-    metaEl.textContent = `${rows.length} record(s) • Received: Rs. ${formatAmount(totalReceivedSum)}`;
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => setTimeout(refreshYousafPaymentReview, 250));
-  } else {
-    setTimeout(refreshYousafPaymentReview, 250);
-  }
-
-  document.addEventListener("click", (e) => {
-    if (e.target.closest("#saveYousafLedgerBtn") || e.target.closest("button[data-save-row-idx]")) {
-      setTimeout(refreshYousafPaymentReview, 400);
-    }
-  });
-  window.addEventListener("storage", refreshYousafPaymentReview);
 })();
 </script>
 </body>
