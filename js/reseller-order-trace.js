@@ -30,6 +30,7 @@
       resellerUid: reseller.uid || "",
       resellerEmail: (reseller.email || "").toLowerCase(),
       resellerName: reseller.resellerName || reseller.email || "Reseller",
+      role: reseller.role || "reseller",
       parcelRecipient: customerName || "N/A",
       parcelPhone: phone || "N/A",
       parcelCity: city || "N/A",
