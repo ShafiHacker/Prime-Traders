@@ -1645,7 +1645,78 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
                 <img src="${img.url}" style="max-width:92vw;max-height:80vh;border-radius:10px;border:1px solid #334155;" />
               </div>
             `).join('')}
-          </body></html>
+            <script id="ptAdminResellerMenu">
+(function addAdminResellerSection() {
+  function injectResellerMenu() {
+    const nav = document.querySelector("aside nav, aside ul, nav ul, aside");
+    if (!nav || document.getElementById("ptResellerMenuBtn")) return;
+
+    const btn = document.createElement("button");
+    btn.id = "ptResellerMenuBtn";
+    btn.type = "button";
+    btn.innerHTML = `<i class="fas fa-user-tie"></i> <span>Reseller</span>`;
+    btn.style.cssText =
+      "display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-top:6px;border-radius:10px;background:#1e293b;color:#f8fafc;border:1px solid #334155;font-size:12px;font-weight:700;cursor:pointer;text-align:left;";
+
+    btn.addEventListener("click", async () => {
+      let panel = document.getElementById("ptResellerOrdersPanel");
+      if (!panel) {
+        panel = document.createElement("section");
+        panel.id = "ptResellerOrdersPanel";
+        panel.style.cssText =
+          "margin:20px;padding:20px;border-radius:14px;background:#0f172a;border:1px solid #1e293b;color:#f8fafc;";
+        const main = document.querySelector("main") || document.body;
+        main.prepend(panel);
+      }
+
+      const orders = window.ptGetResellerOrders ? await window.ptGetResellerOrders("") : [];
+      panel.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <h3 style="font-size:15px;font-weight:800;color:#f59e0b;">Reseller Orders & Parcel Trace</h3>
+          <span style="font-size:12px;color:#94a3b8;">Total: ${orders.length}</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead>
+              <tr style="border-bottom:1px solid #1e293b;color:#94a3b8;text-align:left;">
+                <th style="padding:8px;">Order ID</th>
+                <th style="padding:8px;">Reseller</th>
+                <th style="padding:8px;">Reseller Gmail</th>
+                <th style="padding:8px;">Parcel / Receiver</th>
+                <th style="padding:8px;">City & Phone</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${
+                orders.length
+                  ? orders
+                      .map(
+                        (o) => `
+                  <tr style="border-bottom:1px solid #1e293b;">
+                    <td style="padding:8px;">${o.id}</td>
+                    <td style="padding:8px;">${o.resellerName}</td>
+                    <td style="padding:8px;color:#38bdf8;">${o.resellerEmail}</td>
+                    <td style="padding:8px;">${o.parcelRecipient}</td>
+                    <td style="padding:8px;">${o.parcelCity} (${o.parcelPhone})</td>
+                  </tr>`
+                      )
+                      .join("")
+                  : `<tr><td colspan="5" style="padding:14px;color:#94a3b8;">No traced reseller orders yet.</td></tr>`
+              }
+            </tbody>
+          </table>
+        </div>
+      `;
+    });
+
+    nav.appendChild(btn);
+  }
+
+  document.addEventListener("DOMContentLoaded", injectResellerMenu);
+})();
+</script>
+          </body>
+          </html>
         `);
       });
       cells[2].appendChild(document.createElement('br'));
