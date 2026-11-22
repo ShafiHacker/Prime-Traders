@@ -404,10 +404,21 @@
 
 <script id="ptDropshipRateControlsScript">
 (function initDropshipRateEnhancements() {
+  const originalAlert = window.alert.bind(window);
+  window.alert = function (msg) {
+    const text = String(msg || "").toLowerCase();
+    const hasNa = Array.from(document.querySelectorAll("#dropshipAdminTableBody input")).some(
+      (i) => (i.value || "").trim().toUpperCase() === "N/A"
+    );
+    if (hasNa && (text.includes("valid amount") || text.includes("all rates"))) {
+      return;
+    }
+    return originalAlert(msg);
+  };
+
   function renamePrimeRateHeader() {
     document.querySelectorAll("th").forEach((th) => {
-      const txt = (th.textContent || "").trim().toLowerCase();
-      if (txt === "prime rate") {
+      if ((th.textContent || "").trim().toLowerCase() === "prime rate") {
         th.textContent = "OUR RATE";
       }
     });
@@ -417,16 +428,13 @@
     const tbody = document.getElementById("dropshipAdminTableBody");
     if (!tbody) return;
 
-    const inputs = tbody.querySelectorAll("input");
-    inputs.forEach((input) => {
+    tbody.querySelectorAll("input").forEach((input) => {
       if (input.dataset.ptEnhanced === "1") {
         syncNaButtonState(input);
         return;
       }
 
       input.dataset.ptEnhanced = "1";
-
-      // Agar input type="number" hai to "N/A" text dikhane ke liye type ko "text" karein
       if (input.type === "number") {
         input.type = "text";
         input.inputMode = "decimal";
@@ -438,32 +446,25 @@
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "pt-na-btn";
-      btn.title = "Set N/A when rate is not available";
       btn.textContent = "N/A";
+
+      const btnId = "pt_na_" + Math.random().toString(36).slice(2, 8);
+      btn.id = btnId;
+      input.dataset.ptNaBtnId = btnId;
 
       input.parentNode.insertBefore(wrapper, input);
       wrapper.appendChild(input);
       wrapper.appendChild(btn);
 
-      input.dataset.ptNaBtnId = "pt_na_" + Math.random().toString(36).slice(2, 8);
-      btn.id = input.dataset.ptNaBtnId;
-
       btn.addEventListener("click", () => {
-        const currentVal = (input.value || "").trim().toUpperCase();
-        if (currentVal === "N/A") {
-          input.value = "0";
-        } else {
-          input.value = "N/A";
-        }
+        const isNa = (input.value || "").trim().toUpperCase() === "N/A";
+        input.value = isNa ? "0" : "N/A";
         input.dispatchEvent(new Event("input", { bubbles: true }));
         input.dispatchEvent(new Event("change", { bubbles: true }));
         syncNaButtonState(input);
       });
 
-      input.addEventListener("input", () => {
-        syncNaButtonState(input);
-      });
-
+      input.addEventListener("input", () => syncNaButtonState(input));
       syncNaButtonState(input);
     });
   }
@@ -472,26 +473,47 @@
     const btn = input.dataset.ptNaBtnId ? document.getElementById(input.dataset.ptNaBtnId) : null;
     if (!btn) return;
     const val = (input.value || "").trim().toUpperCase();
-    const isZeroOrEmpty = val === "" || val === "0";
-    const isNa = val === "N/A";
-
-    btn.classList.toggle("is-na", isNa);
-    btn.style.display = (isZeroOrEmpty || isNa) ? "inline-flex" : "none";
+    btn.classList.toggle("is-na", val === "N/A");
+    btn.style.display = (val === "" || val === "0" || val === "N/A") ? "inline-flex" : "none";
   }
 
-  function runEnhancements() {
-    renamePrimeRateHeader();
-    enhanceZeroRateInputs();
-  }
+  document.addEventListener("click", (e) => {
+    const saveBtn = e.target.closest("button");
+    if (!saveBtn || !(saveBtn.textContent || "").toLowerCase().includes("save")) return;
+
+    const scope = saveBtn.closest("tr") || document.getElementById("dropshipAdminTableBody") || document;
+    const naInputs = Array.from(scope.querySelectorAll("input")).filter(
+      (inp) => (inp.value || "").trim().toUpperCase() === "N/A"
+    );
+    if (!naInputs.length) return;
+
+    naInputs.forEach((inp) => {
+      inp.dataset.ptWasNa = "1";
+      inp.value = "0";
+      inp.dispatchEvent(new Event("input", { bubbles: true }));
+      inp.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    setTimeout(() => {
+      naInputs.forEach((inp) => {
+        if (inp.dataset.ptWasNa === "1") {
+          inp.value = "N/A";
+          delete inp.dataset.ptWasNa;
+          syncNaButtonState(inp);
+        }
+      });
+    }, 200);
+  }, true);
 
   document.addEventListener("DOMContentLoaded", () => {
-    runEnhancements();
+    renamePrimeRateHeader();
+    enhanceZeroRateInputs();
     const tbody = document.getElementById("dropshipAdminTableBody");
     if (tbody) {
-      const obs = new MutationObserver(() => {
-        runEnhancements();
-      });
-      obs.observe(tbody, { childList: true, subtree: true });
+      new MutationObserver(() => {
+        renamePrimeRateHeader();
+        enhanceZeroRateInputs();
+      }).observe(tbody, { childList: true, subtree: true });
     }
   });
 })();
