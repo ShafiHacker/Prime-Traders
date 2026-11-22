@@ -1271,83 +1271,35 @@ document.addEventListener("DOMContentLoaded", function () {
 })();
 </script>
     <script id="ptDropshipPublicNaDisplay">
-(function formatPublicDropshipCards() {
-  let isRunning = false;
+(function formatDropshipCards() {
+  function runFormat() {
+    const grid = document.getElementById("dropshipProductsGrid");
+    if (!grid) return;
 
-  function applyCardFormatting() {
-    if (isRunning) return;
-    isRunning = true;
-
-    try {
-      document.querySelectorAll("div, span, p, strong, b").forEach((el) => {
-        if (el.children.length > 0) return;
-        const txt = (el.textContent || "").trim();
-
-        if (/^PRIME RATE:?$/i.test(txt)) {
-          const updated = txt.replace(/PRIME RATE/i, "OUR RATE");
-          if (el.textContent !== updated) el.textContent = updated;
-        } else if (/^PKR\s*0(\.0+)?$/i.test(txt) || /^N\/A$/i.test(txt)) {
-          if (el.textContent !== "N/A") el.textContent = "N/A";
-        }
-      });
-    } finally {
-      isRunning = false;
-    }
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => {
-      applyCardFormatting();
-      setTimeout(applyCardFormatting, 600);
-      setTimeout(applyCardFormatting, 1600);
-    });
-  } else {
-    applyCardFormatting();
-    setTimeout(applyCardFormatting, 600);
-    setTimeout(applyCardFormatting, 1600);
-  }
-})();
-</script>
-    <script id="ptDropshipPublicNaDisplay">
-(function formatPublicDropshipCards() {
-  function applyCardFormatting() {
-    document.querySelectorAll("div, span, p, strong, b").forEach((el) => {
+    grid.querySelectorAll("div, span, p, strong, b").forEach((el) => {
       if (el.children.length > 0) return;
       const txt = (el.textContent || "").trim();
 
       if (/^PRIME RATE:?$/i.test(txt)) {
-        el.textContent = txt.replace(/PRIME RATE/i, "OUR RATE");
+        const next = txt.replace(/PRIME RATE/i, "OUR RATE");
+        if (el.textContent !== next) el.textContent = next;
       } else if (/^PKR\s*0(\.0+)?$/i.test(txt) || /^N\/A$/i.test(txt)) {
-        el.textContent = "N/A";
+        if (el.textContent !== "N/A") el.textContent = "N/A";
       }
     });
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", applyCardFormatting);
-  } else {
-    applyCardFormatting();
-  }
+  document.addEventListener("DOMContentLoaded", () => {
+    runFormat();
+    const grid = document.getElementById("dropshipProductsGrid");
+    if (!grid) return;
 
-  window.addEventListener("load", applyCardFormatting);
-})();
-</script>
-    <script id="ptDropshipPublicNaDisplay">
-(function formatPublicDropshipCards() {
-  function applyCardFormatting() {
-    document.querySelectorAll("div, span, p, strong, b").forEach((el) => {
-      if (el.children.length > 0) return;
-      const txt = (el.textContent || "").trim();
-
-      if (/^PRIME RATE:?$/i.test(txt)) {
-        el.textContent = txt.replace(/PRIME RATE/i, "OUR RATE");
-      } else if (/^PKR\s*0(\.0+)?$/i.test(txt) || /^N\/A$/i.test(txt)) {
-        el.textContent = "N/A";
-      }
-    });
-  }
-
-  document.addEventListener("DOMContentLoaded", applyCardFormatting);
+    let timer = null;
+    new MutationObserver(() => {
+      clearTimeout(timer);
+      timer = setTimeout(runFormat, 80);
+    }).observe(grid, { childList: true, subtree: true });
+  });
 })();
 </script>
 </body>
