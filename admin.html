@@ -1286,6 +1286,47 @@
     }
   });
 })();
+        <style id="ptStudentTableAlignmentFix">
+  #ecommerceStudentsView table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+  }
+
+  #ecommerceStudentsView th,
+  #ecommerceStudentsView td {
+    vertical-align: middle !important;
+  }
+
+  #ecommerceStudentsView td:last-child,
+  #ecommerceStudentsView th:last-child {
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+
+  #ecommerceStudentsView td:last-child {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding-top: 18px !important;
+    padding-bottom: 18px !important;
+  }
+
+  /* Agar td flex ho jaye to border-b ko row/cell par clean rakhne ke liye */
+  #ecommerceStudentsView tbody tr {
+    border-bottom: 1px solid #1e293b;
+  }
+
+  #ecommerceStudentsView td:last-child button {
+    margin: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    line-height: 1.2;
+  }
+</style>
 </script>
     <!-- VIEW FOR E-COMMERCE STUDENTS VERIFICATION -->
 <div id="ecommerceStudentsView" class="admin-view-section hidden space-y-4 px-2 md:px-0">
