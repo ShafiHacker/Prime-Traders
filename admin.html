@@ -985,14 +985,7 @@
     const bank2Pct = (commTotal / 100) * 2;
     const pay = commTotal - bank2Pct;
 
-    return {
-      totalReceived,
-      commRate,
-      twoPctAdd,
-      commTotal,
-      bank2Pct,
-      pay
-    };
+    return { totalReceived, commRate, twoPctAdd, commTotal, bank2Pct, pay };
   }
 
   function fmtNum(n) {
@@ -1028,12 +1021,11 @@
       <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;border-bottom:1px solid #1e293b;padding-bottom:12px;">
         <div>
           <h2 style="margin:0;font-size:18px;font-weight:800;color:#fbbf24;">Yousaf Ansari Payment Ledger</h2>
-          <p style="margin:3px 0 0;font-size:12px;color:#94a3b8;">Referral: <strong>143256</strong> • Rate slabs: ≤100→10, ≤200→20, ≤300→30, ≤400→40, ≤500→50, >500→80</p>
+          <p style="margin:3px 0 0;font-size:12px;color:#94a3b8;">Referral: <strong>143256</strong> • Rate slabs: ≤100→10, ≤200→20, ≤300→30, ≤400→40, ≤500→50, &gt;500→80</p>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;">
           <button type="button" id="addYousafRowBtn" style="background:#2563eb;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">+ Add Line</button>
           <button type="button" id="saveYousafLedgerBtn" style="background:#16a34a;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">Save</button>
-          <button type="button" id="closeYousafPaymentModalBtn" style="background:#334155;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">Close</button>
         </div>
       </div>
 
@@ -1077,9 +1069,6 @@
 
     target.prepend(panel);
 
-    document.getElementById("closeYousafPaymentModalBtn").addEventListener("click", () => {
-      panel.style.display = "none";
-    });
     document.getElementById("addYousafRowBtn").addEventListener("click", () => {
       rowsData.push(createEmptyRow());
       renderTable();
@@ -1279,12 +1268,21 @@
   }
 
   document.addEventListener("click", async (e) => {
-    const btn = e.target.closest("#openYousafPaymentBtn");
-    if (!btn) return;
-    const panel = ensureLedgerPanel();
-    panel.style.display = "block";
-    panel.scrollIntoView({ behavior: "smooth", block: "start" });
-    await loadFromFirestore();
+    const paymentBtn = e.target.closest("#openYousafPaymentBtn");
+    if (paymentBtn) {
+      const panel = ensureLedgerPanel();
+      panel.style.display = "block";
+      panel.scrollIntoView({ behavior: "smooth", block: "start" });
+      await loadFromFirestore();
+      return;
+    }
+
+    // Auto-hide Yousaf Ledger when user clicks any other sidebar menu item
+    const clickedSidebarItem = e.target.closest("aside a, aside button, nav a, nav button, [class*='sidebar'] a, [class*='sidebar'] button");
+    if (clickedSidebarItem && !clickedSidebarItem.closest("#adminYousafPaymentPanel")) {
+      const panel = document.getElementById("adminYousafPaymentPanel");
+      if (panel) panel.style.display = "none";
+    }
   });
 })();
 </script>
