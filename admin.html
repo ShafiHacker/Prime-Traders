@@ -1212,7 +1212,8 @@
           ? `<iframe src="${row.proofDataUrl}" style="width:95vw;height:95vh;border:none;"></iframe>`
           : `<img src="${row.proofDataUrl}" style="max-width:95vw;max-height:95vh;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.6);" />`
         }
-      </body></html>
+      </body>
+      </html>
     `);
   }
 
@@ -1410,7 +1411,8 @@
             <html><head><title>CNIC - ${student.name || student.studentName || 'Student'}</title></head>
             <body style="margin:0;padding:24px;background:#090d16;display:flex;flex-direction:column;align-items:center;">
                 ${cardsHtml}
-            </body></html>
+            </body>
+            </html>
         `);
     };
 
@@ -1530,6 +1532,92 @@
     document.addEventListener("DOMContentLoaded", function() {
         loadAdminStudentRequests();
     });
+    // Agar aapka async function loadAdminStudentsList() Firestore se students load karta hai,
+// toh uske end mein (tbody.innerHTML = rows set karne ke baad) yeh call chala dein:
+if (typeof window.decorateFirestoreStudentRows === "function") {
+  window.decorateFirestoreStudentRows();
+}
+    window.decorateFirestoreStudentRows = async function() {
+  const tbody = document.getElementById('adminStudentsTableBody');
+  if (!tbody) return;
+
+  let firestoreDocs = [];
+  try {
+    if (typeof db !== 'undefined' && db) {
+      const snap = await db.collection('students').get();
+      snap.forEach((doc) => firestoreDocs.push({ id: doc.id, data: doc.data() || {} }));
+    }
+  } catch (_) {}
+
+  const trList = tbody.querySelectorAll('tr');
+  trList.forEach((tr, idx) => {
+    const cells = tr.querySelectorAll('td');
+    if (cells.length < 6) return;
+
+    const rowText = (tr.innerText || '').toLowerCase();
+    const matched = firestoreDocs.find((item) => {
+      const d = item.data;
+      return (d.email && rowText.includes(String(d.email).toLowerCase())) ||
+             (d.cnic && rowText.includes(String(d.cnic).toLowerCase())) ||
+             (d.phone && rowText.includes(String(d.phone).toLowerCase()));
+    }) || firestoreDocs[idx] || null;
+
+    const imgs = matched ? extractStudentCnicImages(matched.data) : [];
+
+    // CNIC image button in CNIC & Batch column (index 2)
+    if (!cells[2].querySelector('.pt-cnic-btn')) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pt-cnic-btn mt-1 bg-sky-600 hover:bg-sky-700 text-white px-2.5 py-1 rounded-md text-[10px] font-bold transition inline-flex items-center gap-1';
+      btn.innerHTML = `<i class="fa-solid fa-id-card"></i> ${imgs.length ? `View CNIC (${imgs.length})` : 'CNIC Image'}`;
+      btn.addEventListener('click', () => {
+        if (!imgs.length) {
+          alert('Is student ke record mein CNIC image data/URL nahi mila.');
+          return;
+        }
+        const win = window.open('', '_blank');
+        if (!win) {
+          alert('Pop-up block hai, please allow pop-ups.');
+          return;
+        }
+        win.document.write(`
+          <html><head><title>CNIC Details</title></head>
+          <body style="margin:0;padding:24px;background:#090d16;display:flex;flex-direction:column;align-items:center;">
+            ${imgs.map((img) => `
+              <div style="margin-bottom:20px;text-align:center;">
+                <div style="color:#fbbf24;font-family:sans-serif;font-size:13px;font-weight:700;margin-bottom:8px;">${img.label}</div>
+                <img src="${img.url}" style="max-width:92vw;max-height:80vh;border-radius:10px;border:1px solid #334155;" />
+              </div>
+            `).join('')}
+          </body></html>
+        `);
+      });
+      cells[2].appendChild(document.createElement('br'));
+      cells[2].appendChild(btn);
+    }
+
+    // Delete button in Admin Controls column (last cell)
+    const lastCell = cells[cells.length - 1];
+    if (!lastCell.querySelector('.pt-del-student-btn')) {
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.className = 'pt-del-student-btn bg-red-700 hover:bg-red-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition ml-2';
+      delBtn.innerHTML = `<i class="fa-solid fa-trash mr-1"></i> Delete`;
+      delBtn.addEventListener('click', async () => {
+        if (!confirm('Kya aap is student record ko permanently delete karna chahte hain?')) return;
+        try {
+          if (typeof db !== 'undefined' && db && matched && matched.id) {
+            await db.collection('students').doc(matched.id).delete();
+          }
+          tr.remove();
+        } catch (e) {
+          alert('Delete error: ' + e.message);
+        }
+      });
+      lastCell.appendChild(delBtn);
+    }
+  });
+};
 </script>
 </body>
 <script>
