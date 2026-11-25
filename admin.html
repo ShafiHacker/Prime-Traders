@@ -1264,6 +1264,7 @@
     }
   });
 })();
+        </script>
         <style id="ptStudentTableAlignmentFix">
   #ecommerceStudentsView {
     width: 100% !important;
@@ -1644,7 +1645,6 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
         const main = document.querySelector("main") || document.body;
         main.prepend(panel);
       }
-
       const orders = window.ptGetResellerOrders ? await window.ptGetResellerOrders("") : [];
       panel.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -1732,12 +1732,7 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
   });
 })();
 </script>
-        <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-<script src="dashboard.js?v=16.0"></script>
-
-<script>
+        <script>
     document.addEventListener("DOMContentLoaded", function() {
         // Clean text formatting
         const descEls = document.querySelectorAll('p');
