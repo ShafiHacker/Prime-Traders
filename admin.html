@@ -925,6 +925,15 @@
 
   let rowsData = [];
 
+  function getFirestoreDb() {
+    if (typeof window.db !== "undefined" && window.db) return window.db;
+    if (typeof db !== "undefined" && db) return db;
+    if (typeof firebase !== "undefined" && firebase.apps && firebase.apps.length > 0) {
+      return firebase.firestore();
+    }
+    return null;
+  }
+
   function createEmptyRow() {
     return {
       id: "row_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7),
@@ -1186,13 +1195,16 @@
     }
     const isPdf = row.proofDataUrl.startsWith("data:application/pdf");
     win.document.write(`
+      <!DOCTYPE html>
       <html><head><title>Bank Slip - ${row.studentName || "Proof"}</title></head>
       <body style="margin:0;background:#090d16;display:flex;align-items:center;justify-content:center;min-height:100vh;">
         ${isPdf
           ? `<iframe src="${row.proofDataUrl}" style="width:95vw;height:95vh;border:none;"></iframe>`
           : `<img src="${row.proofDataUrl}" style="max-width:95vw;max-height:95vh;border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,0.6);" />`
         }
-     `);
+      </body></html>
+    `);
+    win.document.close();
   }
 
   function setStatus(msg, isErr = false) {
@@ -1205,8 +1217,9 @@
 
   async function loadFromFirestore() {
     try {
-      if (window.db) {
-        const snap = await window.db.collection(COLLECTION_NAME).doc(DOC_ID).get();
+      const firestore = getFirestoreDb();
+      if (firestore) {
+        const snap = await firestore.collection(COLLECTION_NAME).doc(DOC_ID).get();
         if (snap.exists && Array.isArray(snap.data().rows)) {
           rowsData = snap.data().rows;
           renderTable();
@@ -1231,8 +1244,9 @@
   async function saveToFirestore() {
     localStorage.setItem("pt_yousaf_payment_rows", JSON.stringify(rowsData));
     try {
-      if (window.db) {
-        await window.db.collection(COLLECTION_NAME).doc(DOC_ID).set({
+      const firestore = getFirestoreDb();
+      if (firestore) {
+        await firestore.collection(COLLECTION_NAME).doc(DOC_ID).set({
           rows: rowsData,
           updatedAt: new Date().toISOString()
         }, { merge: true });
@@ -1264,7 +1278,7 @@
     }
   });
 })();
-        </script>
+</script>
         <style id="ptStudentTableAlignmentFix">
   #ecommerceStudentsView {
     width: 100% !important;
@@ -1307,8 +1321,7 @@
     white-space: nowrap !important;
   }
 
-  #ecommerceStudentsView td:last-child > div,
-  #ecommerceStudentsView td:last-child {
+  #ecommerceStudentsView td:last-child > div {
     vertical-align: middle !important;
   }
 
@@ -1321,7 +1334,6 @@
     vertical-align: middle !important;
   }
 </style>
-</script>
     <!-- VIEW FOR E-COMMERCE STUDENTS VERIFICATION -->
 <div id="ecommerceStudentsView" class="admin-view-section hidden space-y-4 px-2 md:px-0">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl w-full">
@@ -1352,6 +1364,15 @@
 </div>
 <script>
     const STUDENT_STORAGE_KEYS = ['studentRegistrations', 'students', 'studentData', 'registeredStudents', 'users'];
+
+    function getStudentFirestoreDb() {
+        if (typeof window.db !== 'undefined' && window.db) return window.db;
+        if (typeof db !== 'undefined' && db) return db;
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+            return firebase.firestore();
+        }
+        return null;
+    }
 
     function findStudentsStorageKey() {
         for (const key of STUDENT_STORAGE_KEYS) {
@@ -1411,19 +1432,7 @@
         return imgs;
     }
 
-    window.viewStudentCnicImage = function(index) {
-        const key = findStudentsStorageKey();
-        let students = [];
-        try {
-            const parsed = JSON.parse(localStorage.getItem(key) || '[]');
-            students = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
-        } catch (_) {
-            students = [];
-        }
-
-        const student = students[index];
-        const imgs = extractStudentCnicImages(student);
-
+    function openCnicPopupWindow(title, imgs) {
         if (!imgs.length) {
             alert("Is student ke record mein CNIC image data/URL nahi mila.");
             return;
@@ -1443,10 +1452,28 @@
         `).join("");
 
         win.document.write(`
-            <html><head><title>CNIC - ${student.name || student.studentName || 'Student'}</title></head>
+            <!DOCTYPE html>
+            <html><head><title>${title}</title></head>
             <body style="margin:0;padding:24px;background:#090d16;display:flex;flex-direction:column;align-items:center;">
                 ${cardsHtml}
-            `);
+            </body></html>
+        `);
+        win.document.close();
+    }
+
+    window.viewStudentCnicImage = function(index) {
+        const key = findStudentsStorageKey();
+        let students = [];
+        try {
+            const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+            students = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : []);
+        } catch (_) {
+            students = [];
+        }
+
+        const student = students[index] || {};
+        const imgs = extractStudentCnicImages(student);
+        openCnicPopupWindow(`CNIC - ${student.name || student.studentName || 'Student'}`, imgs);
     };
 
     function loadAdminStudentRequests() {
@@ -1562,67 +1589,56 @@
 
     window.loadAdminStudentsList = loadAdminStudentRequests;
 
+    window.decorateFirestoreStudentRows = async function() {
+        const tbody = document.getElementById('adminStudentsTableBody');
+        if (!tbody) return;
+
+        let firestoreDocs = [];
+        try {
+            const firestore = getStudentFirestoreDb();
+            if (firestore) {
+                const snap = await firestore.collection('students').get();
+                snap.forEach((doc) => firestoreDocs.push({ id: doc.id, data: doc.data() || {} }));
+            }
+        } catch (_) {}
+
+        const trList = tbody.querySelectorAll('tr');
+        trList.forEach((tr, idx) => {
+            const cells = tr.querySelectorAll('td');
+            if (cells.length < 6) return;
+
+            const rowText = (tr.innerText || '').toLowerCase();
+            const matched = firestoreDocs.find((item) => {
+                const d = item.data;
+                return (d.email && rowText.includes(String(d.email).toLowerCase())) ||
+                       (d.cnic && rowText.includes(String(d.cnic).toLowerCase())) ||
+                       (d.phone && rowText.includes(String(d.phone).toLowerCase()));
+            }) || firestoreDocs[idx] || null;
+
+            const imgs = matched ? extractStudentCnicImages(matched.data) : [];
+
+            if (!cells[2].querySelector('.pt-cnic-btn')) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'pt-cnic-btn mt-1 bg-sky-600 hover:bg-sky-700 text-white px-2.5 py-1 rounded-md text-[10px] font-bold transition inline-flex items-center gap-1';
+                btn.innerHTML = `<i class="fa-solid fa-id-card"></i> ${imgs.length ? `View CNIC (${imgs.length})` : 'CNIC Image'}`;
+                btn.addEventListener('click', () => {
+                    openCnicPopupWindow('CNIC Details', imgs);
+                });
+                cells[2].appendChild(btn);
+            }
+        });
+    };
+
     document.addEventListener("DOMContentLoaded", function() {
         loadAdminStudentRequests();
+        if (typeof window.decorateFirestoreStudentRows === "function") {
+            window.decorateFirestoreStudentRows();
+        }
     });
-    // Agar aapka async function loadAdminStudentsList() Firestore se students load karta hai,
-// toh uske end mein (tbody.innerHTML = rows set karne ke baad) yeh call chala dein:
-if (typeof window.decorateFirestoreStudentRows === "function") {
-  window.decorateFirestoreStudentRows();
-}
-    window.decorateFirestoreStudentRows = async function() {
-  const tbody = document.getElementById('adminStudentsTableBody');
-  if (!tbody) return;
+</script>
 
-  let firestoreDocs = [];
-  try {
-    if (typeof db !== 'undefined' && db) {
-      const snap = await db.collection('students').get();
-      snap.forEach((doc) => firestoreDocs.push({ id: doc.id, data: doc.data() || {} }));
-    }
-  } catch (_) {}
-
-  const trList = tbody.querySelectorAll('tr');
-  trList.forEach((tr, idx) => {
-    const cells = tr.querySelectorAll('td');
-    if (cells.length < 6) return;
-
-    const rowText = (tr.innerText || '').toLowerCase();
-    const matched = firestoreDocs.find((item) => {
-      const d = item.data;
-      return (d.email && rowText.includes(String(d.email).toLowerCase())) ||
-             (d.cnic && rowText.includes(String(d.cnic).toLowerCase())) ||
-             (d.phone && rowText.includes(String(d.phone).toLowerCase()));
-    }) || firestoreDocs[idx] || null;
-
-    const imgs = matched ? extractStudentCnicImages(matched.data) : [];
-
-    // CNIC image button in CNIC & Batch column (index 2)
-    if (!cells[2].querySelector('.pt-cnic-btn')) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'pt-cnic-btn mt-1 bg-sky-600 hover:bg-sky-700 text-white px-2.5 py-1 rounded-md text-[10px] font-bold transition inline-flex items-center gap-1';
-      btn.innerHTML = `<i class="fa-solid fa-id-card"></i> ${imgs.length ? `View CNIC (${imgs.length})` : 'CNIC Image'}`;
-      btn.addEventListener('click', () => {
-        if (!imgs.length) {
-          alert('Is student ke record mein CNIC image data/URL nahi mila.');
-          return;
-        }
-        const win = window.open('', '_blank');
-        if (!win) {
-          alert('Pop-up block hai, please allow pop-ups.');
-          return;
-        }
-        win.document.write(`
-          <html><head><title>CNIC Details</title></head>
-          <body style="margin:0;padding:24px;background:#090d16;display:flex;flex-direction:column;align-items:center;">
-            ${imgs.map((img) => `
-              <div style="margin-bottom:20px;text-align:center;">
-                <div style="color:#fbbf24;font-family:sans-serif;font-size:13px;font-weight:700;margin-bottom:8px;">${img.label}</div>
-                <img src="${img.url}" style="max-width:92vw;max-height:80vh;border-radius:10px;border:1px solid #334155;" />
-              </div>
-            `).join('')}
-            <script id="ptAdminResellerMenu">
+<script id="ptAdminResellerMenu">
 (function addAdminResellerSection() {
   function injectResellerMenu() {
     const nav = document.querySelector("aside nav, aside ul, nav ul, aside");
@@ -1645,6 +1661,8 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
         const main = document.querySelector("main") || document.body;
         main.prepend(panel);
       }
+      panel.style.display = "block";
+
       const orders = window.ptGetResellerOrders ? await window.ptGetResellerOrders("") : [];
       panel.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -1669,11 +1687,11 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
                       .map(
                         (o) => `
                   <tr style="border-bottom:1px solid #1e293b;">
-                    <td style="padding:8px;">${o.id}</td>
-                    <td style="padding:8px;">${o.resellerName}</td>
-                    <td style="padding:8px;color:#38bdf8;">${o.resellerEmail}</td>
-                    <td style="padding:8px;">${o.parcelRecipient}</td>
-                    <td style="padding:8px;">${o.parcelCity} (${o.parcelPhone})</td>
+                    <td style="padding:8px;">${o.id || "-"}</td>
+                    <td style="padding:8px;">${o.resellerName || "-"}</td>
+                    <td style="padding:8px;color:#38bdf8;">${o.resellerEmail || "-"}</td>
+                    <td style="padding:8px;">${o.parcelRecipient || "-"}</td>
+                    <td style="padding:8px;">${o.parcelCity || "-"} (${o.parcelPhone || "-"})</td>
                   </tr>`
                       )
                       .join("")
@@ -1688,18 +1706,44 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
     nav.appendChild(btn);
   }
 
+  document.addEventListener("click", (e) => {
+    const clickedSidebarItem = e.target.closest("aside a, aside button, nav a, nav button, [class*='sidebar'] a, [class*='sidebar'] button");
+    if (clickedSidebarItem && clickedSidebarItem.id !== "ptResellerMenuBtn") {
+      const panel = document.getElementById("ptResellerOrdersPanel");
+      if (panel) panel.style.display = "none";
+    }
+  });
+
   document.addEventListener("DOMContentLoaded", injectResellerMenu);
 })();
 </script>
     <script id="ptStudentDeleteBtnFix">
 (function attachStudentDeleteButtons() {
+  function getStudentDb() {
+    if (typeof window.db !== "undefined" && window.db) return window.db;
+    if (typeof db !== "undefined" && db) return db;
+    if (typeof firebase !== "undefined" && firebase.apps && firebase.apps.length > 0) {
+      return firebase.firestore();
+    }
+    return null;
+  }
+
   function addDeleteButtons() {
-    const rows = document.querySelectorAll("table tbody tr");
+    const tbody = document.getElementById("adminStudentsTableBody");
+    if (!tbody) return;
+
+    const rows = tbody.querySelectorAll("tr");
     rows.forEach((tr) => {
       const cells = tr.querySelectorAll("td");
       if (cells.length < 2) return;
       const lastCell = cells[cells.length - 1];
-      if (!lastCell || lastCell.querySelector(".pt-del-student-btn")) return;
+      if (!lastCell) return;
+
+      // Agar pehle se delete button maujood hai toh duplicate mat banayein
+      const hasExistingDelete =
+        lastCell.querySelector(".pt-del-student-btn") ||
+        lastCell.querySelector("[onclick*='deleteStudentRequest']");
+      if (hasExistingDelete) return;
 
       const delBtn = document.createElement("button");
       delBtn.type = "button";
@@ -1710,8 +1754,9 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
         if (!confirm("Kya aap is student record ko permanently delete karna chahte hain?")) return;
         try {
           const docId = tr.dataset.id || tr.getAttribute("data-id") || "";
-          if (typeof db !== "undefined" && db && docId) {
-            await db.collection("students").doc(docId).delete();
+          const firestore = getStudentDb();
+          if (firestore && docId) {
+            await firestore.collection("students").doc(docId).delete();
           }
           tr.remove();
         } catch (e) {
@@ -1723,18 +1768,33 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
     });
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
+  function initObserver() {
     addDeleteButtons();
-    const tbody = document.querySelector("table tbody");
-    if (tbody) {
+    const tbody = document.getElementById("adminStudentsTableBody");
+    if (tbody && !tbody.dataset.ptDeleteObserverAttached) {
+      tbody.dataset.ptDeleteObserverAttached = "true";
       new MutationObserver(addDeleteButtons).observe(tbody, { childList: true, subtree: true });
     }
-  });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initObserver);
+  } else {
+    initObserver();
+  }
 })();
 </script>
-        <script>
+       <script>
+    function getStudentsFirestoreDb() {
+        if (typeof window.db !== 'undefined' && window.db) return window.db;
+        if (typeof db !== 'undefined' && db) return db;
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+            return firebase.firestore();
+        }
+        return null;
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
-        // Clean text formatting
         const descEls = document.querySelectorAll('p');
         descEls.forEach(el => {
             if (el.innerHTML.includes('[cite:')) {
@@ -1748,10 +1808,21 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
         const tableBody = document.getElementById('adminStudentsTableBody');
         if (!tableBody) return;
 
+        const firestore = getStudentsFirestoreDb();
+        if (!firestore) {
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400 font-semibold">Firebase Firestore is not initialized.</td></tr>`;
+            return;
+        }
+
         tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">Fetching student registrations from Firebase...</td></tr>`;
 
         try {
-            const snapshot = await db.collection('students').orderBy('createdAt', 'desc').get();
+            let snapshot;
+            try {
+                snapshot = await firestore.collection('students').orderBy('createdAt', 'desc').get();
+            } catch (_) {
+                snapshot = await firestore.collection('students').get();
+            }
 
             if (snapshot.empty) {
                 tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">No student registration requests found in database.</td></tr>`;
@@ -1760,37 +1831,37 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
 
             let html = '';
             snapshot.forEach(doc => {
-                const data = doc.data();
+                const data = doc.data() || {};
                 const docId = doc.id;
+                const statusVal = String(data.status || 'pending').toLowerCase();
 
                 let statusBadge = '';
-                if (data.status === 'approved') {
+                if (statusVal === 'approved') {
                     statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full text-xs font-bold">APPROVED</span>`;
-                } else if (data.status === 'rejected') {
+                } else if (statusVal === 'rejected') {
                     statusBadge = `<span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-2.5 py-1 rounded-full text-xs font-bold">REJECTED</span>`;
                 } else {
                     statusBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-full text-xs font-bold">PENDING</span>`;
                 }
 
-                let cnicImgLink = data.cnicImage || data.cnicFrontUrl || data.cnicPic || '';
-                let bankImgLink = data.bankImage || data.bankReceiptUrl || data.bankSlip || '';
+                const cnicImgLink = data.cnicImage || data.cnicFrontUrl || data.cnicPic || '';
+                const bankImgLink = data.bankImage || data.bankReceiptUrl || data.bankSlip || '';
 
                 let cnicDisplay = `<p class="text-white">${data.cnic || 'N/A'}</p>`;
                 if (cnicImgLink) {
                     cnicDisplay += `<a href="${cnicImgLink}" target="_blank" class="text-amber-400 hover:underline text-[10px] font-bold"><i class="fa-solid fa-image"></i> View CNIC Pic</a>`;
                 }
 
-                let bankDisplay = `<p class="text-slate-300">${data.bankDetails || 'N/A'}</p>`;
+                let bankDisplay = `<p class="text-slate-300">${data.bankDetails || data.bank || 'N/A'}</p>`;
                 if (bankImgLink) {
                     bankDisplay += `<a href="${bankImgLink}" target="_blank" class="text-amber-400 hover:underline text-[10px] font-bold"><i class="fa-solid fa-receipt"></i> View Account Pic</a>`;
                 }
 
                 html += `
-                    <tr class="border-b border-slate-800 hover:bg-slate-900/50 transition">
-                        <tr class="border-b border-slate-800 hover:bg-slate-900/50 transition">
+                    <tr data-id="${docId}" class="border-b border-slate-800 hover:bg-slate-900/50 transition">
                         <td class="p-3">
-                            <p class="font-bold text-white">${data.fullName || 'N/A'}</p>
-                            <p class="text-[11px] text-purple-400">${data.businessName || 'N/A'}</p>
+                            <p class="font-bold text-white">${data.fullName || data.name || data.studentName || 'N/A'}</p>
+                            <p class="text-[11px] text-purple-400">${data.businessName || data.company || 'N/A'}</p>
                         </td>
                         <td class="p-3">
                             <p class="text-white">${data.email || 'N/A'}</p>
@@ -1798,7 +1869,7 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
                         </td>
                         <td class="p-3">
                             ${cnicDisplay}
-                            <p class="text-[11px] text-slate-400 mt-0.5">Batch: ${data.batchNo || 'N/A'}</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Batch: ${data.batchNo || data.batch || 'N/A'}</p>
                         </td>
                         <td class="p-3">
                             ${bankDisplay}
@@ -1807,27 +1878,36 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
                             ${statusBadge}
                         </td>
                         <td class="p-3 text-center space-x-2">
-                            <button onclick="updateStudentStatus('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
+                            <button type="button" onclick="updateStudentStatus('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
                                 <i class="fa-solid fa-check mr-1"></i> Approve
                             </button>
-                            <button onclick="updateStudentStatus('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
+                            <button type="button" onclick="updateStudentStatus('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
                                 <i class="fa-solid fa-xmark mr-1"></i> Reject
                             </button>
                         </td>
                     </tr>
                 `;
             });
+
             tableBody.innerHTML = html;
+
+            if (typeof window.decorateFirestoreStudentRows === 'function') {
+                window.decorateFirestoreStudentRows();
+            }
         } catch (err) {
             console.error("Error loading students:", err);
             tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400 font-semibold">Error loading data: ${err.message}</td></tr>`;
         }
     }
 
-    // Ye naya function .set() aur merge use karega taake koi purana format conflict na kare
     window.updateStudentStatus = async function(docId, newStatus) {
+        const firestore = getStudentsFirestoreDb();
+        if (!firestore) {
+            alert("Firebase Firestore is not initialized.");
+            return;
+        }
         try {
-            await db.collection('students').doc(docId).set({
+            await firestore.collection('students').doc(docId).set({
                 status: newStatus,
                 updatedAt: new Date().toISOString()
             }, { merge: true });
@@ -1841,124 +1921,24 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
     };
 </script>
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // 1. Operations Dashboard heading aur subtext ko hide/clean karne ke liye
-        const headerSub = document.querySelector('header .hidden.md\\:block');
-        if (headerSub) {
-            headerSub.style.display = 'none'; // Isko poora hide kar dete hain taake clean look aaye
+    function getAdminStudentsDb() {
+        if (typeof window.db !== 'undefined' && window.db) return window.db;
+        if (typeof db !== 'undefined' && db) return db;
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+            return firebase.firestore();
         }
-
-        // Clean text formatting
-        const descEls = document.querySelectorAll('p');
-        descEls.forEach(el => {
-            if (el.innerHTML.includes('[cite:')) {
-                el.innerHTML = el.innerHTML.replace(/\[cite:[^\]]*\]/g, '');
-            }
-        });
-
-        loadAdminStudentRequests();
-    });
-
-    async function loadAdminStudentRequests() {
-        const tableBody = document.getElementById('adminStudentsTableBody');
-        if (!tableBody) return;
-
-        tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">Fetching student registrations from Firebase...</td></tr>`;
-
-        try {
-            const snapshot = await db.collection('students').orderBy('createdAt', 'desc').get();
-
-            if (snapshot.empty) {
-                tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">No student registration requests found in database.</td></tr>`;
-                return;
-            }
-
-            let html = '';
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const docId = doc.id;
-
-                let statusBadge = '';
-                if (data.status === 'approved') {
-                    statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full text-xs font-bold">APPROVED</span>`;
-                } else if (data.status === 'rejected') {
-                    statusBadge = `<span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-2.5 py-1 rounded-full text-xs font-bold">REJECTED</span>`;
-                } else {
-                    statusBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-full text-xs font-bold">PENDING</span>`;
-                }
-
-                // Saare possible field names check kar rahe hain taake pictures ka link zaroor mil jaye
-                let cnicImgLink = data.cnicImage || data.cnicFrontUrl || data.cnicPic || data.cnicURL || data.cnicDocument || '';
-                let bankImgLink = data.bankImage || data.bankReceiptUrl || data.bankSlip || data.bankURL || data.bankDocument || '';
-
-                let cnicDisplay = `<p class="text-white">${data.cnic || 'N/A'}</p>`;
-                if (cnicImgLink) {
-                    cnicDisplay += `<a href="${cnicImgLink}" target="_blank" class="text-amber-400 hover:underline text-[11px] font-bold block mt-1"><i class="fa-solid fa-image"></i> View CNIC Pic</a>`;
-                } else {
-                    cnicDisplay += `<span class="text-[10px] text-slate-500 block">No CNIC Pic</span>`;
-                }
-
-                let bankDisplay = `<p class="text-slate-300">${data.bankDetails || 'N/A'}</p>`;
-                if (bankImgLink) {
-                    bankDisplay += `<a href="${bankImgLink}" target="_blank" class="text-amber-400 hover:underline text-[11px] font-bold block mt-1"><i class="fa-solid fa-receipt"></i> View Account Pic</a>`;
-                } else {
-                    bankDisplay += `<span class="text-[10px] text-slate-500 block">No Account Pic</span>`;
-                }
-
-                html += `
-                    <tr class="border-b border-slate-800 hover:bg-slate-900/50 transition">
-                        <td class="p-3">
-                            <p class="font-bold text-white">${data.fullName || 'N/A'}</p>
-                            <p class="text-[11px] text-purple-400">${data.businessName || 'N/A'}</p>
-                        </td>
-                        <td class="p-3">
-                            <p class="text-white">${data.email || 'N/A'}</p>
-                            <p class="text-[11px] text-slate-400">${data.phone || 'N/A'}</p>
-                        </td>
-                        <td class="p-3">
-                            ${cnicDisplay}
-                            <p class="text-[11px] text-slate-400 mt-0.5">Batch: ${data.batchNo || 'N/A'}</p>
-                        </td>
-                        <td class="p-3">
-                            ${bankDisplay}
-                        </td>
-                        <td class="p-3">
-                            ${statusBadge}
-                        </td>
-                        <td class="p-3 text-center space-x-2">
-                            <button onclick="updateStudentStatus('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
-                                <i class="fa-solid fa-check mr-1"></i> Approve
-                            </button>
-                            <button onclick="updateStudentStatus('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
-                                <i class="fa-solid fa-xmark mr-1"></i> Reject
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-            tableBody.innerHTML = html;
-        } catch (err) {
-            console.error("Error loading students:", err);
-            tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400 font-semibold">Error loading data: ${err.message}</td></tr>`;
-        }
+        return null;
     }
 
-    window.updateStudentStatus = async function(docId, newStatus) {
-        try {
-            await db.collection('students').doc(docId).set({
-                status: newStatus,
-                updatedAt: new Date().toISOString()
-            }, { merge: true });
-
-            alert("Student status updated successfully!");
-            loadAdminStudentRequests();
-        } catch (err) {
-            console.error("Update error:", err);
-            alert("Status update failed: " + err.message);
+    function resolveMediaUrl(val) {
+        if (!val) return '';
+        if (typeof val === 'string') return val.trim();
+        if (typeof val === 'object') {
+            return String(val.url || val.dataUrl || val.src || val.downloadUrl || '').trim();
         }
-    };
-</script>
-<script>
+        return '';
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
         const headerSub = document.querySelector('header .hidden.md\\:block');
         if (headerSub) {
@@ -1979,10 +1959,21 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
         const tableBody = document.getElementById('adminStudentsTableBody');
         if (!tableBody) return;
 
+        const firestore = getAdminStudentsDb();
+        if (!firestore) {
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400 font-semibold">Firebase Firestore is not initialized.</td></tr>`;
+            return;
+        }
+
         tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">Fetching student registrations from Firebase...</td></tr>`;
 
         try {
-            const snapshot = await db.collection('students').orderBy('createdAt', 'desc').get();
+            let snapshot;
+            try {
+                snapshot = await firestore.collection('students').orderBy('createdAt', 'desc').get();
+            } catch (_) {
+                snapshot = await firestore.collection('students').get();
+            }
 
             if (snapshot.empty) {
                 tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">No student registration requests found in database.</td></tr>`;
@@ -1991,28 +1982,191 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
 
             let html = '';
             snapshot.forEach(doc => {
-                const data = doc.data();
+                const data = doc.data() || {};
                 const docId = doc.id;
+                const statusVal = String(data.status || 'pending').toLowerCase();
 
                 let statusBadge = '';
-                if (data.status === 'approved') {
+                if (statusVal === 'approved') {
                     statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full text-xs font-bold">APPROVED</span>`;
-                } else if (data.status === 'rejected') {
+                } else if (statusVal === 'rejected') {
                     statusBadge = `<span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-2.5 py-1 rounded-full text-xs font-bold">REJECTED</span>`;
                 } else {
                     statusBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-full text-xs font-bold">PENDING</span>`;
                 }
 
-                let cnicImg = data.cnicImage || data.cnicFrontUrl || data.cnicPic || data.cnicURL || '';
-                let bankImg = data.bankImage || data.bankReceiptUrl || data.bankSlip || data.bankURL || '';
+                const cnicImgLink = resolveMediaUrl(
+                    data.cnicImage || data.cnicFrontUrl || data.cnicPic || data.cnicURL || data.cnicDocument
+                );
+                const bankImgLink = resolveMediaUrl(
+                    data.bankImage || data.bankReceiptUrl || data.bankSlip || data.bankURL || data.bankDocument
+                );
 
-                // Document Verification Button Links
+                let cnicDisplay = `<p class="text-white">${data.cnic || 'N/A'}</p>`;
+                if (cnicImgLink) {
+                    cnicDisplay += `<a href="${cnicImgLink}" target="_blank" rel="noopener noreferrer" class="text-amber-400 hover:underline text-[11px] font-bold block mt-1"><i class="fa-solid fa-image"></i> View CNIC Pic</a>`;
+                } else {
+                    cnicDisplay += `<span class="text-[10px] text-slate-500 block">No CNIC Pic</span>`;
+                }
+
+                let bankDisplay = `<p class="text-slate-300">${data.bankDetails || data.bank || 'N/A'}</p>`;
+                if (bankImgLink) {
+                    bankDisplay += `<a href="${bankImgLink}" target="_blank" rel="noopener noreferrer" class="text-amber-400 hover:underline text-[11px] font-bold block mt-1"><i class="fa-solid fa-receipt"></i> View Account Pic</a>`;
+                } else {
+                    bankDisplay += `<span class="text-[10px] text-slate-500 block">No Account Pic</span>`;
+                }
+
+                html += `
+                    <tr data-id="${docId}" class="border-b border-slate-800 hover:bg-slate-900/50 transition">
+                        <td class="p-3">
+                            <p class="font-bold text-white">${data.fullName || data.name || data.studentName || 'N/A'}</p>
+                            <p class="text-[11px] text-purple-400">${data.businessName || data.company || 'N/A'}</p>
+                        </td>
+                        <td class="p-3">
+                            <p class="text-white">${data.email || 'N/A'}</p>
+                            <p class="text-[11px] text-slate-400">${data.phone || 'N/A'}</p>
+                        </td>
+                        <td class="p-3">
+                            ${cnicDisplay}
+                            <p class="text-[11px] text-slate-400 mt-0.5">Batch: ${data.batchNo || data.batch || 'N/A'}</p>
+                        </td>
+                        <td class="p-3">
+                            ${bankDisplay}
+                        </td>
+                        <td class="p-3">
+                            ${statusBadge}
+                        </td>
+                        <td class="p-3 text-center space-x-2">
+                            <button type="button" onclick="updateStudentStatus('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
+                                <i class="fa-solid fa-check mr-1"></i> Approve
+                            </button>
+                            <button type="button" onclick="updateStudentStatus('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">
+                                <i class="fa-solid fa-xmark mr-1"></i> Reject
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableBody.innerHTML = html;
+
+            if (typeof window.decorateFirestoreStudentRows === 'function') {
+                window.decorateFirestoreStudentRows();
+            }
+        } catch (err) {
+            console.error("Error loading students:", err);
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400 font-semibold">Error loading data: ${err.message}</td></tr>`;
+        }
+    }
+
+    window.updateStudentStatus = async function(docId, newStatus) {
+        const firestore = getAdminStudentsDb();
+        if (!firestore) {
+            alert("Firebase Firestore is not initialized.");
+            return;
+        }
+        try {
+            await firestore.collection('students').doc(docId).set({
+                status: newStatus,
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+
+            alert("Student status updated successfully!");
+            loadAdminStudentRequests();
+        } catch (err) {
+            console.error("Update error:", err);
+            alert("Status update failed: " + err.message);
+        }
+    };
+</script>
+<script>
+    function getAdminStudentsFirestore() {
+        if (typeof window.db !== 'undefined' && window.db) return window.db;
+        if (typeof db !== 'undefined' && db) return db;
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+            return firebase.firestore();
+        }
+        return null;
+    }
+
+    function resolveStudentDocUrl(val) {
+        if (!val) return '';
+        if (typeof val === 'string') return val.trim();
+        if (typeof val === 'object') {
+            return String(val.url || val.dataUrl || val.src || val.downloadUrl || '').trim();
+        }
+        return '';
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const headerSub = document.querySelector('header .hidden.md\\:block');
+        if (headerSub) {
+            headerSub.style.display = 'none';
+        }
+
+        const descEls = document.querySelectorAll('p');
+        descEls.forEach(el => {
+            if (el.innerHTML.includes('[cite:')) {
+                el.innerHTML = el.innerHTML.replace(/\[cite:[^\]]*\]/g, '');
+            }
+        });
+
+        loadAdminStudentRequests();
+    });
+
+    async function loadAdminStudentRequests() {
+        const tableBody = document.getElementById('adminStudentsTableBody');
+        if (!tableBody) return;
+
+        const firestore = getAdminStudentsFirestore();
+        if (!firestore) {
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400 font-semibold">Firebase Firestore is not initialized.</td></tr>`;
+            return;
+        }
+
+        tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">Fetching student registrations from Firebase...</td></tr>`;
+
+        try {
+            let snapshot;
+            try {
+                snapshot = await firestore.collection('students').orderBy('createdAt', 'desc').get();
+            } catch (_) {
+                snapshot = await firestore.collection('students').get();
+            }
+
+            if (snapshot.empty) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">No student registration requests found in database.</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            snapshot.forEach(doc => {
+                const data = doc.data() || {};
+                const docId = doc.id;
+                const statusVal = String(data.status || 'pending').toLowerCase();
+
+                let statusBadge = '';
+                if (statusVal === 'approved') {
+                    statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full text-xs font-bold">APPROVED</span>`;
+                } else if (statusVal === 'rejected') {
+                    statusBadge = `<span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-2.5 py-1 rounded-full text-xs font-bold">REJECTED</span>`;
+                } else {
+                    statusBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-full text-xs font-bold">PENDING</span>`;
+                }
+
+                const cnicImg = resolveStudentDocUrl(
+                    data.cnicImage || data.cnicFrontUrl || data.cnicPic || data.cnicURL
+                );
+                const bankImg = resolveStudentDocUrl(
+                    data.bankImage || data.bankReceiptUrl || data.bankSlip || data.bankURL
+                );
+
                 let docsButtons = `<div class="flex flex-col gap-1">`;
                 if (cnicImg) {
-                    docsButtons += `<a href="${cnicImg}" target="_blank" class="text-amber-400 hover:text-amber-300 text-[11px] font-bold flex items-center gap-1"><i class="fa-solid fa-id-card"></i> View CNIC</a>`;
+                    docsButtons += `<a href="${cnicImg}" target="_blank" rel="noopener noreferrer" class="text-amber-400 hover:text-amber-300 text-[11px] font-bold flex items-center gap-1"><i class="fa-solid fa-id-card"></i> View CNIC</a>`;
                 }
                 if (bankImg) {
-                    docsButtons += `<a href="${bankImg}" target="_blank" class="text-blue-400 hover:text-blue-300 text-[11px] font-bold flex items-center gap-1"><i class="fa-solid fa-receipt"></i> View Bank Slip</a>`;
+                    docsButtons += `<a href="${bankImg}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 text-[11px] font-bold flex items-center gap-1"><i class="fa-solid fa-receipt"></i> View Bank Slip</a>`;
                 }
                 if (!cnicImg && !bankImg) {
                     docsButtons += `<span class="text-slate-500 text-[11px]">No Docs Uploaded</span>`;
@@ -2020,10 +2174,10 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
                 docsButtons += `</div>`;
 
                 html += `
-                    <tr class="border-b border-slate-800 hover:bg-slate-900/50 transition">
+                    <tr data-id="${docId}" class="border-b border-slate-800 hover:bg-slate-900/50 transition">
                         <td class="p-3.5 align-middle">
-                            <p class="font-bold text-white text-sm">${data.fullName || 'N/A'}</p>
-                            <p class="text-xs text-purple-400 font-semibold">${data.businessName || 'N/A'}</p>
+                            <p class="font-bold text-white text-sm">${data.fullName || data.name || data.studentName || 'N/A'}</p>
+                            <p class="text-xs text-purple-400 font-semibold">${data.businessName || data.company || 'N/A'}</p>
                         </td>
                         <td class="p-3.5 align-middle">
                             <p class="text-white text-xs">${data.email || 'N/A'}</p>
@@ -2031,27 +2185,32 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
                         </td>
                         <td class="p-3.5 align-middle">
                             <p class="text-white text-xs font-bold">${data.cnic || 'N/A'}</p>
-                            <p class="text-[11px] text-slate-400">Batch: ${data.batchNo || 'N/A'}</p>
+                            <p class="text-[11px] text-slate-400">Batch: ${data.batchNo || data.batch || 'N/A'}</p>
                         </td>
                         <td class="p-3.5 align-middle">
-                            <p class="text-slate-300 text-xs">${data.bankDetails || 'N/A'}</p>
+                            <p class="text-slate-300 text-xs">${data.bankDetails || data.bank || 'N/A'}</p>
                             <div class="mt-1">${docsButtons}</div>
                         </td>
                         <td class="p-3.5 align-middle">
                             ${statusBadge}
                         </td>
                         <td class="p-3.5 text-center align-middle space-x-1.5">
-                            <button onclick="updateStudentStatus('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold shadow transition" title="Approve">
+                            <button type="button" onclick="updateStudentStatus('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold shadow transition" title="Approve">
                                 <i class="fa-solid fa-check"></i>
                             </button>
-                            <button onclick="updateStudentStatus('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold shadow transition" title="Reject">
+                            <button type="button" onclick="updateStudentStatus('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold shadow transition" title="Reject">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
                         </td>
                     </tr>
                 `;
             });
+
             tableBody.innerHTML = html;
+
+            if (typeof window.decorateFirestoreStudentRows === 'function') {
+                window.decorateFirestoreStudentRows();
+            }
         } catch (err) {
             console.error("Error loading students:", err);
             tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400 font-semibold">Error loading data: ${err.message}</td></tr>`;
@@ -2059,8 +2218,13 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
     }
 
     window.updateStudentStatus = async function(docId, newStatus) {
+        const firestore = getAdminStudentsFirestore();
+        if (!firestore) {
+            alert("Firebase Firestore is not initialized.");
+            return;
+        }
         try {
-            await db.collection('students').doc(docId).set({
+            await firestore.collection('students').doc(docId).set({
                 status: newStatus,
                 updatedAt: new Date().toISOString()
             }, { merge: true });
@@ -2074,14 +2238,30 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
     };
 </script>
 <script>
+    function getStudentPortalFirestoreDb() {
+        if (typeof window.db !== 'undefined' && window.db) return window.db;
+        if (typeof db !== 'undefined' && db) return db;
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+            return firebase.firestore();
+        }
+        return null;
+    }
+
+    function resolveStudentAttachmentUrl(val) {
+        if (!val) return '';
+        if (typeof val === 'string') return val.trim();
+        if (typeof val === 'object') {
+            return String(val.url || val.dataUrl || val.src || val.downloadUrl || '').trim();
+        }
+        return '';
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
-        // Operations Dashboard header text ko properly clean ya hide karna
         const headerSub = document.querySelector('header .hidden.md\\:block');
         if (headerSub) {
             headerSub.innerHTML = '<h2 class="text-sm font-black text-white uppercase tracking-wider">E-Commerce Student Portal</h2><p class="text-[10px] text-slate-400">Manage student registrations and document verifications.</p>';
         }
 
-        // Clean text formatting
         const descEls = document.querySelectorAll('p');
         descEls.forEach(el => {
             if (el.innerHTML.includes('[cite:')) {
@@ -2096,10 +2276,21 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
         const tableBody = document.getElementById('adminStudentsTableBody');
         if (!tableBody) return;
 
+        const firestore = getStudentPortalFirestoreDb();
+        if (!firestore) {
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400 font-semibold">Firebase Firestore is not initialized.</td></tr>`;
+            return;
+        }
+
         tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">Fetching student registrations from Firebase...</td></tr>`;
 
         try {
-            const snapshot = await db.collection('students').orderBy('createdAt', 'desc').get();
+            let snapshot;
+            try {
+                snapshot = await firestore.collection('students').orderBy('createdAt', 'desc').get();
+            } catch (_) {
+                snapshot = await firestore.collection('students').get();
+            }
 
             if (snapshot.empty) {
                 tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">No student registration requests found in database.</td></tr>`;
@@ -2108,27 +2299,32 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
 
             let html = '';
             snapshot.forEach(doc => {
-                const data = doc.data();
+                const data = doc.data() || {};
                 const docId = doc.id;
+                const statusVal = String(data.status || 'pending').toLowerCase();
 
                 let statusBadge = '';
-                if (data.status === 'approved') {
+                if (statusVal === 'approved') {
                     statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold">APPROVED</span>`;
-                } else if (data.status === 'rejected') {
+                } else if (statusVal === 'rejected') {
                     statusBadge = `<span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-3 py-1 rounded-full text-xs font-bold">REJECTED</span>`;
                 } else {
                     statusBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold">PENDING</span>`;
                 }
 
-                let cnicImg = data.cnicImage || data.cnicFrontUrl || data.cnicPic || data.cnicURL || '';
-                let bankImg = data.bankImage || data.bankReceiptUrl || data.bankSlip || data.bankURL || '';
+                const cnicImg = resolveStudentAttachmentUrl(
+                    data.cnicImage || data.cnicFrontUrl || data.cnicPic || data.cnicURL
+                );
+                const bankImg = resolveStudentAttachmentUrl(
+                    data.bankImage || data.bankReceiptUrl || data.bankSlip || data.bankURL
+                );
 
-                let docsButtons = `<div class="flex items-center gap-2 mt-1.5">`;
+                let docsButtons = `<div class="flex items-center gap-2 mt-1.5 flex-wrap">`;
                 if (cnicImg) {
-                    docsButtons += `<a href="${cnicImg}" target="_blank" class="bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-id-card"></i> CNIC Doc</a>`;
+                    docsButtons += `<a href="${cnicImg}" target="_blank" rel="noopener noreferrer" class="bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-id-card"></i> CNIC Doc</a>`;
                 }
                 if (bankImg) {
-                    docsButtons += `<a href="${bankImg}" target="_blank" class="bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-receipt"></i> Bank Slip</a>`;
+                    docsButtons += `<a href="${bankImg}" target="_blank" rel="noopener noreferrer" class="bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-receipt"></i> Bank Slip</a>`;
                 }
                 if (!cnicImg && !bankImg) {
                     docsButtons += `<span class="text-slate-500 text-[10px]">No Documents</span>`;
@@ -2136,10 +2332,10 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
                 docsButtons += `</div>`;
 
                 html += `
-                    <tr class="border-b border-slate-800 hover:bg-slate-900/50 transition">
+                    <tr data-id="${docId}" class="border-b border-slate-800 hover:bg-slate-900/50 transition">
                         <td class="p-4 align-middle">
-                            <p class="font-bold text-white text-sm">${data.fullName || 'N/A'}</p>
-                            <p class="text-xs text-purple-400 font-semibold">${data.businessName || 'N/A'}</p>
+                            <p class="font-bold text-white text-sm">${data.fullName || data.name || data.studentName || 'N/A'}</p>
+                            <p class="text-xs text-purple-400 font-semibold">${data.businessName || data.company || 'N/A'}</p>
                         </td>
                         <td class="p-4 align-middle">
                             <p class="text-white text-xs">${data.email || 'N/A'}</p>
@@ -2147,27 +2343,32 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
                         </td>
                         <td class="p-4 align-middle">
                             <p class="text-white text-xs font-bold">${data.cnic || 'N/A'}</p>
-                            <p class="text-[11px] text-slate-400">Batch: ${data.batchNo || 'N/A'}</p>
+                            <p class="text-[11px] text-slate-400">Batch: ${data.batchNo || data.batch || 'N/A'}</p>
                         </td>
                         <td class="p-4 align-middle">
-                            <p class="text-slate-300 text-xs">${data.bankDetails || 'N/A'}</p>
+                            <p class="text-slate-300 text-xs">${data.bankDetails || data.bank || 'N/A'}</p>
                             ${docsButtons}
                         </td>
                         <td class="p-4 align-middle">
                             ${statusBadge}
                         </td>
                         <td class="p-4 text-center align-middle space-x-2">
-                            <button onclick="updateStudentStatus('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition">
+                            <button type="button" onclick="updateStudentStatus('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition">
                                 <i class="fa-solid fa-check mr-1"></i> Approve
                             </button>
-                            <button onclick="updateStudentStatus('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition">
+                            <button type="button" onclick="updateStudentStatus('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition">
                                 <i class="fa-solid fa-xmark mr-1"></i> Reject
                             </button>
                         </td>
                     </tr>
                 `;
             });
+
             tableBody.innerHTML = html;
+
+            if (typeof window.decorateFirestoreStudentRows === 'function') {
+                window.decorateFirestoreStudentRows();
+            }
         } catch (err) {
             console.error("Error loading students:", err);
             tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400 font-semibold">Error loading data: ${err.message}</td></tr>`;
@@ -2175,8 +2376,13 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
     }
 
     window.updateStudentStatus = async function(docId, newStatus) {
+        const firestore = getStudentPortalFirestoreDb();
+        if (!firestore) {
+            alert("Firebase Firestore is not initialized.");
+            return;
+        }
         try {
-            await db.collection('students').doc(docId).set({
+            await firestore.collection('students').doc(docId).set({
                 status: newStatus,
                 updatedAt: new Date().toISOString()
             }, { merge: true });
@@ -2190,14 +2396,30 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
     };
 </script>
 <script>
+    function getAdminVerifyFirestoreDb() {
+        if (typeof window.db !== 'undefined' && window.db) return window.db;
+        if (typeof db !== 'undefined' && db) return db;
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+            return firebase.firestore();
+        }
+        return null;
+    }
+
+    function resolveVerifyAttachmentUrl(val) {
+        if (!val) return '';
+        if (typeof val === 'string') return val.trim();
+        if (typeof val === 'object') {
+            return String(val.url || val.dataUrl || val.src || val.downloadUrl || '').trim();
+        }
+        return '';
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
-        // Operations Dashboard header text clean karna
         const headerSub = document.querySelector('header .hidden.md\\:block');
         if (headerSub) {
             headerSub.style.display = 'none';
         }
 
-        // Clean text formatting
         const descEls = document.querySelectorAll('p');
         descEls.forEach(el => {
             if (el.innerHTML.includes('[cite:')) {
@@ -2212,10 +2434,21 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
         const tableBody = document.getElementById('adminStudentsTableBody');
         if (!tableBody) return;
 
+        const firestore = getAdminVerifyFirestoreDb();
+        if (!firestore) {
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400 font-semibold">Firebase Firestore is not initialized.</td></tr>`;
+            return;
+        }
+
         tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">Fetching student registrations from Firebase...</td></tr>`;
 
         try {
-            const snapshot = await db.collection('students').orderBy('createdAt', 'desc').get();
+            let snapshot;
+            try {
+                snapshot = await firestore.collection('students').orderBy('createdAt', 'desc').get();
+            } catch (_) {
+                snapshot = await firestore.collection('students').get();
+            }
 
             if (snapshot.empty) {
                 tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">No student registration requests found in database.</td></tr>`;
@@ -2224,27 +2457,32 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
 
             let html = '';
             snapshot.forEach(doc => {
-                const data = doc.data();
+                const data = doc.data() || {};
                 const docId = doc.id;
+                const statusVal = String(data.status || 'pending').toLowerCase();
 
                 let statusBadge = '';
-                if (data.status === 'approved') {
+                if (statusVal === 'approved') {
                     statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold">APPROVED</span>`;
-                } else if (data.status === 'rejected') {
+                } else if (statusVal === 'rejected') {
                     statusBadge = `<span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-3 py-1 rounded-full text-xs font-bold">REJECTED</span>`;
                 } else {
                     statusBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold">PENDING</span>`;
                 }
 
-                let cnicImg = data.cnicImage || data.cnicFrontUrl || data.cnicPic || data.cnicURL || '';
-                let bankImg = data.bankImage || data.bankReceiptUrl || data.bankSlip || data.bankURL || '';
+                const cnicImg = resolveVerifyAttachmentUrl(
+                    data.cnicImage || data.cnicFrontUrl || data.cnicPic || data.cnicURL
+                );
+                const bankImg = resolveVerifyAttachmentUrl(
+                    data.bankImage || data.bankReceiptUrl || data.bankSlip || data.bankURL
+                );
 
-                let docsButtons = `<div class="flex items-center gap-2 mt-1.5">`;
+                let docsButtons = `<div class="flex items-center gap-2 mt-1.5 flex-wrap">`;
                 if (cnicImg) {
-                    docsButtons += `<a href="${cnicImg}" target="_blank" class="bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 px-2.5 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-id-card"></i> CNIC Doc</a>`;
+                    docsButtons += `<a href="${cnicImg}" target="_blank" rel="noopener noreferrer" class="bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 px-2.5 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-id-card"></i> CNIC Doc</a>`;
                 }
                 if (bankImg) {
-                    docsButtons += `<a href="${bankImg}" target="_blank" class="bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 px-2.5 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-receipt"></i> Bank Slip</a>`;
+                    docsButtons += `<a href="${bankImg}" target="_blank" rel="noopener noreferrer" class="bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 px-2.5 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-receipt"></i> Bank Slip</a>`;
                 }
                 if (!cnicImg && !bankImg) {
                     docsButtons += `<span class="text-slate-500 text-[10px]">No Documents</span>`;
@@ -2252,10 +2490,10 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
                 docsButtons += `</div>`;
 
                 html += `
-                    <tr class="border-b border-slate-800 hover:bg-slate-900/50 transition">
+                    <tr data-id="${docId}" class="border-b border-slate-800 hover:bg-slate-900/50 transition">
                         <td class="p-4 align-middle">
-                            <p class="font-bold text-white text-sm">${data.fullName || 'N/A'}</p>
-                            <p class="text-xs text-purple-400 font-semibold">${data.businessName || 'N/A'}</p>
+                            <p class="font-bold text-white text-sm">${data.fullName || data.name || data.studentName || 'N/A'}</p>
+                            <p class="text-xs text-purple-400 font-semibold">${data.businessName || data.company || 'N/A'}</p>
                         </td>
                         <td class="p-4 align-middle">
                             <p class="text-white text-xs">${data.email || 'N/A'}</p>
@@ -2263,50 +2501,59 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
                         </td>
                         <td class="p-4 align-middle">
                             <p class="text-white text-xs font-bold">${data.cnic || 'N/A'}</p>
-                            <p class="text-[11px] text-slate-400">Batch: ${data.batchNo || 'N/A'}</p>
+                            <p class="text-[11px] text-slate-400">Batch: ${data.batchNo || data.batch || 'N/A'}</p>
                         </td>
                         <td class="p-4 align-middle">
-                            <p class="text-slate-300 text-xs">${data.bankDetails || 'N/A'}</p>
+                            <p class="text-slate-300 text-xs">${data.bankDetails || data.bank || 'N/A'}</p>
                             ${docsButtons}
                         </td>
                         <td class="p-4 align-middle">
                             ${statusBadge}
                         </td>
                         <td class="p-4 text-center align-middle space-x-2">
-                            <button onclick="adminVerifyStudent('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition">
+                            <button type="button" onclick="adminVerifyStudent('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition">
                                 <i class="fa-solid fa-check mr-1"></i> Approve
                             </button>
-                            <button onclick="adminVerifyStudent('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition">
+                            <button type="button" onclick="adminVerifyStudent('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition">
                                 <i class="fa-solid fa-xmark mr-1"></i> Reject
                             </button>
                         </td>
                     </tr>
                 `;
             });
+
             tableBody.innerHTML = html;
+
+            if (typeof window.decorateFirestoreStudentRows === 'function') {
+                window.decorateFirestoreStudentRows();
+            }
         } catch (err) {
             console.error("Error loading students:", err);
             tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400 font-semibold">Error loading data: ${err.message}</td></tr>`;
         }
     }
 
-    // Function name change kar diya hai taake dashboard.js ke purane function se conflict na ho
     window.adminVerifyStudent = async function(docId, newStatus) {
+        const firestore = getAdminVerifyFirestoreDb();
+        if (!firestore) {
+            alert("Firebase Firestore is not initialized.");
+            return;
+        }
         try {
-            // Transaction error se bachne ke liye sirf plain status update bhej rahe hain
-            const studentRef = db.collection('students').doc(docId);
+            const studentRef = firestore.collection('students').doc(docId);
             await studentRef.update({
-                status: newStatus
+                status: newStatus,
+                updatedAt: new Date().toISOString()
             });
 
             alert("Student status updated successfully!");
             loadAdminStudentRequests();
         } catch (err) {
             console.error("Update error:", err);
-            // Fallback agar update() mein fir bhi issue aaye toh set merge use karein
             try {
-                await db.collection('students').doc(docId).set({
-                    status: newStatus
+                await firestore.collection('students').doc(docId).set({
+                    status: newStatus,
+                    updatedAt: new Date().toISOString()
                 }, { merge: true });
                 alert("Student status updated successfully!");
                 loadAdminStudentRequests();
@@ -2317,14 +2564,30 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
     };
 </script>
 <script>
+    function getPortalVerifyFirestoreDb() {
+        if (typeof window.db !== 'undefined' && window.db) return window.db;
+        if (typeof db !== 'undefined' && db) return db;
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+            return firebase.firestore();
+        }
+        return null;
+    }
+
+    function resolvePortalDocUrl(val) {
+        if (!val) return '';
+        if (typeof val === 'string') return val.trim();
+        if (typeof val === 'object') {
+            return String(val.url || val.dataUrl || val.src || val.downloadUrl || '').trim();
+        }
+        return '';
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
-        // Operations Dashboard header text clean karna
         const headerSub = document.querySelector('header .hidden.md\\:block');
         if (headerSub) {
             headerSub.innerHTML = '<h2 class="text-sm font-black text-white uppercase tracking-wider">E-Commerce Student Portal</h2><p class="text-[10px] text-amber-400">Manage student verifications and documents.</p>';
         }
 
-        // Clean text formatting
         const descEls = document.querySelectorAll('p');
         descEls.forEach(el => {
             if (el.innerHTML.includes('[cite:')) {
@@ -2339,10 +2602,21 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
         const tableBody = document.getElementById('adminStudentsTableBody');
         if (!tableBody) return;
 
+        const firestore = getPortalVerifyFirestoreDb();
+        if (!firestore) {
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-rose-400 font-semibold">Firebase Firestore is not initialized.</td></tr>`;
+            return;
+        }
+
         tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400 font-semibold">Fetching student registrations from Firebase...</td></tr>`;
 
         try {
-            const snapshot = await db.collection('students').orderBy('createdAt', 'desc').get();
+            let snapshot;
+            try {
+                snapshot = await firestore.collection('students').orderBy('createdAt', 'desc').get();
+            } catch (_) {
+                snapshot = await firestore.collection('students').get();
+            }
 
             if (snapshot.empty) {
                 tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400 font-semibold">No student registration requests found in database.</td></tr>`;
@@ -2351,27 +2625,32 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
 
             let html = '';
             snapshot.forEach(doc => {
-                const data = doc.data();
+                const data = doc.data() || {};
                 const docId = doc.id;
+                const statusVal = String(data.status || 'pending').toLowerCase();
 
                 let statusBadge = '';
-                if (data.status === 'approved') {
+                if (statusVal === 'approved') {
                     statusBadge = `<span class="px-2.5 py-1 bg-emerald-950 text-emerald-400 border border-emerald-500/40 rounded-full text-[10px] font-bold uppercase">Approved</span>`;
-                } else if (data.status === 'rejected') {
+                } else if (statusVal === 'rejected') {
                     statusBadge = `<span class="px-2.5 py-1 bg-rose-950 text-rose-400 border border-rose-500/40 rounded-full text-[10px] font-bold uppercase">Rejected</span>`;
                 } else {
                     statusBadge = `<span class="px-2.5 py-1 bg-amber-950 text-amber-400 border border-amber-500/40 rounded-full text-[10px] font-bold uppercase">Pending</span>`;
                 }
 
-                let cnicImg = data.cnicImage || data.cnicFrontUrl || data.cnicPic || data.cnicURL || '';
-                let bankImg = data.bankImage || data.bankReceiptUrl || data.bankSlip || data.bankURL || '';
+                const cnicImg = resolvePortalDocUrl(
+                    data.cnicImage || data.cnicFrontUrl || data.cnicPic || data.cnicURL
+                );
+                const bankImg = resolvePortalDocUrl(
+                    data.bankImage || data.bankReceiptUrl || data.bankSlip || data.bankURL
+                );
 
-                let docsButtons = `<div class="flex items-center gap-2 mt-1.5">`;
+                let docsButtons = `<div class="flex items-center gap-2 mt-1.5 flex-wrap">`;
                 if (cnicImg) {
-                    docsButtons += `<a href="${cnicImg}" target="_blank" class="bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-id-card"></i> CNIC Doc</a>`;
+                    docsButtons += `<a href="${cnicImg}" target="_blank" rel="noopener noreferrer" class="bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-id-card"></i> CNIC Doc</a>`;
                 }
                 if (bankImg) {
-                    docsButtons += `<a href="${bankImg}" target="_blank" class="bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-receipt"></i> Bank Slip</a>`;
+                    docsButtons += `<a href="${bankImg}" target="_blank" rel="noopener noreferrer" class="bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 px-2 py-1 rounded-md text-[10px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-receipt"></i> Bank Slip</a>`;
                 }
                 if (!cnicImg && !bankImg) {
                     docsButtons += `<span class="text-slate-500 text-[10px]">No Documents</span>`;
@@ -2379,10 +2658,10 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
                 docsButtons += `</div>`;
 
                 html += `
-                    <tr class="border-b border-slate-800 hover:bg-slate-900/50 transition">
+                    <tr data-id="${docId}" class="border-b border-slate-800 hover:bg-slate-900/50 transition">
                         <td class="p-3">
-                            <p class="font-bold text-white">${data.fullName || 'N/A'}</p>
-                            <p class="text-amber-400 font-semibold text-xs">${data.businessName || 'N/A'}</p>
+                            <p class="font-bold text-white">${data.fullName || data.name || data.studentName || 'N/A'}</p>
+                            <p class="text-amber-400 font-semibold text-xs">${data.businessName || data.company || 'N/A'}</p>
                         </td>
                         <td class="p-3">
                             <p class="text-slate-300">${data.email || 'N/A'}</p>
@@ -2390,27 +2669,32 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
                         </td>
                         <td class="p-3">
                             <p class="text-slate-300">${data.cnic || 'N/A'}</p>
-                            <p class="text-purple-300 font-semibold text-[11px]">Batch: ${data.batchNo || 'N/A'}</p>
+                            <p class="text-purple-300 font-semibold text-[11px]">Batch: ${data.batchNo || data.batch || 'N/A'}</p>
                         </td>
                         <td class="p-3">
-                            <p class="text-slate-300">${data.bankDetails || 'N/A'}</p>
+                            <p class="text-slate-300">${data.bankDetails || data.bank || 'N/A'}</p>
                             ${docsButtons}
                         </td>
                         <td class="p-3">
                             ${statusBadge}
                         </td>
                         <td class="p-3 text-center space-x-2">
-                            <button onclick="adminVerifyStudent('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition">
+                            <button type="button" onclick="adminVerifyStudent('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition">
                                 <i class="fa-solid fa-check mr-1"></i> Approve
                             </button>
-                            <button onclick="adminVerifyStudent('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition">
+                            <button type="button" onclick="adminVerifyStudent('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition">
                                 <i class="fa-solid fa-xmark mr-1"></i> Reject
                             </button>
                         </td>
                     </tr>
                 `;
             });
+
             tableBody.innerHTML = html;
+
+            if (typeof window.decorateFirestoreStudentRows === 'function') {
+                window.decorateFirestoreStudentRows();
+            }
         } catch (err) {
             console.error("Error loading students:", err);
             tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-rose-400 font-semibold">Error loading data: ${err.message}</td></tr>`;
@@ -2418,10 +2702,16 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
     }
 
     window.adminVerifyStudent = async function(docId, newStatus) {
+        const firestore = getPortalVerifyFirestoreDb();
+        if (!firestore) {
+            alert("Firebase Firestore is not initialized.");
+            return;
+        }
         try {
-            const studentRef = db.collection('students').doc(docId);
+            const studentRef = firestore.collection('students').doc(docId);
             await studentRef.update({
-                status: newStatus
+                status: newStatus,
+                updatedAt: new Date().toISOString()
             });
 
             alert("Student status updated successfully!");
@@ -2429,8 +2719,9 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
         } catch (err) {
             console.error("Update error:", err);
             try {
-                await db.collection('students').doc(docId).set({
-                    status: newStatus
+                await firestore.collection('students').doc(docId).set({
+                    status: newStatus,
+                    updatedAt: new Date().toISOString()
                 }, { merge: true });
                 alert("Student status updated successfully!");
                 loadAdminStudentRequests();
@@ -2441,8 +2732,25 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
     };
 </script>
 <script>
+    function getFinalVerifyFirestoreDb() {
+        if (typeof window.db !== 'undefined' && window.db) return window.db;
+        if (typeof db !== 'undefined' && db) return db;
+        if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0) {
+            return firebase.firestore();
+        }
+        return null;
+    }
+
+    function resolveFinalAttachmentUrl(val) {
+        if (!val) return '';
+        if (typeof val === 'string') return val.trim();
+        if (typeof val === 'object') {
+            return String(val.url || val.dataUrl || val.src || val.downloadUrl || '').trim();
+        }
+        return '';
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
-        // Clean text formatting
         const descEls = document.querySelectorAll('p');
         descEls.forEach(el => {
             if (el.innerHTML.includes('[cite:')) {
@@ -2457,10 +2765,21 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
         const tableBody = document.getElementById('adminStudentsTableBody');
         if (!tableBody) return;
 
+        const firestore = getFinalVerifyFirestoreDb();
+        if (!firestore) {
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400 font-semibold">Firebase Firestore is not initialized.</td></tr>`;
+            return;
+        }
+
         tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">Fetching student registrations from Firebase...</td></tr>`;
 
         try {
-            const snapshot = await db.collection('students').orderBy('createdAt', 'desc').get();
+            let snapshot;
+            try {
+                snapshot = await firestore.collection('students').orderBy('createdAt', 'desc').get();
+            } catch (_) {
+                snapshot = await firestore.collection('students').get();
+            }
 
             if (snapshot.empty) {
                 tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400 font-semibold">No student registration requests found in database.</td></tr>`;
@@ -2469,27 +2788,32 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
 
             let html = '';
             snapshot.forEach(doc => {
-                const data = doc.data();
+                const data = doc.data() || {};
                 const docId = doc.id;
+                const statusVal = String(data.status || 'pending').toLowerCase();
 
                 let statusBadge = '';
-                if (data.status === 'approved') {
+                if (statusVal === 'approved') {
                     statusBadge = `<span class="px-3 py-1 bg-emerald-950 text-emerald-400 border border-emerald-500/40 rounded-full text-xs font-bold uppercase">Approved</span>`;
-                } else if (data.status === 'rejected') {
+                } else if (statusVal === 'rejected') {
                     statusBadge = `<span class="px-3 py-1 bg-rose-950 text-rose-400 border border-rose-500/40 rounded-full text-xs font-bold uppercase">Rejected</span>`;
                 } else {
                     statusBadge = `<span class="px-3 py-1 bg-amber-950 text-amber-400 border border-amber-500/40 rounded-full text-xs font-bold uppercase">Pending</span>`;
                 }
 
-                let cnicImg = data.cnicImage || data.cnicFrontUrl || data.cnicPic || data.cnicURL || '';
-                let bankImg = data.bankImage || data.bankReceiptUrl || data.bankSlip || data.bankURL || '';
+                const cnicImg = resolveFinalAttachmentUrl(
+                    data.cnicImage || data.cnicFrontUrl || data.cnicPic || data.cnicURL
+                );
+                const bankImg = resolveFinalAttachmentUrl(
+                    data.bankImage || data.bankReceiptUrl || data.bankSlip || data.bankURL
+                );
 
-                let docsButtons = `<div class="flex items-center gap-2 mt-2">`;
+                let docsButtons = `<div class="flex items-center gap-2 mt-2 flex-wrap">`;
                 if (cnicImg) {
-                    docsButtons += `<a href="${cnicImg}" target="_blank" class="bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-id-card"></i> CNIC Doc</a>`;
+                    docsButtons += `<a href="${cnicImg}" target="_blank" rel="noopener noreferrer" class="bg-amber-500/10 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-id-card"></i> CNIC Doc</a>`;
                 }
                 if (bankImg) {
-                    docsButtons += `<a href="${bankImg}" target="_blank" class="bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-receipt"></i> Bank Slip</a>`;
+                    docsButtons += `<a href="${bankImg}" target="_blank" rel="noopener noreferrer" class="bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1"><i class="fa-solid fa-receipt"></i> Bank Slip</a>`;
                 }
                 if (!cnicImg && !bankImg) {
                     docsButtons += `<span class="text-slate-500 text-[11px]">No Documents Uploaded</span>`;
@@ -2497,10 +2821,10 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
                 docsButtons += `</div>`;
 
                 html += `
-                    <tr class="border-b border-slate-800 hover:bg-slate-900/50 transition">
+                    <tr data-id="${docId}" class="border-b border-slate-800 hover:bg-slate-900/50 transition">
                         <td class="p-4">
-                            <p class="font-bold text-white text-sm">${data.fullName || 'N/A'}</p>
-                            <p class="text-amber-400 font-semibold text-xs mt-0.5">${data.businessName || 'N/A'}</p>
+                            <p class="font-bold text-white text-sm">${data.fullName || data.name || data.studentName || 'N/A'}</p>
+                            <p class="text-amber-400 font-semibold text-xs mt-0.5">${data.businessName || data.company || 'N/A'}</p>
                         </td>
                         <td class="p-4">
                             <p class="text-slate-300 text-xs">${data.email || 'N/A'}</p>
@@ -2508,27 +2832,32 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
                         </td>
                         <td class="p-4">
                             <p class="text-slate-300 text-xs font-bold">${data.cnic || 'N/A'}</p>
-                            <p class="text-purple-300 font-semibold text-[11px] mt-0.5">Batch: ${data.batchNo || 'N/A'}</p>
+                            <p class="text-purple-300 font-semibold text-[11px] mt-0.5">Batch: ${data.batchNo || data.batch || 'N/A'}</p>
                         </td>
                         <td class="p-4">
-                            <p class="text-slate-300 text-xs">${data.bankDetails || 'N/A'}</p>
+                            <p class="text-slate-300 text-xs">${data.bankDetails || data.bank || 'N/A'}</p>
                             ${docsButtons}
                         </td>
                         <td class="p-4">
                             ${statusBadge}
                         </td>
                         <td class="p-4 text-center space-x-2">
-                            <button onclick="adminVerifyStudent('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow transition">
+                            <button type="button" onclick="adminVerifyStudent('${docId}', 'approved')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow transition">
                                 <i class="fa-solid fa-check mr-1"></i> Approve
                             </button>
-                            <button onclick="adminVerifyStudent('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow transition">
+                            <button type="button" onclick="adminVerifyStudent('${docId}', 'rejected')" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow transition">
                                 <i class="fa-solid fa-xmark mr-1"></i> Reject
                             </button>
                         </td>
                     </tr>
                 `;
             });
+
             tableBody.innerHTML = html;
+
+            if (typeof window.decorateFirestoreStudentRows === 'function') {
+                window.decorateFirestoreStudentRows();
+            }
         } catch (err) {
             console.error("Error loading students:", err);
             tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-400 font-semibold">Error loading data: ${err.message}</td></tr>`;
@@ -2536,10 +2865,16 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
     }
 
     window.adminVerifyStudent = async function(docId, newStatus) {
+        const firestore = getFinalVerifyFirestoreDb();
+        if (!firestore) {
+            alert("Firebase Firestore is not initialized.");
+            return;
+        }
         try {
-            const studentRef = db.collection('students').doc(docId);
+            const studentRef = firestore.collection('students').doc(docId);
             await studentRef.update({
-                status: newStatus
+                status: newStatus,
+                updatedAt: new Date().toISOString()
             });
 
             alert("Student status updated successfully!");
@@ -2547,8 +2882,9 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
         } catch (err) {
             console.error("Update error:", err);
             try {
-                await db.collection('students').doc(docId).set({
-                    status: newStatus
+                await firestore.collection('students').doc(docId).set({
+                    status: newStatus,
+                    updatedAt: new Date().toISOString()
                 }, { merge: true });
                 alert("Student status updated successfully!");
                 loadAdminStudentRequests();
@@ -2557,6 +2893,6 @@ if (typeof window.decorateFirestoreStudentRows === "function") {
             }
         }
     };
-    </script>
- </body>
-      </html>
+</script>
+</body>
+</html>
