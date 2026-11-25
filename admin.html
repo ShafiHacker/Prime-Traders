@@ -1641,16 +1641,79 @@
 
 <script id="ptAdminResellerMenu">
 (function addAdminResellerSection() {
+  async function getFallbackResellerOrders() {
+    if (typeof window.ptGetResellerOrders === "function") {
+      try {
+        const res = await window.ptGetResellerOrders("");
+        if (Array.isArray(res) && res.length) return res;
+      } catch (_) {}
+    }
+
+    const found = [];
+    const candidateKeys = [
+      "tracedResellerOrders",
+      "resellerOrders",
+      "ptResellerOrders",
+      "parcelOrders",
+      "orders"
+    ];
+
+    for (const key of candidateKeys) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        const parsed = JSON.parse(raw);
+        const list = Array.isArray(parsed) ? parsed : (parsed && typeof parsed === "object" ? Object.values(parsed) : []);
+        list.forEach((item) => {
+          if (item && (item.resellerEmail || item.resellerName || item.resellerId || item.isResellerOrder)) {
+            found.push({
+              id: item.id || item.orderId || item.trackingId || "-",
+              resellerName: item.resellerName || item.reseller || item.studentName || "-",
+              resellerEmail: item.resellerEmail || item.email || "-",
+              parcelRecipient: item.parcelRecipient || item.customerName || item.receiverName || "-",
+              parcelCity: item.parcelCity || item.city || "-",
+              parcelPhone: item.parcelPhone || item.phone || item.mobile || "-"
+            });
+          }
+        });
+      } catch (_) {}
+    }
+
+    return found;
+  }
+
+  function findSidebarTarget() {
+    if (document.getElementById("ptResellerMenuBtn")) return null;
+
+    const selectors = [
+      "aside nav",
+      "aside ul",
+      "aside > div:nth-of-type(2)",
+      "aside",
+      "[class*='sidebar'] nav",
+      "[class*='sidebar'] ul",
+      "[class*='sidebar']",
+      "nav"
+    ];
+
+    for (const sel of selectors) {
+      const el = document.querySelector(sel);
+      if (el) return el;
+    }
+    return null;
+  }
+
   function injectResellerMenu() {
-    const nav = document.querySelector("aside nav, aside ul, nav ul, aside");
-    if (!nav || document.getElementById("ptResellerMenuBtn")) return;
+    if (document.getElementById("ptResellerMenuBtn")) return true;
+    const nav = findSidebarTarget();
+    if (!nav) return false;
 
     const btn = document.createElement("button");
     btn.id = "ptResellerMenuBtn";
     btn.type = "button";
     btn.innerHTML = `<i class="fas fa-user-tie"></i> <span>Reseller</span>`;
     btn.style.cssText =
-      "display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-top:6px;border-radius:10px;background:#1e293b;color:#f8fafc;border:1px solid #334155;font-size:12px;font-weight:700;cursor:pointer;text-align:left;";
+      "display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-top:8px;border-radius:10px;background:#1e293b;color:#f8fafc;border:1px solid #334155;font-size:12px;font-weight:700;cursor:pointer;text-align:left;z-index:20;";
 
     btn.addEventListener("click", async () => {
       let panel = document.getElementById("ptResellerOrdersPanel");
@@ -1664,7 +1727,7 @@
       }
       panel.style.display = "block";
 
-      const orders = window.ptGetResellerOrders ? await window.ptGetResellerOrders("") : [];
+      const orders = await getFallbackResellerOrders();
       panel.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
           <h3 style="font-size:15px;font-weight:800;color:#f59e0b;">Reseller Orders & Parcel Trace</h3>
@@ -1705,6 +1768,7 @@
     });
 
     nav.appendChild(btn);
+    return true;
   }
 
   document.addEventListener("click", (e) => {
@@ -1715,7 +1779,27 @@
     }
   });
 
-  document.addEventListener("DOMContentLoaded", injectResellerMenu);
+  function startResellerMenuWatcher() {
+    injectResellerMenu();
+    const observer = new MutationObserver(() => {
+      injectResellerMenu();
+    });
+    observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
+
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts += 1;
+      if (injectResellerMenu() || attempts >= 20) {
+        clearInterval(timer);
+      }
+    }, 300);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", startResellerMenuWatcher);
+  } else {
+    startResellerMenuWatcher();
+  }
 })();
 </script>
     <script id="ptStudentDeleteBtnFix">
