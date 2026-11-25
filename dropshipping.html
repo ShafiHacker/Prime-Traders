@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <a href="dropshipping.html" id="saBrandLink" class="flex items-center gap-3 shrink-0 group">
+  <img
+    id="saBrandLogo"
+    src="./sa-dropshipping-logo.png"
+    alt="SA Dropshipping Logo"
+    class="h-11 w-auto rounded-lg bg-white p-1 object-contain shadow-sm"
+  />
+  <div class="leading-tight">
+    <div id="saBrandTitle" class="text-base md:text-lg font-extrabold tracking-wide text-white group-hover:text-amber-400 transition">
+      SA Dropshipping
+    </div>
+    <div id="saBrandSub" class="text-[10px] font-semibold uppercase tracking-wider text-amber-400">
+      Dropshipping Hub
+    </div>
+  </div>
+</a>
     <style>
   .lumiere-stars-backdrop {
     position: fixed !important;
@@ -1431,6 +1447,72 @@ document.addEventListener("DOMContentLoaded", function () {
   }, true);
 
   setInterval(ensureAuthFields, 400);
+})();
+</script>
+    <script id="ptSaDropshippingBranding">
+(function applySaDropshippingBranding() {
+  const LOGO_SRC = "./sa-dropshipping-logo.png"; // Apni repo mein logo file ka path yahan set karein
+  const BRAND_NAME = "SA Dropshipping";
+
+  function updateBranding() {
+    if (document.title && /prime traders/i.test(document.title)) {
+      document.title = document.title.replace(/prime traders/gi, BRAND_NAME);
+    }
+
+    const header = document.querySelector("header") || document.querySelector("nav") || document.body;
+    if (!header) return;
+
+    // Top-left brand container ya "PRIME TRADERS" text nodes ko update karein
+    const candidates = header.querySelectorAll("a, div, span, h1, h2, p, strong");
+    candidates.forEach((el) => {
+      if (el.children.length > 2) return;
+      const txt = (el.textContent || "").trim();
+      if (/^prime\s*traders$/i.test(txt)) {
+        el.textContent = BRAND_NAME;
+        el.classList.remove("bg-amber-400", "text-slate-950");
+        el.classList.add("text-white", "font-extrabold");
+
+        // Agar iske saath logo <img> abhi nahi hai toh add karein
+        const parent = el.parentElement;
+        if (parent && !parent.querySelector(".sa-injected-logo") && !parent.previousElementSibling?.classList?.contains("sa-injected-logo")) {
+          const wrapper = parent.closest("a") || parent;
+          if (wrapper && !wrapper.querySelector("img.sa-injected-logo")) {
+            const img = document.createElement("img");
+            img.src = LOGO_SRC;
+            img.alt = `${BRAND_NAME} Logo`;
+            img.className = "sa-injected-logo h-10 w-auto rounded-lg bg-white p-1 object-contain mr-2 shrink-0";
+            wrapper.prepend(img);
+            wrapper.style.display = wrapper.style.display || "flex";
+            wrapper.style.alignItems = "center";
+          }
+        }
+      }
+    });
+
+    // Agar purana yellow "P" square badge maujood ho toh usay logo se replace karein
+    header.querySelectorAll("img.sa-injected-logo").forEach((logoImg) => {
+      const prev = logoImg.nextElementSibling;
+      if (prev && prev.children) {
+        Array.from(prev.children).forEach((child) => {
+          const cText = (child.textContent || "").trim();
+          if (cText === "P" && child.offsetWidth <= 48 && child.offsetHeight <= 48) {
+            child.remove();
+          }
+        });
+      }
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", updateBranding);
+  } else {
+    updateBranding();
+  }
+
+  new MutationObserver(updateBranding).observe(document.body || document.documentElement, {
+    childList: true,
+    subtree: true
+  });
 })();
 </script>
 </body>
