@@ -2979,5 +2979,458 @@
         }
     };
 </script>
+                <script id="ptAdminViewAndExpenseAddon">
+(function enhanceAdminViewsAndExpenses() {
+  const EXPENSE_STORAGE_KEY = "ptDailyExpenseSheet_v1";
+
+  function getExpenseDb() {
+    if (typeof window.db !== "undefined" && window.db) return window.db;
+    if (typeof db !== "undefined" && db) return db;
+    if (typeof firebase !== "undefined" && firebase.apps && firebase.apps.length > 0) {
+      return firebase.firestore();
+    }
+    return null;
+  }
+
+  function injectCleanStyles() {
+    if (document.getElementById("ptAdminCleanStyles")) return;
+    const style = document.createElement("style");
+    style.id = "ptAdminCleanStyles";
+    style.textContent = `
+      /* Tickets box overlapping fix: keep inside normal layout flow */
+      #ticketsView,
+      #ticketsSection,
+      #supportTicketsPanel,
+      [id*="ticket" i][class*="fixed"],
+      [id*="ticket" i][class*="absolute"] {
+        position: static !important;
+        right: auto !important;
+        left: auto !important;
+        top: auto !important;
+        bottom: auto !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        z-index: auto !important;
+        box-shadow: none !important;
+      }
+
+      /* Yousaf Ansari Ledger table horizontal scroll & column breathing room */
+      #yousafLedgerView table,
+      #yousafPaymentView table,
+      [id*="yousaf" i] table {
+        min-width: 980px;
+        width: 100%;
+        border-collapse: collapse;
+      }
+      #yousafLedgerView th,
+      #yousafLedgerView td,
+      [id*="yousaf" i] th,
+      [id*="yousaf" i] td {
+        padding: 8px 10px !important;
+        white-space: nowrap;
+        font-size: 12px;
+      }
+      #yousafLedgerView input,
+      [id*="yousaf" i] input {
+        min-width: 78px;
+        padding: 5px 8px !important;
+      }
+
+      .pt-addon-view {
+        padding: 16px;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function hideAllMainViewsExcept(keepId) {
+    const main = document.querySelector("main") || document.body;
+    const candidates = main.querySelectorAll(
+      "section, [id$='View'], [id$='Section'], [id$='Panel']"
+    );
+
+    candidates.forEach((el) => {
+      if (el.id === keepId || el.contains(document.getElementById(keepId))) {
+        el.style.display = "block";
+        el.classList.remove("hidden");
+        return;
+      }
+      // Keep top stats/charts only if not switching into a dedicated full view
+      if (
+        el.id === "ptResellerOrdersPanel" ||
+        el.id === "ptExpenseSheetPanel" ||
+        el.classList.contains("admin-view-section")
+      ) {
+        el.style.display = "none";
+        el.classList.add("hidden");
+      }
+    });
+  }
+
+  function hideCustomAddonPanels() {
+    ["ptResellerOrdersPanel", "ptExpenseSheetPanel"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "none";
+    });
+  }
+
+  function loadExpensesLocal() {
+    try {
+      const raw = localStorage.getItem(EXPENSE_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveExpensesLocal(items) {
+    try {
+      localStorage.setItem(EXPENSE_STORAGE_KEY, JSON.stringify(items));
+    } catch (_) {}
+  }
+
+  async function syncExpenseToFirestore(entry, action = "upsert") {
+    const firestore = getExpenseDb();
+    if (!firestore || !entry || !entry.id) return;
+    try {
+      const ref = firestore.collection("dailyExpenses").doc(String(entry.id));
+      if (action === "delete") {
+        await ref.delete();
+      } else {
+        await ref.set(entry, { merge: true });
+      }
+    } catch (_) {}
+  }
+
+  async function pullExpensesFromFirestore() {
+    const firestore = getExpenseDb();
+    const localItems = loadExpensesLocal();
+    if (!firestore) return localItems;
+
+    try {
+      const snap = await firestore.collection("dailyExpenses").get();
+      if (snap.empty) return localItems;
+
+      const map = new Map();
+      localItems.forEach((item) => {
+        if (item && item.id) map.set(String(item.id), item);
+      });
+      snap.forEach((doc) => {
+        const d = doc.data() || {};
+        const id = d.id || doc.id;
+        map.set(String(id), { ...d, id });
+      });
+
+      const merged = Array.from(map.values()).sort((a, b) =>
+        String(b.date || "").localeCompare(String(a.date || ""))
+      );
+      saveExpensesLocal(merged);
+      return merged;
+    } catch (_) {
+      return localItems;
+    }
+  }
+
+  function formatPkr(amount) {
+    const num = Number(amount) || 0;
+    return "Rs. " + num.toLocaleString("en-PK", { maximumFractionDigits: 2 });
+  }
+
+  function ensureResellerPanel() {
+    let panel = document.getElementById("ptResellerOrdersPanel");
+    if (!panel) {
+      panel = document.createElement("section");
+      panel.id = "ptResellerOrdersPanel";
+      panel.className = "pt-addon-view";
+      panel.style.cssText =
+        "margin:16px;padding:20px;border-radius:16px;background:#0f172a;border:1px solid #1e293b;color:#f8fafc;display:none;";
+      const main = document.querySelector("main") || document.body;
+      main.prepend(panel);
+    }
+
+    panel.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+        <div>
+          <h3 style="font-size:16px;font-weight:800;color:#f59e0b;margin:0;">Reseller Section</h3>
+          <p style="font-size:12px;color:#94a3b8;margin:4px 0 0 0;">Reseller module ready. Aap jo bhi fields/features is mein chahayenge, bataein toh add kar denge.</p>
+        </div>
+        <span style="font-size:11px;padding:4px 10px;border-radius:999px;background:#1e293b;color:#cbd5e1;border:1px solid #334155;">Ready for Configuration</span>
+      </div>
+    `;
+    return panel;
+  }
+
+  async function renderExpenseSheetPanel() {
+    let panel = document.getElementById("ptExpenseSheetPanel");
+    if (!panel) {
+      panel = document.createElement("section");
+      panel.id = "ptExpenseSheetPanel";
+      panel.className = "pt-addon-view";
+      panel.style.cssText =
+        "margin:16px;padding:20px;border-radius:16px;background:#0f172a;border:1px solid #1e293b;color:#f8fafc;display:none;";
+      const main = document.querySelector("main") || document.body;
+      main.prepend(panel);
+    }
+
+    const expenses = await pullExpensesFromFirestore();
+    const todayStr = new Date().toISOString().slice(0, 10);
+
+    const totalAll = expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    const totalToday = expenses
+      .filter((item) => item.date === todayStr)
+      .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+
+    // Group daily totals
+    const byDate = {};
+    expenses.forEach((item) => {
+      const d = item.date || "Unknown";
+      byDate[d] = (byDate[d] || 0) + (Number(item.amount) || 0);
+    });
+    const sortedDates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+
+    panel.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <div>
+          <h3 style="font-size:17px;font-weight:800;color:#f59e0b;margin:0;">Expensive Sheet (Daily Cost Tracker)</h3>
+          <p style="font-size:12px;color:#94a3b8;margin:4px 0 0 0;">Rozana ke kharchay (daily cost) yahan entry karein aur ab tak ka total cost track karein.</p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <div style="background:#1e293b;border:1px solid #334155;padding:8px 14px;border-radius:12px;">
+            <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;">Aaj Ka Kharcha (${todayStr})</div>
+            <div style="font-size:15px;font-weight:800;color:#38bdf8;">${formatPkr(totalToday)}</div>
+          </div>
+          <div style="background:#1e293b;border:1px solid #334155;padding:8px 14px;border-radius:12px;">
+            <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;">Ab Tak Total Cost</div>
+            <div style="font-size:15px;font-weight:800;color:#34d399;">${formatPkr(totalAll)}</div>
+          </div>
+        </div>
+      </div>
+
+      <form id="ptExpenseEntryForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;background:#020617;padding:14px;border-radius:12px;border:1px solid #1e293b;margin-bottom:16px;">
+        <div>
+          <label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Date</label>
+          <input id="ptExpDate" type="date" value="${todayStr}" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" />
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Category / Item</label>
+          <input id="ptExpCategory" type="text" placeholder="e.g. Petrol, Packaging, Ads" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" />
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Amount (PKR)</label>
+          <input id="ptExpAmount" type="number" step="0.01" min="0" placeholder="0" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" />
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Notes / Details</label>
+          <input id="ptExpNote" type="text" placeholder="Optional detail" style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" />
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button type="submit" style="width:100%;padding:9px 14px;border-radius:8px;background:#10b981;color:#fff;font-weight:700;font-size:12px;border:none;cursor:pointer;">
+            + Add Cost
+          </button>
+        </div>
+      </form>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <label style="font-size:12px;color:#94a3b8;">Filter Date:</label>
+          <select id="ptExpDateFilter" style="padding:6px 10px;border-radius:8px;background:#1e293b;border:1px solid #334155;color:#fff;font-size:12px;">
+            <option value="">All Dates</option>
+            ${sortedDates.map((d) => `<option value="${d}">${d} (${formatPkr(byDate[d])})</option>`).join("")}
+          </select>
+          <input id="ptExpSearch" type="text" placeholder="Search item / note..." style="padding:6px 10px;border-radius:8px;background:#1e293b;border:1px solid #334155;color:#fff;font-size:12px;" />
+        </div>
+        <span style="font-size:12px;color:#94a3b8;">Entries: ${expenses.length}</span>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr style="border-bottom:1px solid #1e293b;color:#94a3b8;text-align:left;">
+              <th style="padding:8px;">Date</th>
+              <th style="padding:8px;">Category / Item</th>
+              <th style="padding:8px;">Notes</th>
+              <th style="padding:8px;">Amount</th>
+              <th style="padding:8px;text-align:center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="ptExpenseTableRows"></tbody>
+        </table>
+      </div>
+    `;
+
+    function paintRows() {
+      const tbody = document.getElementById("ptExpenseTableRows");
+      if (!tbody) return;
+      const dateFilter = (document.getElementById("ptExpDateFilter")?.value || "").trim();
+      const query = (document.getElementById("ptExpSearch")?.value || "").trim().toLowerCase();
+
+      const filtered = expenses.filter((item) => {
+        const matchDate = !dateFilter || item.date === dateFilter;
+        const matchText =
+          !query ||
+          String(item.category || "").toLowerCase().includes(query) ||
+          String(item.note || "").toLowerCase().includes(query) ||
+          String(item.date || "").toLowerCase().includes(query);
+        return matchDate && matchText;
+      });
+
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="padding:14px;text-align:center;color:#94a3b8;">Koi expense entry nahi mili. Upar form se daily cost add karein.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered
+        .map(
+          (item) => `
+          <tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:8px;color:#e2e8f0;font-weight:600;">${item.date || "-"}</td>
+            <td style="padding:8px;color:#fbbf24;font-weight:700;">${item.category || "-"}</td>
+            <td style="padding:8px;color:#cbd5e1;">${item.note || "-"}</td>
+            <td style="padding:8px;color:#34d399;font-weight:700;">${formatPkr(item.amount)}</td>
+            <td style="padding:8px;text-align:center;">
+              <button type="button" data-del-exp="${item.id}" style="padding:4px 10px;border-radius:6px;background:#dc2626;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;">Delete</button>
+            </td>
+          </tr>`
+        )
+        .join("");
+
+      tbody.querySelectorAll("[data-del-exp]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-del-exp");
+          const updated = loadExpensesLocal().filter((x) => String(x.id) !== String(id));
+          saveExpensesLocal(updated);
+          await syncExpenseToFirestore({ id }, "delete");
+          renderExpenseSheetPanel();
+        });
+      });
+    }
+
+    paintRows();
+
+    document.getElementById("ptExpDateFilter")?.addEventListener("change", paintRows);
+    document.getElementById("ptExpSearch")?.addEventListener("input", paintRows);
+
+    document.getElementById("ptExpenseEntryForm")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const dateVal = document.getElementById("ptExpDate")?.value || todayStr;
+      const catVal = (document.getElementById("ptExpCategory")?.value || "").trim();
+      const amtVal = parseFloat(document.getElementById("ptExpAmount")?.value || "0");
+      const noteVal = (document.getElementById("ptExpNote")?.value || "").trim();
+
+      if (!catVal || isNaN(amtVal) || amtVal < 0) return;
+
+      const newEntry = {
+        id: "exp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+        date: dateVal,
+        category: catVal,
+        amount: amtVal,
+        note: noteVal,
+        createdAt: new Date().toISOString()
+      };
+
+      const current = loadExpensesLocal();
+      current.unshift(newEntry);
+      saveExpensesLocal(current);
+      await syncExpenseToFirestore(newEntry, "upsert");
+      renderExpenseSheetPanel();
+    });
+
+    return panel;
+  }
+
+  function findSidebarContainer() {
+    const selectors = [
+      "aside nav",
+      "aside ul",
+      "aside > div:nth-of-type(2)",
+      "aside",
+      "[class*='sidebar'] nav",
+      "[class*='sidebar'] ul",
+      "[class*='sidebar']",
+      "nav"
+    ];
+    for (const sel of selectors) {
+      const el = document.querySelector(sel);
+      if (el) return el;
+    }
+    return null;
+  }
+
+  function injectSidebarButtons() {
+    const container = findSidebarContainer();
+    if (!container) return false;
+
+    if (!document.getElementById("ptResellerMenuBtn")) {
+      const resellerBtn = document.createElement("button");
+      resellerBtn.id = "ptResellerMenuBtn";
+      resellerBtn.type = "button";
+      resellerBtn.innerHTML = `<i class="fas fa-user-tie"></i> <span>Reseller</span>`;
+      resellerBtn.style.cssText =
+        "display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-top:8px;border-radius:10px;background:#1e293b;color:#f8fafc;border:1px solid #334155;font-size:12px;font-weight:700;cursor:pointer;text-align:left;";
+
+      resellerBtn.addEventListener("click", () => {
+        const panel = ensureResellerPanel();
+        hideAllMainViewsExcept("ptResellerOrdersPanel");
+        panel.style.display = "block";
+      });
+
+      container.appendChild(resellerBtn);
+    }
+
+    if (!document.getElementById("ptExpenseSheetBtn")) {
+      const expBtn = document.createElement("button");
+      expBtn.id = "ptExpenseSheetBtn";
+      expBtn.type = "button";
+      expBtn.innerHTML = `<i class="fas fa-file-invoice-dollar"></i> <span>Expensive Sheet</span>`;
+      expBtn.style.cssText =
+        "display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-top:8px;border-radius:10px;background:#1e293b;color:#fbbf24;border:1px solid #475569;font-size:12px;font-weight:700;cursor:pointer;text-align:left;";
+
+      expBtn.addEventListener("click", async () => {
+        const panel = await renderExpenseSheetPanel();
+        hideAllMainViewsExcept("ptExpenseSheetPanel");
+        panel.style.display = "block";
+      });
+
+      container.appendChild(expBtn);
+    }
+
+    return true;
+  }
+
+  document.addEventListener("click", (e) => {
+    const sidebarItem = e.target.closest(
+      "aside a, aside button, nav a, nav button, [class*='sidebar'] a, [class*='sidebar'] button"
+    );
+    if (
+      sidebarItem &&
+      sidebarItem.id !== "ptResellerMenuBtn" &&
+      sidebarItem.id !== "ptExpenseSheetBtn"
+    ) {
+      hideCustomAddonPanels();
+    }
+  });
+
+  function init() {
+    injectCleanStyles();
+    injectSidebarButtons();
+
+    const observer = new MutationObserver(() => {
+      injectCleanStyles();
+      injectSidebarButtons();
+    });
+    observer.observe(document.body || document.documentElement, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+</script>
 </body>
 </html>
