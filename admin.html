@@ -84,21 +84,10 @@
                 <!-- OPERATIONS & LOGISTICS SETTINGS -->
                 <div class="space-y-1">
                     <p class="text-[10px] uppercase font-bold text-slate-500 px-3 mb-2 tracking-wider">Operations & Logistics</p>
-                    <button onclick="switchAdminTab('petrolRateView')" class="sidebar-link w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
-                        <i class="fa-solid fa-gas-pump w-4 text-emerald-400"></i> Daily Petrol Rate
-                    </button>
-                    <button onclick="openKmSettingsModal()" class="sidebar-link w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
-                        <i class="fa-solid fa-route w-4 text-amber-400"></i> DC KM Settings
-                    </button>
                     <button onclick="openCustomTrackModal()" class="sidebar-link w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
                         <i class="fa-solid fa-barcode w-4 text-purple-400"></i> Upload Tracking Pool
                     </button>
-                    <button onclick="openAddCodModal()" class="sidebar-link w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 hover:text-white transition">
-                        <i class="fa-solid fa-plus-circle w-4 text-emerald-400"></i> Manual Parcel Entry
-                    </button>
-                </div>
-            </div>
-        </div>
+                    </div>
 
         <!-- Sidebar User Profile Footer -->
         <div class="p-4 border-t border-slate-800 bg-slate-900/50 flex items-center justify-between text-xs">
@@ -127,15 +116,6 @@
             <div class="hidden md:block">
                 <h2 class="text-sm font-black text-white uppercase tracking-wider">Operations Dashboard</h2>
                 <p class="text-[10px] text-slate-400">Manage shipments, logistics rates, and active system users.</p>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <button onclick="openProfileModal()" class="bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow">
-                    <i class="fa-solid fa-user-pen"></i> Edit Profile
-                </button>
-                <button onclick="openAddCodModal()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-lg">
-                    <i class="fa-solid fa-plus"></i> New Shipment
-                </button>
             </div>
         </header>
 
