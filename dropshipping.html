@@ -1455,9 +1455,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const BRAND_MAIN = "SA Dropshipping";
   const BRAND_SUB = "DROPSHIPPING HUB";
 
-  // Pure SVG code of SA Dropshipping Logo (Globe + Swoosh + SA + Truck)
   const SA_LOGO_SVG = `
-    <svg viewBox="0 0 220 205" xmlns="http://www.w3.org/2000/svg" style="height:44px;width:48px;background:#ffffff;border-radius:10px;padding:3px;box-shadow:0 2px 6px rgba(0,0,0,0.25);flex-shrink:0;">
+    <svg viewBox="0 0 220 205" xmlns="http://www.w3.org/2000/svg" style="height:54px;width:60px;background:#ffffff;border-radius:11px;padding:3px;box-shadow:0 2px 8px rgba(0,0,0,0.35);flex-shrink:0;display:block;">
       <defs>
         <linearGradient id="saBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="#0ea5e9"/>
@@ -1516,6 +1515,54 @@ document.addEventListener("DOMContentLoaded", function () {
   let observer = null;
   let appliedOnce = false;
 
+  function removeTop StrayBrandText(header) {
+    // Header se bahar/upar jo extra "SA Dropshipping" / "Dropshipping Hub" text aa raha hai usay remove karein
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    const toRemove = [];
+    let node;
+    while ((node = walker.nextNode())) {
+      const parent = node.parentElement;
+      if (!parent) continue;
+      if (parent.closest("header")) continue;
+      if (["SCRIPT", "STYLE", "TITLE", "NOSCRIPT"].includes(parent.tagName)) continue;
+
+      const val = (node.nodeValue || "").trim();
+      if (/^sa\s*dropshipping$/i.test(val) || /^dropshipping\s*hub$/i.test(val)) {
+        const rect = parent.getBoundingClientRect();
+        if (rect.top < 160 && rect.left < 400) {
+          toRemove.push(parent);
+        }
+      }
+    }
+
+    toRemove.forEach((el) => {
+      if (el && el.parentNode) {
+        el.remove();
+      }
+    });
+
+    // Agar <header> ke pehle koi stray block ho toh use bhi hide/remove karein
+    Array.from(document.body.children || []).forEach((child) => {
+      if (
+        child !== header &&
+        !child.contains(header) &&
+        !["SCRIPT", "STYLE"].includes(child.tagName)
+      ) {
+        const rect = child.getBoundingClientRect();
+        const txt = (child.textContent || "").trim();
+        if (
+          rect.top >= -20 &&
+          rect.top < 120 &&
+          rect.left < 350 &&
+          rect.height < 140 &&
+          (/sa dropshipping/i.test(txt) || /dropshipping hub/i.test(txt))
+        ) {
+          child.remove();
+        }
+      }
+    });
+  }
+
   function applyCleanHeader() {
     if (appliedOnce) return;
 
@@ -1543,19 +1590,19 @@ document.addEventListener("DOMContentLoaded", function () {
       document.title = document.title.replace(/prime traders/gi, BRAND_MAIN);
     }
 
+    removeTopStrayBrandText(header);
+
     target.innerHTML = "";
     target.style.display = "flex";
     target.style.alignItems = "center";
-    target.style.gap = "11px";
+    target.style.gap = "12px";
     target.style.textDecoration = "none";
     target.style.flexShrink = "0";
 
-    // Inject SVG Logo
     const logoHolder = document.createElement("div");
     logoHolder.style.cssText = "display:flex;align-items:center;justify-content:center;flex-shrink:0;";
     logoHolder.innerHTML = SA_LOGO_SVG.trim();
 
-    // Stacked Brand Text
     const textWrap = document.createElement("div");
     textWrap.style.cssText = "display:flex;flex-direction:column;line-height:1.15;";
 
