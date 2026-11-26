@@ -1450,69 +1450,114 @@ document.addEventListener("DOMContentLoaded", function () {
 })();
 </script>
     <script id="ptSaDropshippingBranding">
-(function applySaDropshippingBranding() {
-  const LOGO_SRC = "./sa-dropshipping-logo.png"; // Apni repo mein logo file ka path yahan set karein
-  const BRAND_NAME = "SA Dropshipping";
+(function fixSaHeaderClean() {
+  const LOGO_SRC = "./sa-dropshipping-logo.png"; // Apni logo image file ka path yahan rakhein
+  const BRAND_MAIN = "SA Dropshipping";
+  const BRAND_SUB = "DROPSHIPPING HUB";
 
-  function updateBranding() {
+  function cleanTopLeftArea() {
     if (document.title && /prime traders/i.test(document.title)) {
-      document.title = document.title.replace(/prime traders/gi, BRAND_NAME);
+      document.title = document.title.replace(/prime traders/gi, BRAND_MAIN);
     }
 
-    const header = document.querySelector("header") || document.querySelector("nav") || document.body;
+    // Page ke bilkul top-left white area mein agar koi duplicate/broken brand block ho toh hatayein
+    const bodyDirectChildren = Array.from(document.body.children || []);
+    bodyDirectChildren.forEach((el) => {
+      if (el.tagName === "HEADER" || el.tagName === "SCRIPT" || el.tagName === "STYLE") return;
+      const rect = el.getBoundingClientRect();
+      const txt = (el.textContent || "").trim();
+      const isTopLeftDuplicate =
+        rect.top >= -5 &&
+        rect.top < 110 &&
+        rect.left < 320 &&
+        rect.height < 120 &&
+        (/sa dropshipping/i.test(txt) || /dropshipping hub/i.test(txt));
+      if (isTopLeftDuplicate) {
+        el.remove();
+      }
+    });
+
+    const header = document.querySelector("header");
     if (!header) return;
 
-    // Top-left brand container ya "PRIME TRADERS" text nodes ko update karein
-    const candidates = header.querySelectorAll("a, div, span, h1, h2, p, strong");
-    candidates.forEach((el) => {
-      if (el.children.length > 2) return;
-      const txt = (el.textContent || "").trim();
-      if (/^prime\s*traders$/i.test(txt)) {
-        el.textContent = BRAND_NAME;
-        el.classList.remove("bg-amber-400", "text-slate-950");
-        el.classList.add("text-white", "font-extrabold");
+    // Purane inject kiye gaye broken/duplicate nodes saaf karein
+    header.querySelectorAll(".sa-injected-logo, .sa-clean-brand-box").forEach((n) => n.remove());
 
-        // Agar iske saath logo <img> abhi nahi hai toh add karein
-        const parent = el.parentElement;
-        if (parent && !parent.querySelector(".sa-injected-logo") && !parent.previousElementSibling?.classList?.contains("sa-injected-logo")) {
-          const wrapper = parent.closest("a") || parent;
-          if (wrapper && !wrapper.querySelector("img.sa-injected-logo")) {
-            const img = document.createElement("img");
-            img.src = LOGO_SRC;
-            img.alt = `${BRAND_NAME} Logo`;
-            img.className = "sa-injected-logo h-10 w-auto rounded-lg bg-white p-1 object-contain mr-2 shrink-0";
-            wrapper.prepend(img);
-            wrapper.style.display = wrapper.style.display || "flex";
-            wrapper.style.alignItems = "center";
-          }
-        }
-      }
-    });
+    // Header mein brand link ya left-most group dhoondein
+    const brandContainer =
+      header.querySelector("a[href*='dropshipping'], a[href*='index'], a[href='#']") ||
+      header.firstElementChild;
 
-    // Agar purana yellow "P" square badge maujood ho toh usay logo se replace karein
-    header.querySelectorAll("img.sa-injected-logo").forEach((logoImg) => {
-      const prev = logoImg.nextElementSibling;
-      if (prev && prev.children) {
-        Array.from(prev.children).forEach((child) => {
-          const cText = (child.textContent || "").trim();
-          if (cText === "P" && child.offsetWidth <= 48 && child.offsetHeight <= 48) {
-            child.remove();
-          }
-        });
-      }
-    });
+    if (!brandContainer) return;
+
+    // Agar brandContainer poora header row hai toh uska pehla child lein
+    let target = brandContainer;
+    if (target.children.length > 3 && target.querySelector("input, button")) {
+      target = target.firstElementChild || target;
+    }
+
+    target.innerHTML = "";
+    target.style.display = "flex";
+    target.style.alignItems = "center";
+    target.style.gap = "10px";
+    target.style.textDecoration = "none";
+    target.style.flexShrink = "0";
+
+    // Logo image (agar load ho toh dikhegi, broken ho toh khud hide ho jayegi)
+    const logoImg = document.createElement("img");
+    logoImg.className = "sa-injected-logo";
+    logoImg.src = LOGO_SRC;
+    logoImg.alt = BRAND_MAIN;
+    logoImg.style.cssText =
+      "height:38px;width:auto;max-width:44px;object-fit:contain;border-radius:8px;background:#ffffff;padding:2px;display:none;";
+    logoImg.onload = function () {
+      logoImg.style.display = "block";
+    };
+    logoImg.onerror = function () {
+      logoImg.style.display = "none";
+    };
+
+    // Stacked text: SA Dropshipping upar, DROPSHIPPING HUB neeche
+    const textWrap = document.createElement("div");
+    textWrap.className = "sa-clean-brand-box";
+    textWrap.style.cssText = "display:flex;flex-direction:column;line-height:1.15;";
+
+    const titleEl = document.createElement("span");
+    titleEl.textContent = BRAND_MAIN;
+    titleEl.style.cssText =
+      "color:#ffffff;font-size:16px;font-weight:800;letter-spacing:0.2px;white-space:nowrap;";
+
+    const subEl = document.createElement("span");
+    subEl.textContent = BRAND_SUB;
+    subEl.style.cssText =
+      "color:#fbbf24;font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;white-space:nowrap;margin-top:2px;";
+
+    textWrap.appendChild(titleEl);
+    textWrap.appendChild(subEl);
+
+    target.appendChild(logoImg);
+    target.appendChild(textWrap);
+  }
+
+  let busy = false;
+  function runSafe() {
+    if (busy) return;
+    busy = true;
+    try {
+      cleanTopLeftArea();
+    } finally {
+      busy = false;
+    }
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", updateBranding);
+    document.addEventListener("DOMContentLoaded", runSafe);
   } else {
-    updateBranding();
+    runSafe();
   }
 
-  new MutationObserver(updateBranding).observe(document.body || document.documentElement, {
-    childList: true,
-    subtree: true
-  });
+  const header = document.querySelector("header") || document.body;
+  new MutationObserver(runSafe).observe(header, { childList: true, subtree: true });
 })();
 </script>
 </body>
