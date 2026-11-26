@@ -1452,9 +1452,66 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
     <script id="ptSaDropshippingBranding">
 (function fixSaHeaderClean() {
-  const LOGO_SRC = "./sa-dropshipping-logo.png"; // Apni logo image file ka path yahan rakhein
   const BRAND_MAIN = "SA Dropshipping";
   const BRAND_SUB = "DROPSHIPPING HUB";
+
+  // Pure SVG code of SA Dropshipping Logo (Globe + Swoosh + SA + Truck)
+  const SA_LOGO_SVG = `
+    <svg viewBox="0 0 220 205" xmlns="http://www.w3.org/2000/svg" style="height:44px;width:48px;background:#ffffff;border-radius:10px;padding:3px;box-shadow:0 2px 6px rgba(0,0,0,0.25);flex-shrink:0;">
+      <defs>
+        <linearGradient id="saBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#0ea5e9"/>
+          <stop offset="55%" stop-color="#0284c7"/>
+          <stop offset="100%" stop-color="#1d4ed8"/>
+        </linearGradient>
+        <linearGradient id="saDarkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#0f172a"/>
+          <stop offset="100%" stop-color="#1e293b"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Blue Globe Top -->
+      <path d="M52,92 A58,58 0 0,1 168,92 Z" fill="url(#saBlueGrad)"/>
+      <!-- Continents Highlights -->
+      <path d="M74,52 Q86,44 96,55 Q92,68 78,66 Z" fill="#e0f2fe" opacity="0.85"/>
+      <path d="M116,42 Q138,38 148,54 Q142,68 126,64 Q118,56 116,42 Z" fill="#e0f2fe" opacity="0.85"/>
+      <path d="M134,68 Q152,66 158,82 L138,84 Z" fill="#e0f2fe" opacity="0.85"/>
+
+      <!-- Orbit Swoosh -->
+      <path d="M22,102 C8,76 44,42 104,34 C54,48 28,74 38,94 C43,102 54,104 66,102 C46,112 28,112 22,102 Z" fill="url(#saBlueGrad)"/>
+      <path d="M178,56 C198,70 198,96 172,110 C188,94 188,72 174,60 Z" fill="url(#saDarkGrad)"/>
+
+      <!-- White Backing behind SA -->
+      <rect x="46" y="64" width="128" height="54" rx="8" fill="#ffffff"/>
+
+      <!-- Bold S (Black) & A (Blue) -->
+      <text x="53" y="112" font-family="Arial Black, Impact, sans-serif" font-weight="900" font-size="56" font-style="italic" fill="#090d16">S</text>
+      <text x="106" y="112" font-family="Arial Black, Impact, sans-serif" font-weight="900" font-size="56" font-style="italic" fill="url(#saBlueGrad)">A</text>
+
+      <!-- Dropshipping Text -->
+      <text x="110" y="137" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="23" letter-spacing="-0.4">
+        <tspan fill="#090d16">Drop</tspan><tspan fill="#0369a1">shipping</tspan>
+      </text>
+
+      <!-- Shop Worldwide Pill -->
+      <line x1="22" y1="154" x2="44" y2="154" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+      <rect x="48" y="144" width="124" height="19" rx="9.5" fill="url(#saBlueGrad)"/>
+      <text x="110" y="157" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-style="italic" font-size="11.5" fill="#ffffff">– Shop Worldwide –</text>
+      <line x1="176" y1="154" x2="198" y2="154" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+
+      <!-- Speed Lines & Delivery Truck -->
+      <line x1="72" y1="176" x2="96" y2="176" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="66" y1="182" x2="96" y2="182" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="76" y1="188" x2="96" y2="188" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+      <rect x="98" y="170" width="28" height="18" rx="2" fill="url(#saBlueGrad)"/>
+      <path d="M126,175 L136,175 L140,182 L140,188 L126,188 Z" fill="#090d16"/>
+      <polygon points="128,177 134,177 137,181 128,181" fill="#ffffff"/>
+      <circle cx="106" cy="190" r="4" fill="#090d16"/>
+      <circle cx="106" cy="190" r="1.6" fill="#ffffff"/>
+      <circle cx="133" cy="190" r="4" fill="#090d16"/>
+      <circle cx="133" cy="190" r="1.6" fill="#ffffff"/>
+    </svg>
+  `;
 
   let observer = null;
   let appliedOnce = false;
@@ -1486,54 +1543,26 @@ document.addEventListener("DOMContentLoaded", function () {
       document.title = document.title.replace(/prime traders/gi, BRAND_MAIN);
     }
 
-    // Top-left white area mein agar duplicate links/text hon toh hide karein
-    Array.from(document.body.children || []).forEach((el) => {
-      if (
-        el !== header &&
-        el.tagName !== "SCRIPT" &&
-        el.tagName !== "STYLE" &&
-        !el.contains(header)
-      ) {
-        const rect = el.getBoundingClientRect();
-        const txt = (el.textContent || "").trim();
-        if (
-          rect.top >= -10 &&
-          rect.top < 120 &&
-          rect.left < 320 &&
-          rect.height < 130 &&
-          (/sa dropshipping/i.test(txt) || /dropshipping hub/i.test(txt))
-        ) {
-          el.style.display = "none";
-        }
-      }
-    });
-
     target.innerHTML = "";
     target.style.display = "flex";
     target.style.alignItems = "center";
-    target.style.gap = "10px";
+    target.style.gap = "11px";
     target.style.textDecoration = "none";
     target.style.flexShrink = "0";
 
-    const logoImg = document.createElement("img");
-    logoImg.src = LOGO_SRC;
-    logoImg.alt = BRAND_MAIN;
-    logoImg.style.cssText =
-      "height:38px;width:auto;max-width:44px;object-fit:contain;border-radius:8px;background:#ffffff;padding:2px;display:none;";
-    logoImg.onload = function () {
-      logoImg.style.display = "block";
-    };
-    logoImg.onerror = function () {
-      logoImg.remove();
-    };
+    // Inject SVG Logo
+    const logoHolder = document.createElement("div");
+    logoHolder.style.cssText = "display:flex;align-items:center;justify-content:center;flex-shrink:0;";
+    logoHolder.innerHTML = SA_LOGO_SVG.trim();
 
+    // Stacked Brand Text
     const textWrap = document.createElement("div");
     textWrap.style.cssText = "display:flex;flex-direction:column;line-height:1.15;";
 
     const titleEl = document.createElement("span");
     titleEl.textContent = BRAND_MAIN;
     titleEl.style.cssText =
-      "color:#ffffff;font-size:16px;font-weight:800;letter-spacing:0.2px;white-space:nowrap;";
+      "color:#ffffff;font-size:17px;font-weight:800;letter-spacing:0.2px;white-space:nowrap;";
 
     const subEl = document.createElement("span");
     subEl.textContent = BRAND_SUB;
@@ -1543,7 +1572,7 @@ document.addEventListener("DOMContentLoaded", function () {
     textWrap.appendChild(titleEl);
     textWrap.appendChild(subEl);
 
-    target.appendChild(logoImg);
+    target.appendChild(logoHolder);
     target.appendChild(textWrap);
   }
 
