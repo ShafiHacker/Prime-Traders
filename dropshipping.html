@@ -1455,46 +1455,57 @@ document.addEventListener("DOMContentLoaded", function () {
   const BRAND_MAIN = "SA Dropshipping";
   const BRAND_SUB = "DROPSHIPPING HUB";
 
-  function cleanTopLeftArea() {
-    if (document.title && /prime traders/i.test(document.title)) {
-      document.title = document.title.replace(/prime traders/gi, BRAND_MAIN);
-    }
+  let observer = null;
+  let appliedOnce = false;
 
-    // Page ke bilkul top-left white area mein agar koi duplicate/broken brand block ho toh hatayein
-    const bodyDirectChildren = Array.from(document.body.children || []);
-    bodyDirectChildren.forEach((el) => {
-      if (el.tagName === "HEADER" || el.tagName === "SCRIPT" || el.tagName === "STYLE") return;
-      const rect = el.getBoundingClientRect();
-      const txt = (el.textContent || "").trim();
-      const isTopLeftDuplicate =
-        rect.top >= -5 &&
-        rect.top < 110 &&
-        rect.left < 320 &&
-        rect.height < 120 &&
-        (/sa dropshipping/i.test(txt) || /dropshipping hub/i.test(txt));
-      if (isTopLeftDuplicate) {
-        el.remove();
-      }
-    });
+  function applyCleanHeader() {
+    if (appliedOnce) return;
 
     const header = document.querySelector("header");
     if (!header) return;
 
-    // Purane inject kiye gaye broken/duplicate nodes saaf karein
-    header.querySelectorAll(".sa-injected-logo, .sa-clean-brand-box").forEach((n) => n.remove());
-
-    // Header mein brand link ya left-most group dhoondein
-    const brandContainer =
+    const brandLink =
       header.querySelector("a[href*='dropshipping'], a[href*='index'], a[href='#']") ||
-      header.firstElementChild;
+      header.querySelector("a, div");
 
-    if (!brandContainer) return;
+    if (!brandLink) return;
 
-    // Agar brandContainer poora header row hai toh uska pehla child lein
-    let target = brandContainer;
+    let target = brandLink;
     if (target.children.length > 3 && target.querySelector("input, button")) {
       target = target.firstElementChild || target;
     }
+
+    appliedOnce = true;
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
+
+    if (document.title && /prime traders/i.test(document.title)) {
+      document.title = document.title.replace(/prime traders/gi, BRAND_MAIN);
+    }
+
+    // Top-left white area mein agar duplicate links/text hon toh hide karein
+    Array.from(document.body.children || []).forEach((el) => {
+      if (
+        el !== header &&
+        el.tagName !== "SCRIPT" &&
+        el.tagName !== "STYLE" &&
+        !el.contains(header)
+      ) {
+        const rect = el.getBoundingClientRect();
+        const txt = (el.textContent || "").trim();
+        if (
+          rect.top >= -10 &&
+          rect.top < 120 &&
+          rect.left < 320 &&
+          rect.height < 130 &&
+          (/sa dropshipping/i.test(txt) || /dropshipping hub/i.test(txt))
+        ) {
+          el.style.display = "none";
+        }
+      }
+    });
 
     target.innerHTML = "";
     target.style.display = "flex";
@@ -1503,9 +1514,7 @@ document.addEventListener("DOMContentLoaded", function () {
     target.style.textDecoration = "none";
     target.style.flexShrink = "0";
 
-    // Logo image (agar load ho toh dikhegi, broken ho toh khud hide ho jayegi)
     const logoImg = document.createElement("img");
-    logoImg.className = "sa-injected-logo";
     logoImg.src = LOGO_SRC;
     logoImg.alt = BRAND_MAIN;
     logoImg.style.cssText =
@@ -1514,12 +1523,10 @@ document.addEventListener("DOMContentLoaded", function () {
       logoImg.style.display = "block";
     };
     logoImg.onerror = function () {
-      logoImg.style.display = "none";
+      logoImg.remove();
     };
 
-    // Stacked text: SA Dropshipping upar, DROPSHIPPING HUB neeche
     const textWrap = document.createElement("div");
-    textWrap.className = "sa-clean-brand-box";
     textWrap.style.cssText = "display:flex;flex-direction:column;line-height:1.15;";
 
     const titleEl = document.createElement("span");
@@ -1539,25 +1546,28 @@ document.addEventListener("DOMContentLoaded", function () {
     target.appendChild(textWrap);
   }
 
-  let busy = false;
-  function runSafe() {
-    if (busy) return;
-    busy = true;
-    try {
-      cleanTopLeftArea();
-    } finally {
-      busy = false;
+  function start() {
+    applyCleanHeader();
+    if (!appliedOnce && (document.body || document.documentElement)) {
+      observer = new MutationObserver(applyCleanHeader);
+      observer.observe(document.body || document.documentElement, {
+        childList: true,
+        subtree: true
+      });
+      setTimeout(() => {
+        if (observer) {
+          observer.disconnect();
+          observer = null;
+        }
+      }, 4000);
     }
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", runSafe);
+    document.addEventListener("DOMContentLoaded", start, { once: true });
   } else {
-    runSafe();
+    start();
   }
-
-  const header = document.querySelector("header") || document.body;
-  new MutationObserver(runSafe).observe(header, { childList: true, subtree: true });
 })();
 </script>
 </body>
