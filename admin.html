@@ -2985,6 +2985,8 @@
   const SAVING_STORAGE_KEY = "ptProjectSavingCost_v1";
   let savingGraphMode = "date";
   let editingSavingId = null;
+    const INVESTMENT_STORAGE_KEY = "ptInvestmentSheet_v1";
+  let editingInvestmentId = null;
 
   function getExpenseDb() {
     if (typeof window.db !== "undefined" && window.db) return window.db;
@@ -3026,7 +3028,13 @@
         el.classList.remove("hidden");
         return;
       }
-      if (el.id === "ptResellerOrdersPanel" || el.id === "ptExpenseSheetPanel" || el.id === "ptSavingCostSheetPanel" || el.classList.contains("admin-view-section")) {
+       if (
+        el.id === "ptResellerOrdersPanel" ||
+        el.id === "ptExpenseSheetPanel" ||
+        el.id === "ptSavingCostSheetPanel" ||
+        el.id === "ptInvestmentPanel" ||
+        el.classList.contains("admin-view-section")
+      ) {
         el.style.display = "none";
         el.classList.add("hidden");
       }
@@ -3034,7 +3042,7 @@
   }
 
   function hideCustomAddonPanels() {
-    ["ptResellerOrdersPanel", "ptExpenseSheetPanel", "ptSavingCostSheetPanel"].forEach((id) => {
+    ["ptResellerOrdersPanel", "ptExpenseSheetPanel", "ptSavingCostSheetPanel", "ptInvestmentPanel"].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.style.display = "none";
     });
@@ -3359,7 +3367,226 @@
     });
     return panel;
   }
+function loadInvestmentsLocal() {
+    try {
+      const p = JSON.parse(localStorage.getItem(INVESTMENT_STORAGE_KEY) || "[]");
+      return Array.isArray(p) ? p : [];
+    } catch (_) {
+      return [];
+    }
+  }
 
+  function saveInvestmentsLocal(items) {
+    try {
+      localStorage.setItem(INVESTMENT_STORAGE_KEY, JSON.stringify(items));
+    } catch (_) {}
+  }
+
+  async function syncInvestmentToFirestore(entry, action) {
+    const fs = getExpenseDb();
+    if (!fs || !entry || !entry.id) return;
+    try {
+      const ref = fs.collection("projectInvestments").doc(String(entry.id));
+      if (action === "delete") await ref.delete();
+      else await ref.set(entry, { merge: true });
+    } catch (_) {}
+  }
+
+  async function pullInvestmentsFromFirestore() {
+    const fs = getExpenseDb();
+    const localItems = loadInvestmentsLocal();
+    if (!fs) return localItems;
+    try {
+      const snap = await fs.collection("projectInvestments").get();
+      if (snap.empty) return localItems;
+      const map = new Map();
+      localItems.forEach((i) => i && i.id && map.set(String(i.id), i));
+      snap.forEach((doc) => {
+        const d = doc.data() || {};
+        const id = d.id || doc.id;
+        map.set(String(id), Object.assign({}, d, { id: id }));
+      });
+      const merged = Array.from(map.values());
+      saveInvestmentsLocal(merged);
+      return merged;
+    } catch (_) {
+      return localItems;
+    }
+  }
+
+  async function renderInvestmentPanel() {
+    let panel = document.getElementById("ptInvestmentPanel");
+    if (!panel) {
+      panel = document.createElement("section");
+      panel.id = "ptInvestmentPanel";
+      panel.className = "pt-addon-view";
+      panel.style.cssText =
+        "margin:16px;padding:20px;border-radius:16px;background:#0f172a;border:1px solid #1e293b;color:#f8fafc;display:none;";
+      (document.querySelector("main") || document.body).prepend(panel);
+    }
+
+    const items = await pullInvestmentsFromFirestore();
+    const totalApprox = items.reduce((s, x) => s + (Number(x.approxAmount) || 0), 0);
+
+    panel.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <div>
+          <h3 style="font-size:18px;font-weight:800;color:#f59e0b;margin:0;">Prime Traders Investment</h3>
+          <p style="font-size:12px;color:#94a3b8;margin:4px 0 0 0;">Investment entries add, edit, save aur delete karein.</p>
+        </div>
+        <div style="background:#1e293b;border:1px solid #334155;padding:8px 16px;border-radius:12px;">
+          <div style="font-size:10px;color:#94a3b8;">TOTAL APPROX AMOUNT</div>
+          <div style="font-size:16px;font-weight:800;color:#34d399;">${formatPkr(totalApprox)}</div>
+        </div>
+      </div>
+
+      <form id="ptInvestmentAddForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;background:#020617;padding:14px;border-radius:12px;border:1px solid #1e293b;margin-bottom:16px;">
+        <div>
+          <label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Item Description</label>
+          <input id="ptInvDesc" type="text" placeholder="e.g. Stock / Setup" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" />
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Approx Amount (PKR)</label>
+          <input id="ptInvAmount" type="number" step="0.01" min="0" placeholder="0" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" />
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Remark</label>
+          <input id="ptInvRemark" type="text" placeholder="Optional remark" style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" />
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button type="submit" style="width:100%;padding:9px 14px;border-radius:8px;background:#10b981;color:#fff;font-weight:700;font-size:12px;border:none;cursor:pointer;">+ Add</button>
+        </div>
+      </form>
+
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr style="border-bottom:1px solid #1e293b;color:#94a3b8;text-align:left;">
+              <th style="padding:8px;">SR#.</th>
+              <th style="padding:8px;">Item Description</th>
+              <th style="padding:8px;">Approx Amount</th>
+              <th style="padding:8px;">Remark</th>
+              <th style="padding:8px;text-align:center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="ptInvestmentTableRows"></tbody>
+        </table>
+      </div>
+    `;
+
+    function paintInvestmentRows() {
+      const tbody = document.getElementById("ptInvestmentTableRows");
+      if (!tbody) return;
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="padding:14px;text-align:center;color:#94a3b8;">Koi investment entry nahi mili.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = items
+        .map((item, idx) => {
+          const srNo = idx + 1;
+          if (String(editingInvestmentId) === String(item.id)) {
+            return `<tr style="border-bottom:1px solid #1e293b;background:#111827;">
+              <td style="padding:8px;color:#94a3b8;font-weight:700;">${srNo}</td>
+              <td style="padding:6px;"><input id="ptEditInvDesc" type="text" value="${safeText(item.description || "")}" style="width:100%;min-width:160px;padding:5px 7px;border-radius:6px;background:#020617;border:1px solid #475569;color:#fff;font-size:12px;" /></td>
+              <td style="padding:6px;"><input id="ptEditInvAmt" type="number" step="0.01" min="0" value="${Number(item.approxAmount) || 0}" style="width:110px;padding:5px 7px;border-radius:6px;background:#020617;border:1px solid #475569;color:#fff;font-size:12px;" /></td>
+              <td style="padding:6px;"><input id="ptEditInvRemark" type="text" value="${safeText(item.remark || "")}" style="width:100%;min-width:140px;padding:5px 7px;border-radius:6px;background:#020617;border:1px solid #475569;color:#fff;font-size:12px;" /></td>
+              <td style="padding:6px;text-align:center;white-space:nowrap;">
+                <button type="button" data-save-inv="${safeText(item.id)}" style="padding:4px 10px;border-radius:6px;background:#10b981;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px;">Save</button>
+                <button type="button" data-cancel-inv="1" style="padding:4px 8px;border-radius:6px;background:#334155;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;">Cancel</button>
+              </td>
+            </tr>`;
+          }
+
+          return `<tr style="border-bottom:1px solid #1e293b;">
+            <td style="padding:8px;color:#94a3b8;font-weight:700;">${srNo}</td>
+            <td style="padding:8px;color:#f8fafc;font-weight:600;">${safeText(item.description || "-")}</td>
+            <td style="padding:8px;color:#34d399;font-weight:700;">${formatPkr(item.approxAmount)}</td>
+            <td style="padding:8px;color:#cbd5e1;">${safeText(item.remark || "-")}</td>
+            <td style="padding:8px;text-align:center;white-space:nowrap;">
+              <button type="button" data-edit-inv="${safeText(item.id)}" style="padding:4px 10px;border-radius:6px;background:#2563eb;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px;">Edit</button>
+              <button type="button" data-del-inv="${safeText(item.id)}" style="padding:4px 10px;border-radius:6px;background:#dc2626;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;">Delete</button>
+            </td>
+          </tr>`;
+        })
+        .join("");
+
+      tbody.querySelectorAll("[data-edit-inv]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          editingInvestmentId = btn.getAttribute("data-edit-inv");
+          paintInvestmentRows();
+        });
+      });
+
+      tbody.querySelectorAll("[data-cancel-inv]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          editingInvestmentId = null;
+          paintInvestmentRows();
+        });
+      });
+
+      tbody.querySelectorAll("[data-save-inv]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-save-inv");
+          const desc = (document.getElementById("ptEditInvDesc")?.value || "").trim();
+          const amt = parseFloat(document.getElementById("ptEditInvAmt")?.value || "0");
+          const remark = (document.getElementById("ptEditInvRemark")?.value || "").trim();
+          if (!desc || isNaN(amt) || amt < 0) return;
+
+          let mod = null;
+          const next = loadInvestmentsLocal().map((r) =>
+            String(r.id) === String(id)
+              ? (mod = Object.assign({}, r, {
+                  description: desc,
+                  approxAmount: amt,
+                  remark: remark,
+                  updatedAt: new Date().toISOString()
+                }))
+              : r
+          );
+          saveInvestmentsLocal(next);
+          if (mod) await syncInvestmentToFirestore(mod, "upsert");
+          editingInvestmentId = null;
+          renderInvestmentPanel();
+        });
+      });
+
+      tbody.querySelectorAll("[data-del-inv]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-del-inv");
+          saveInvestmentsLocal(loadInvestmentsLocal().filter((x) => String(x.id) !== String(id)));
+          await syncInvestmentToFirestore({ id: id }, "delete");
+          if (String(editingInvestmentId) === String(id)) editingInvestmentId = null;
+          renderInvestmentPanel();
+        });
+      });
+    }
+
+    paintInvestmentRows();
+
+    document.getElementById("ptInvestmentAddForm")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const desc = (document.getElementById("ptInvDesc")?.value || "").trim();
+      const amt = parseFloat(document.getElementById("ptInvAmount")?.value || "0");
+      const remark = (document.getElementById("ptInvRemark")?.value || "").trim();
+      if (!desc || isNaN(amt) || amt < 0) return;
+
+      const entry = {
+        id: "inv_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+        description: desc,
+        approxAmount: amt,
+        remark: remark,
+        createdAt: new Date().toISOString()
+      };
+      const cur = loadInvestmentsLocal();
+      cur.unshift(entry);
+      saveInvestmentsLocal(cur);
+      await syncInvestmentToFirestore(entry, "upsert");
+      renderInvestmentPanel();
+    });
+
+    return panel;
+  }
   let isInjectingSidebar = false;
   function findWholesellerMenuItem() {
     const items = Array.from(document.querySelectorAll("aside a, aside button, nav a, nav button, [class*='sidebar'] a, [class*='sidebar'] button"));
@@ -3416,6 +3643,23 @@
           const b = e.target.closest("a, button");
           if (b && ["ptResellerMenuBtn", "ptExpenseSheetBtn", "ptSavingCostBtn"].indexOf(b.id) === -1) hideCustomAddonPanels();
         });
+          const invBtn = document.createElement(tag);
+      invBtn.id = "ptInvestmentBtn";
+      if (tag === "button") invBtn.type = "button";
+      if (baseClass) invBtn.className = baseClass;
+      invBtn.innerHTML = `<i class="fas fa-hand-holding-usd" style="width:16px;text-align:center;"></i> <span>Investment</span>`;
+      invBtn.style.cssText = css;
+      invBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        const p = await renderInvestmentPanel();
+        hideAllMainViewsExcept("ptInvestmentPanel");
+        p.style.display = "block";
+      });
+
+      wBtn.insertAdjacentElement("afterend", rBtn);
+      rBtn.insertAdjacentElement("afterend", eBtn);
+      eBtn.insertAdjacentElement("afterend", sBtn);
+      sBtn.insertAdjacentElement("afterend", invBtn);
       }
       return true;
     } finally {
