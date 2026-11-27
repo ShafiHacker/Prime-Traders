@@ -3478,9 +3478,7 @@
 
     return panel;
   }
-  }
-
-  function renderSavingGraphHtml(items, mode) {
+    function renderSavingGraphHtml(items, mode) {
     const grouped = {};
     items.forEach((r) => {
       const k = mode === "category" ? (String(r.categoryType || "Uncategorized").trim() || "Uncategorized") : (String(r.date || "Unknown").trim() || "Unknown");
