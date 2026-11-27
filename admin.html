@@ -3884,9 +3884,12 @@ function loadInvestmentsLocal() {
       if (parent && !parent.dataset.ptNavBound) {
         parent.dataset.ptNavBound = "1";
         parent.addEventListener("click", (e) => {
-          const b = e.target.closest("a, button");
-          if (b && ["ptResellerMenuBtn", "ptExpenseSheetBtn", "ptSavingCostBtn", "ptInvestmentBtn", "ptReturnAmountBtn"].indexOf(b.id) === -1) hideCustomAddonPanels();
-        });
+        const b = e.target.closest("a, button");
+        if (b && ["ptResellerMenuBtn", "ptExpenseSheetBtn", "ptSavingCostBtn", "ptInvestmentBtn", "ptReturnAmountBtn"].indexOf(b.id) === -1) {
+          hideCustomAddonPanels();
+        }
+      });
+    }
           const invBtn = document.createElement(tag);
       invBtn.id = "ptInvestmentBtn";
       if (tag === "button") invBtn.type = "button";
