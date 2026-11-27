@@ -3357,46 +3357,7 @@
     return null;
   }
 
-  function injectSidebarButtons() {
-    const container = findSidebarContainer();
-    if (!container) return false;
-
-    if (!document.getElementById("ptResellerMenuBtn")) {
-      const resellerBtn = document.createElement("button");
-      resellerBtn.id = "ptResellerMenuBtn";
-      resellerBtn.type = "button";
-      resellerBtn.innerHTML = `<i class="fas fa-user-tie"></i> <span>Reseller</span>`;
-      resellerBtn.style.cssText =
-        "display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-top:8px;border-radius:10px;background:#1e293b;color:#f8fafc;border:1px solid #334155;font-size:12px;font-weight:700;cursor:pointer;text-align:left;";
-
-      resellerBtn.addEventListener("click", () => {
-        const panel = ensureResellerPanel();
-        hideAllMainViewsExcept("ptResellerOrdersPanel");
-        panel.style.display = "block";
-      });
-
-      container.appendChild(resellerBtn);
-    }
-
-    if (!document.getElementById("ptExpenseSheetBtn")) {
-      const expBtn = document.createElement("button");
-      expBtn.id = "ptExpenseSheetBtn";
-      expBtn.type = "button";
-      expBtn.innerHTML = `<i class="fas fa-file-invoice-dollar"></i> <span>Expensive Sheet</span>`;
-      expBtn.style.cssText =
-        "display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-top:8px;border-radius:10px;background:#1e293b;color:#fbbf24;border:1px solid #475569;font-size:12px;font-weight:700;cursor:pointer;text-align:left;";
-
-      expBtn.addEventListener("click", async () => {
-        const panel = await renderExpenseSheetPanel();
-        hideAllMainViewsExcept("ptExpenseSheetPanel");
-        panel.style.display = "block";
-      });
-
-      container.appendChild(expBtn);
-    }
-
-    return true;
-  }
+  njectSidebarButton
 
   document.addEventListener("click", (e) => {
     const sidebarItem = e.target.closest(
