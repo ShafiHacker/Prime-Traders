@@ -3041,7 +3041,7 @@
   }
 
   function safeText(val) {
- return String(val == null ? "" : val).split("<").join("<").split(">").join(">").split('"').join(""");
+ return String(val == null ? "" : val).split(String.fromCharCode(38)).join(String.fromCharCode(38) + "amp;").split(String.fromCharCode(60)).join(String.fromCharCode(38) + "lt;").split(String.fromCharCode(62)).join(String.fromCharCode(38) + "gt;").split(String.fromCharCode(34)).join(String.fromCharCode(38) + "quot;");
   }
 
   function formatPkr(amount) {
