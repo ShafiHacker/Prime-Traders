@@ -3357,7 +3357,63 @@
     return null;
   }
 
-  njectSidebarButton
+  function findWholesellerMenuItem() {
+    const items = Array.from(
+      document.querySelectorAll(
+        "aside a, aside button, nav a, nav button, [class*='sidebar'] a, [class*='sidebar'] button"
+      )
+    );
+    return (
+      items.find((el) => /wholeseller\s*orders?/i.test((el.textContent || "").trim())) || null
+    );
+  }
+
+  function injectSidebarButtons() {
+    const wholesellerBtn = findWholesellerMenuItem();
+    if (!wholesellerBtn || !wholesellerBtn.parentElement) return false;
+
+    // Purane buttons agar kahin aur (neeche) pare hon toh remove karein taake clean move hon
+    document.getElementById("ptResellerMenuBtn")?.remove();
+    document.getElementById("ptExpenseSheetBtn")?.remove();
+
+    const tag = wholesellerBtn.tagName.toLowerCase() === "button" ? "button" : "a";
+    const baseClass = wholesellerBtn.className || "";
+
+    const resellerBtn = document.createElement(tag);
+    resellerBtn.id = "ptResellerMenuBtn";
+    if (tag === "button") resellerBtn.type = "button";
+    if (baseClass) resellerBtn.className = baseClass;
+    resellerBtn.innerHTML = `<i class="fas fa-user-tie" style="width:16px;text-align:center;"></i> <span>Reseller</span>`;
+    resellerBtn.style.cssText =
+      "display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-top:4px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;text-align:left;text-decoration:none;";
+
+    resellerBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const panel = ensureResellerPanel();
+      hideAllMainViewsExcept("ptResellerOrdersPanel");
+      panel.style.display = "block";
+    });
+
+    const expBtn = document.createElement(tag);
+    expBtn.id = "ptExpenseSheetBtn";
+    if (tag === "button") expBtn.type = "button";
+    if (baseClass) expBtn.className = baseClass;
+    expBtn.innerHTML = `<i class="fas fa-file-invoice-dollar" style="width:16px;text-align:center;"></i> <span>Expensive Sheet</span>`;
+    expBtn.style.cssText =
+      "display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-top:4px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;text-align:left;text-decoration:none;";
+
+    expBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const panel = await renderExpenseSheetPanel();
+      hideAllMainViewsExcept("ptExpenseSheetPanel");
+      panel.style.display = "block";
+    });
+
+    wholesellerBtn.insertAdjacentElement("afterend", resellerBtn);
+    resellerBtn.insertAdjacentElement("afterend", expBtn);
+
+    return true;
+  }
 
   document.addEventListener("click", (e) => {
     const sidebarItem = e.target.closest(
