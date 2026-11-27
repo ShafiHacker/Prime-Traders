@@ -2983,8 +2983,7 @@
 (function enhanceAdminViewsAndExpenses() {
   const EXPENSE_STORAGE_KEY = "ptDailyExpenseSheet_v1";
   const SAVING_STORAGE_KEY = "ptProjectSavingCost_v1";
-
-  let savingGraphMode = "date"; // "date" | "category"
+  let savingGraphMode = "date";
   let editingSavingId = null;
 
   function getExpenseDb() {
@@ -3001,68 +3000,33 @@
     const style = document.createElement("style");
     style.id = "ptAdminCleanStyles";
     style.textContent = `
-      #ticketsView,
-      #ticketsSection,
-      #supportTicketsPanel,
-      [id*="ticket" i][class*="fixed"],
-      [id*="ticket" i][class*="absolute"] {
-        position: static !important;
-        right: auto !important;
-        left: auto !important;
-        top: auto !important;
-        bottom: auto !important;
-        max-width: 100% !important;
-        width: 100% !important;
-        z-index: auto !important;
-        box-shadow: none !important;
+      #ticketsView,#ticketsSection,#supportTicketsPanel,[id*="ticket" i][class*="fixed"],[id*="ticket" i][class*="absolute"] {
+        position:static !important;right:auto !important;left:auto !important;top:auto !important;bottom:auto !important;max-width:100% !important;width:100% !important;z-index:auto !important;box-shadow:none !important;
       }
-
-      #yousafLedgerView table,
-      #yousafPaymentView table,
-      [id*="yousaf" i] table {
-        min-width: 980px;
-        width: 100%;
-        border-collapse: collapse;
+      #yousafLedgerView table,#yousafPaymentView table,[id*="yousaf" i] table {
+        min-width:980px;width:100%;border-collapse:collapse;
       }
-      #yousafLedgerView th,
-      #yousafLedgerView td,
-      [id*="yousaf" i] th,
-      [id*="yousaf" i] td {
-        padding: 8px 10px !important;
-        white-space: nowrap;
-        font-size: 12px;
+      #yousafLedgerView th,#yousafLedgerView td,[id*="yousaf" i] th,[id*="yousaf" i] td {
+        padding:8px 10px !important;white-space:nowrap;font-size:12px;
       }
-      #yousafLedgerView input,
-      [id*="yousaf" i] input {
-        min-width: 78px;
-        padding: 5px 8px !important;
+      #yousafLedgerView input,[id*="yousaf" i] input {
+        min-width:78px;padding:5px 8px !important;
       }
-
-      .pt-addon-view {
-        padding: 16px;
-      }
+      .pt-addon-view { padding:16px; }
     `;
     document.head.appendChild(style);
   }
 
   function hideAllMainViewsExcept(keepId) {
     const main = document.querySelector("main") || document.body;
-    const candidates = main.querySelectorAll(
-      "section, [id$='View'], [id$='Section'], [id$='Panel']"
-    );
-
+    const candidates = main.querySelectorAll("section, [id$='View'], [id$='Section'], [id$='Panel']");
     candidates.forEach((el) => {
       if (el.id === keepId || el.contains(document.getElementById(keepId))) {
         el.style.display = "block";
         el.classList.remove("hidden");
         return;
       }
-      if (
-        el.id === "ptResellerOrdersPanel" ||
-        el.id === "ptExpenseSheetPanel" ||
-        el.id === "ptSavingCostSheetPanel" ||
-        el.classList.contains("admin-view-section")
-      ) {
+      if (el.id === "ptResellerOrdersPanel" || el.id === "ptExpenseSheetPanel" || el.id === "ptSavingCostSheetPanel" || el.classList.contains("admin-view-section")) {
         el.style.display = "none";
         el.classList.add("hidden");
       }
@@ -3076,424 +3040,207 @@
     });
   }
 
-  function escapeHtml(str) {
-    return String(str ?? "")
-      .replace(/&/g, "&")
-      .replace(/</g, "<")
-      .replace(/>/g, ">")
-      .replace(/"/g, """);
+  function safeText(val) {
+    return String(val == null ? "" : val).split("<").join("<").split(">").join(">").split('"').join(""");
   }
 
   function formatPkr(amount) {
-    const num = Number(amount) || 0;
-    return "Rs. " + num.toLocaleString("en-PK", { maximumFractionDigits: 2 });
+    return "Rs. " + (Number(amount) || 0).toLocaleString("en-PK", { maximumFractionDigits: 2 });
   }
 
-  /* ---------------- EXPENSE STORAGE & FIRESTORE ---------------- */
   function loadExpensesLocal() {
-    try {
-      const raw = localStorage.getItem(EXPENSE_STORAGE_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (_) {
-      return [];
-    }
+    try { const p = JSON.parse(localStorage.getItem(EXPENSE_STORAGE_KEY) || "[]"); return Array.isArray(p) ? p : []; } catch (_) { return []; }
   }
-
   function saveExpensesLocal(items) {
+    try { localStorage.setItem(EXPENSE_STORAGE_KEY, JSON.stringify(items)); } catch (_) {}
+  }
+  async function syncExpenseToFirestore(entry, action) {
+    const fs = getExpenseDb();
+    if (!fs || !entry || !entry.id) return;
     try {
-      localStorage.setItem(EXPENSE_STORAGE_KEY, JSON.stringify(items));
+      const ref = fs.collection("dailyExpenses").doc(String(entry.id));
+      if (action === "delete") await ref.delete(); else await ref.set(entry, { merge: true });
     } catch (_) {}
   }
-
-  async function syncExpenseToFirestore(entry, action = "upsert") {
-    const firestore = getExpenseDb();
-    if (!firestore || !entry || !entry.id) return;
-    try {
-      const ref = firestore.collection("dailyExpenses").doc(String(entry.id));
-      if (action === "delete") {
-        await ref.delete();
-      } else {
-        await ref.set(entry, { merge: true });
-      }
-    } catch (_) {}
-  }
-
   async function pullExpensesFromFirestore() {
-    const firestore = getExpenseDb();
+    const fs = getExpenseDb();
     const localItems = loadExpensesLocal();
-    if (!firestore) return localItems;
-
+    if (!fs) return localItems;
     try {
-      const snap = await firestore.collection("dailyExpenses").get();
+      const snap = await fs.collection("dailyExpenses").get();
       if (snap.empty) return localItems;
-
       const map = new Map();
-      localItems.forEach((item) => {
-        if (item && item.id) map.set(String(item.id), item);
-      });
-      snap.forEach((doc) => {
-        const d = doc.data() || {};
-        const id = d.id || doc.id;
-        map.set(String(id), { ...d, id });
-      });
-
-      const merged = Array.from(map.values()).sort((a, b) =>
-        String(b.date || "").localeCompare(String(a.date || ""))
-      );
+      localItems.forEach((i) => i && i.id && map.set(String(i.id), i));
+      snap.forEach((doc) => { const d = doc.data() || {}; const id = d.id || doc.id; map.set(String(id), Object.assign({}, d, { id: id })); });
+      const merged = Array.from(map.values()).sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
       saveExpensesLocal(merged);
       return merged;
-    } catch (_) {
-      return localItems;
-    }
+    } catch (_) { return localItems; }
   }
 
-  /* ---------------- SAVING COST STORAGE & FIRESTORE ---------------- */
   function loadSavingsLocal() {
-    try {
-      const raw = localStorage.getItem(SAVING_STORAGE_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (_) {
-      return [];
-    }
+    try { const p = JSON.parse(localStorage.getItem(SAVING_STORAGE_KEY) || "[]"); return Array.isArray(p) ? p : []; } catch (_) { return []; }
   }
-
   function saveSavingsLocal(items) {
+    try { localStorage.setItem(SAVING_STORAGE_KEY, JSON.stringify(items)); } catch (_) {}
+  }
+  async function syncSavingToFirestore(entry, action) {
+    const fs = getExpenseDb();
+    if (!fs || !entry || !entry.id) return;
     try {
-      localStorage.setItem(SAVING_STORAGE_KEY, JSON.stringify(items));
+      const ref = fs.collection("projectSavingCosts").doc(String(entry.id));
+      if (action === "delete") await ref.delete(); else await ref.set(entry, { merge: true });
     } catch (_) {}
   }
-
-  async function syncSavingToFirestore(entry, action = "upsert") {
-    const firestore = getExpenseDb();
-    if (!firestore || !entry || !entry.id) return;
-    try {
-      const ref = firestore.collection("projectSavingCosts").doc(String(entry.id));
-      if (action === "delete") {
-        await ref.delete();
-      } else {
-        await ref.set(entry, { merge: true });
-      }
-    } catch (_) {}
-  }
-
   async function pullSavingsFromFirestore() {
-    const firestore = getExpenseDb();
+    const fs = getExpenseDb();
     const localItems = loadSavingsLocal();
-    if (!firestore) return localItems;
-
+    if (!fs) return localItems;
     try {
-      const snap = await firestore.collection("projectSavingCosts").get();
+      const snap = await fs.collection("projectSavingCosts").get();
       if (snap.empty) return localItems;
-
       const map = new Map();
-      localItems.forEach((item) => {
-        if (item && item.id) map.set(String(item.id), item);
-      });
-      snap.forEach((doc) => {
-        const d = doc.data() || {};
-        const id = d.id || doc.id;
-        map.set(String(id), { ...d, id });
-      });
-
-      const merged = Array.from(map.values()).sort((a, b) =>
-        String(b.date || "").localeCompare(String(a.date || ""))
-      );
+      localItems.forEach((i) => i && i.id && map.set(String(i.id), i));
+      snap.forEach((doc) => { const d = doc.data() || {}; const id = d.id || doc.id; map.set(String(id), Object.assign({}, d, { id: id })); });
+      const merged = Array.from(map.values()).sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
       saveSavingsLocal(merged);
       return merged;
-    } catch (_) {
-      return localItems;
-    }
+    } catch (_) { return localItems; }
   }
-
-  async function addSavingCostEntry({ date, description, amount, categoryType }) {
+  async function addSavingCostEntry(opts) {
     const entry = {
       id: "sav_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
-      date: date || new Date().toISOString().slice(0, 10),
-      description: String(description || "").trim(),
-      amount: Number(amount) || 0,
-      categoryType: String(categoryType || "General").trim() || "General",
+      date: opts.date || new Date().toISOString().slice(0, 10),
+      description: String(opts.description || "").trim(),
+      amount: Number(opts.amount) || 0,
+      categoryType: String(opts.categoryType || "General").trim() || "General",
       createdAt: new Date().toISOString()
     };
-    const current = loadSavingsLocal();
-    current.unshift(entry);
-    saveSavingsLocal(current);
+    const cur = loadSavingsLocal();
+    cur.unshift(entry);
+    saveSavingsLocal(cur);
     await syncSavingToFirestore(entry, "upsert");
     return entry;
   }
 
-  /* ---------------- RESELLER PANEL ---------------- */
   function ensureResellerPanel() {
     let panel = document.getElementById("ptResellerOrdersPanel");
     if (!panel) {
       panel = document.createElement("section");
       panel.id = "ptResellerOrdersPanel";
       panel.className = "pt-addon-view";
-      panel.style.cssText =
-        "margin:16px;padding:20px;border-radius:16px;background:#0f172a;border:1px solid #1e293b;color:#f8fafc;display:none;";
-      const main = document.querySelector("main") || document.body;
-      main.prepend(panel);
+      panel.style.cssText = "margin:16px;padding:20px;border-radius:16px;background:#0f172a;border:1px solid #1e293b;color:#f8fafc;display:none;";
+      (document.querySelector("main") || document.body).prepend(panel);
     }
-
-    panel.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
-        <div>
-          <h3 style="font-size:16px;font-weight:800;color:#f59e0b;margin:0;">Reseller Section</h3>
-          <p style="font-size:12px;color:#94a3b8;margin:4px 0 0 0;">Reseller module ready. Aap jo bhi fields/features is mein chahayenge, bataein toh add kar denge.</p>
-        </div>
-        <span style="font-size:11px;padding:4px 10px;border-radius:999px;background:#1e293b;color:#cbd5e1;border:1px solid #334155;">Ready for Configuration</span>
-      </div>
-    `;
+    panel.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;"><div><h3 style="font-size:16px;font-weight:800;color:#f59e0b;margin:0;">Reseller Section</h3><p style="font-size:12px;color:#94a3b8;margin:4px 0 0 0;">Reseller module ready.</p></div><span style="font-size:11px;padding:4px 10px;border-radius:999px;background:#1e293b;color:#cbd5e1;border:1px solid #334155;">Ready</span></div>`;
     return panel;
   }
 
-  /* ---------------- EXPENSE SHEET PANEL ---------------- */
   async function renderExpenseSheetPanel() {
     let panel = document.getElementById("ptExpenseSheetPanel");
     if (!panel) {
       panel = document.createElement("section");
       panel.id = "ptExpenseSheetPanel";
       panel.className = "pt-addon-view";
-      panel.style.cssText =
-        "margin:16px;padding:20px;border-radius:16px;background:#0f172a;border:1px solid #1e293b;color:#f8fafc;display:none;";
-      const main = document.querySelector("main") || document.body;
-      main.prepend(panel);
+      panel.style.cssText = "margin:16px;padding:20px;border-radius:16px;background:#0f172a;border:1px solid #1e293b;color:#f8fafc;display:none;";
+      (document.querySelector("main") || document.body).prepend(panel);
     }
-
     const expenses = await pullExpensesFromFirestore();
     const todayStr = new Date().toISOString().slice(0, 10);
-
-    const totalAll = expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-    const totalToday = expenses
-      .filter((item) => item.date === todayStr)
-      .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-
+    const totalAll = expenses.reduce((s, x) => s + (Number(x.amount) || 0), 0);
+    const totalToday = expenses.filter((x) => x.date === todayStr).reduce((s, x) => s + (Number(x.amount) || 0), 0);
     const byDate = {};
-    expenses.forEach((item) => {
-      const d = item.date || "Unknown";
-      byDate[d] = (byDate[d] || 0) + (Number(item.amount) || 0);
-    });
+    expenses.forEach((x) => { const d = x.date || "Unknown"; byDate[d] = (byDate[d] || 0) + (Number(x.amount) || 0); });
     const sortedDates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
 
     panel.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-        <div>
-          <h3 style="font-size:17px;font-weight:800;color:#f59e0b;margin:0;">Expensive Sheet (Daily Cost Tracker)</h3>
-          <p style="font-size:12px;color:#94a3b8;margin:4px 0 0 0;">Rozana ke kharchay (daily cost) yahan entry karein aur ab tak ka total cost track karein.</p>
-        </div>
+        <div><h3 style="font-size:17px;font-weight:800;color:#f59e0b;margin:0;">Expensive Sheet (Daily Cost Tracker)</h3><p style="font-size:12px;color:#94a3b8;margin:4px 0 0 0;">Rozana ke kharchay track karein.</p></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <div style="background:#1e293b;border:1px solid #334155;padding:8px 14px;border-radius:12px;">
-            <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;">Aaj Ka Kharcha (${todayStr})</div>
-            <div style="font-size:15px;font-weight:800;color:#38bdf8;">${formatPkr(totalToday)}</div>
-          </div>
-          <div style="background:#1e293b;border:1px solid #334155;padding:8px 14px;border-radius:12px;">
-            <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;">Ab Tak Total Cost</div>
-            <div style="font-size:15px;font-weight:800;color:#34d399;">${formatPkr(totalAll)}</div>
-          </div>
+          <div style="background:#1e293b;border:1px solid #334155;padding:8px 14px;border-radius:12px;"><div style="font-size:10px;color:#94a3b8;">AAJ KA KHARCHA (${todayStr})</div><div style="font-size:15px;font-weight:800;color:#38bdf8;">${formatPkr(totalToday)}</div></div>
+          <div style="background:#1e293b;border:1px solid #334155;padding:8px 14px;border-radius:12px;"><div style="font-size:10px;color:#94a3b8;">AB TAK TOTAL COST</div><div style="font-size:15px;font-weight:800;color:#34d399;">${formatPkr(totalAll)}</div></div>
         </div>
       </div>
-
-      <form id="ptExpenseEntryForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;background:#020617;padding:14px;border-radius:12px;border:1px solid #1e293b;margin-bottom:16px;">
-        <div>
-          <label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Date</label>
-          <input id="ptExpDate" type="date" value="${todayStr}" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" />
-        </div>
-        <div>
-          <label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Category / Item</label>
-          <input id="ptExpCategory" type="text" placeholder="e.g. Petrol, Packaging, Ads" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" />
-        </div>
-        <div>
-          <label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Amount (PKR)</label>
-          <input id="ptExpAmount" type="number" step="0.01" min="0" placeholder="0" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" />
-        </div>
-        <div>
-          <label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Notes / Details</label>
-          <input id="ptExpNote" type="text" placeholder="Optional detail" style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" />
-        </div>
-        <div style="display:flex;align-items:flex-end;">
-          <button type="button" id="ptToggleSaveCostFlagBtn" data-active="0" style="width:100%;padding:9px 12px;border-radius:8px;background:#1e293b;color:#fbbf24;border:1px solid #f59e0b;font-weight:700;font-size:12px;cursor:pointer;">
-            Save Cost: OFF
-          </button>
-        </div>
-        <div style="display:flex;align-items:flex-end;">
-          <button type="submit" style="width:100%;padding:9px 14px;border-radius:8px;background:#10b981;color:#fff;font-weight:700;font-size:12px;border:none;cursor:pointer;">
-            + Add Cost
-          </button>
-        </div>
+      <form id="ptExpenseEntryForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;background:#020617;padding:14px;border-radius:12px;border:1px solid #1e293b;margin-bottom:16px;">
+        <div><label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Date</label><input id="ptExpDate" type="date" value="${todayStr}" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" /></div>
+        <div><label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Category / Item</label><input id="ptExpCategory" type="text" placeholder="e.g. Petrol, Ads" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" /></div>
+        <div><label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Amount (PKR)</label><input id="ptExpAmount" type="number" step="0.01" min="0" placeholder="0" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" /></div>
+        <div><label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Notes / Details</label><input id="ptExpNote" type="text" placeholder="Optional detail" style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" /></div>
+        <div style="display:flex;align-items:flex-end;"><button type="button" id="ptToggleSaveCostFlagBtn" data-active="0" style="width:100%;padding:9px 12px;border-radius:8px;background:#1e293b;color:#fbbf24;border:1px solid #f59e0b;font-weight:700;font-size:12px;cursor:pointer;">Save Cost: OFF</button></div>
+        <div style="display:flex;align-items:flex-end;"><button type="submit" style="width:100%;padding:9px 14px;border-radius:8px;background:#10b981;color:#fff;font-weight:700;font-size:12px;border:none;cursor:pointer;">+ Add Cost</button></div>
       </form>
-
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <label style="font-size:12px;color:#94a3b8;">Filter Date:</label>
-          <select id="ptExpDateFilter" style="padding:6px 10px;border-radius:8px;background:#1e293b;border:1px solid #334155;color:#fff;font-size:12px;">
-            <option value="">All Dates</option>
-            ${sortedDates.map((d) => `<option value="${d}">${d} (${formatPkr(byDate[d])})</option>`).join("")}
-          </select>
+          <select id="ptExpDateFilter" style="padding:6px 10px;border-radius:8px;background:#1e293b;border:1px solid #334155;color:#fff;font-size:12px;"><option value="">All Dates</option>${sortedDates.map((d) => `<option value="${d}">${d} (${formatPkr(byDate[d])})</option>`).join("")}</select>
           <input id="ptExpSearch" type="text" placeholder="Search item / note..." style="padding:6px 10px;border-radius:8px;background:#1e293b;border:1px solid #334155;color:#fff;font-size:12px;" />
         </div>
         <span style="font-size:12px;color:#94a3b8;">Entries: ${expenses.length}</span>
       </div>
-
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead>
-            <tr style="border-bottom:1px solid #1e293b;color:#94a3b8;text-align:left;">
-              <th style="padding:8px;">Date</th>
-              <th style="padding:8px;">Category / Item</th>
-              <th style="padding:8px;">Notes</th>
-              <th style="padding:8px;">Amount</th>
-              <th style="padding:8px;text-align:center;">Action</th>
-            </tr>
-          </thead>
-          <tbody id="ptExpenseTableRows"></tbody>
-        </table>
-      </div>
+      <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid #1e293b;color:#94a3b8;text-align:left;"><th style="padding:8px;">Date</th><th style="padding:8px;">Category / Item</th><th style="padding:8px;">Notes</th><th style="padding:8px;">Amount</th><th style="padding:8px;text-align:center;">Action</th></tr></thead><tbody id="ptExpenseTableRows"></tbody></table></div>
     `;
 
     const saveFlagBtn = document.getElementById("ptToggleSaveCostFlagBtn");
     saveFlagBtn?.addEventListener("click", () => {
-      const isNowActive = saveFlagBtn.getAttribute("data-active") !== "1";
-      saveFlagBtn.setAttribute("data-active", isNowActive ? "1" : "0");
-      saveFlagBtn.textContent = isNowActive ? "Save Cost: ON" : "Save Cost: OFF";
-      saveFlagBtn.style.background = isNowActive ? "#f59e0b" : "#1e293b";
-      saveFlagBtn.style.color = isNowActive ? "#090d16" : "#fbbf24";
+      const on = saveFlagBtn.getAttribute("data-active") !== "1";
+      saveFlagBtn.setAttribute("data-active", on ? "1" : "0");
+      saveFlagBtn.textContent = on ? "Save Cost: ON" : "Save Cost: OFF";
+      saveFlagBtn.style.background = on ? "#f59e0b" : "#1e293b";
+      saveFlagBtn.style.color = on ? "#090d16" : "#fbbf24";
     });
 
     function paintRows() {
       const tbody = document.getElementById("ptExpenseTableRows");
       if (!tbody) return;
-      const dateFilter = (document.getElementById("ptExpDateFilter")?.value || "").trim();
-      const query = (document.getElementById("ptExpSearch")?.value || "").trim().toLowerCase();
-
-      const filtered = expenses.filter((item) => {
-        const matchDate = !dateFilter || item.date === dateFilter;
-        const matchText =
-          !query ||
-          String(item.category || "").toLowerCase().includes(query) ||
-          String(item.note || "").toLowerCase().includes(query) ||
-          String(item.date || "").toLowerCase().includes(query);
-        return matchDate && matchText;
-      });
-
-      if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="5" style="padding:14px;text-align:center;color:#94a3b8;">Koi expense entry nahi mili. Upar form se daily cost add karein.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = filtered
-        .map(
-          (item) => `
-          <tr style="border-bottom:1px solid #1e293b;">
-            <td style="padding:8px;color:#e2e8f0;font-weight:600;">${escapeHtml(item.date || "-")}</td>
-            <td style="padding:8px;color:#fbbf24;font-weight:700;">${escapeHtml(item.category || "-")}</td>
-            <td style="padding:8px;color:#cbd5e1;">${escapeHtml(item.note || "-")}</td>
-            <td style="padding:8px;color:#34d399;font-weight:700;">${formatPkr(item.amount)}</td>
-            <td style="padding:8px;text-align:center;">
-              <button type="button" data-del-exp="${escapeHtml(item.id)}" style="padding:4px 10px;border-radius:6px;background:#dc2626;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;">Delete</button>
-            </td>
-          </tr>`
-        )
-        .join("");
-
+      const df = (document.getElementById("ptExpDateFilter")?.value || "").trim();
+      const q = (document.getElementById("ptExpSearch")?.value || "").trim().toLowerCase();
+      const list = expenses.filter((it) => (!df || it.date === df) && (!q || String(it.category || "").toLowerCase().includes(q) || String(it.note || "").toLowerCase().includes(q) || String(it.date || "").toLowerCase().includes(q)));
+      if (!list.length) { tbody.innerHTML = `<tr><td colspan="5" style="padding:14px;text-align:center;color:#94a3b8;">Koi expense entry nahi mili.</td></tr>`; return; }
+      tbody.innerHTML = list.map((it) => `<tr style="border-bottom:1px solid #1e293b;"><td style="padding:8px;color:#e2e8f0;font-weight:600;">${safeText(it.date || "-")}</td><td style="padding:8px;color:#fbbf24;font-weight:700;">${safeText(it.category || "-")}</td><td style="padding:8px;color:#cbd5e1;">${safeText(it.note || "-")}</td><td style="padding:8px;color:#34d399;font-weight:700;">${formatPkr(it.amount)}</td><td style="padding:8px;text-align:center;"><button type="button" data-del-exp="${safeText(it.id)}" style="padding:4px 10px;border-radius:6px;background:#dc2626;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;">Delete</button></td></tr>`).join("");
       tbody.querySelectorAll("[data-del-exp]").forEach((btn) => {
         btn.addEventListener("click", async () => {
           const id = btn.getAttribute("data-del-exp");
-          const updated = loadExpensesLocal().filter((x) => String(x.id) !== String(id));
-          saveExpensesLocal(updated);
-          await syncExpenseToFirestore({ id }, "delete");
+          saveExpensesLocal(loadExpensesLocal().filter((x) => String(x.id) !== String(id)));
+          await syncExpenseToFirestore({ id: id }, "delete");
           renderExpenseSheetPanel();
         });
       });
     }
-
     paintRows();
-
     document.getElementById("ptExpDateFilter")?.addEventListener("change", paintRows);
     document.getElementById("ptExpSearch")?.addEventListener("input", paintRows);
-
     document.getElementById("ptExpenseEntryForm")?.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const dateVal = document.getElementById("ptExpDate")?.value || todayStr;
-      const catVal = (document.getElementById("ptExpCategory")?.value || "").trim();
-      const amtVal = parseFloat(document.getElementById("ptExpAmount")?.value || "0");
-      const noteVal = (document.getElementById("ptExpNote")?.value || "").trim();
-      const saveAlsoInSaving =
-        document.getElementById("ptToggleSaveCostFlagBtn")?.getAttribute("data-active") === "1";
-
-      if (!catVal || isNaN(amtVal) || amtVal < 0) return;
-
-      const newEntry = {
-        id: "exp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
-        date: dateVal,
-        category: catVal,
-        amount: amtVal,
-        note: noteVal,
-        createdAt: new Date().toISOString()
-      };
-
-      const current = loadExpensesLocal();
-      current.unshift(newEntry);
-      saveExpensesLocal(current);
-      await syncExpenseToFirestore(newEntry, "upsert");
-
-      if (saveAlsoInSaving) {
-        const desc = noteVal ? `${catVal} - ${noteVal}` : catVal;
-        await addSavingCostEntry({
-          date: dateVal,
-          description: desc,
-          amount: amtVal,
-          categoryType: catVal
-        });
-      }
-
+      const d = document.getElementById("ptExpDate")?.value || todayStr;
+      const c = (document.getElementById("ptExpCategory")?.value || "").trim();
+      const a = parseFloat(document.getElementById("ptExpAmount")?.value || "0");
+      const n = (document.getElementById("ptExpNote")?.value || "").trim();
+      const alsoSave = document.getElementById("ptToggleSaveCostFlagBtn")?.getAttribute("data-active") === "1";
+      if (!c || isNaN(a) || a < 0) return;
+      const entry = { id: "exp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6), date: d, category: c, amount: a, note: n, createdAt: new Date().toISOString() };
+      const cur = loadExpensesLocal(); cur.unshift(entry); saveExpensesLocal(cur);
+      await syncExpenseToFirestore(entry, "upsert");
+      if (alsoSave) await addSavingCostEntry({ date: d, description: n ? (c + " - " + n) : c, amount: a, categoryType: c });
       renderExpenseSheetPanel();
     });
-
     return panel;
   }
 
-  /* ---------------- SAVING COST PANEL (PRIME TRADERS PROJECT SAVING COST) ---------------- */
   function renderSavingGraphHtml(items, mode) {
     const grouped = {};
-    items.forEach((row) => {
-      const key =
-        mode === "category"
-          ? String(row.categoryType || "Uncategorized").trim() || "Uncategorized"
-          : String(row.date || "Unknown").trim() || "Unknown";
-      grouped[key] = (grouped[key] || 0) + (Number(row.amount) || 0);
+    items.forEach((r) => {
+      const k = mode === "category" ? (String(r.categoryType || "Uncategorized").trim() || "Uncategorized") : (String(r.date || "Unknown").trim() || "Unknown");
+      grouped[k] = (grouped[k] || 0) + (Number(r.amount) || 0);
     });
-
-    const entries = Object.entries(grouped).sort((a, b) =>
-      mode === "date" ? a[0].localeCompare(b[0]) : b[1] - a[1]
-    );
-
-    if (!entries.length) {
-      return `<div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">Graph show karne ke liye Saving Cost mein data add karein.</div>`;
-    }
-
-    const maxVal = Math.max(...entries.map(([, v]) => v), 1);
-
-    return `
-      <div style="display:flex;align-items:flex-end;gap:14px;min-height:190px;padding:14px 8px 6px 8px;overflow-x:auto;">
-        ${entries
-          .map(([label, val]) => {
-            const pct = Math.max(8, Math.round((val / maxVal) * 130));
-            const barColor =
-              mode === "date"
-                ? "linear-gradient(180deg,#38bdf8 0%,#0284c7 100%)"
-                : "linear-gradient(180deg,#34d399 0%,#059669 100%)";
-            return `
-              <div style="display:flex;flex-direction:column;align-items:center;min-width:74px;flex:1;">
-                <div style="font-size:10px;font-weight:700;color:#e2e8f0;margin-bottom:6px;white-space:nowrap;">${formatPkr(val)}</div>
-                <div title="${escapeHtml(label)}: ${formatPkr(val)}" style="width:34px;height:${pct}px;border-radius:8px 8px 3px 3px;background:${barColor};box-shadow:0 4px 12px rgba(0,0,0,0.35);transition:height 0.25s ease;"></div>
-                <div style="margin-top:8px;font-size:11px;color:#cbd5e1;font-weight:600;text-align:center;max-width:105px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
-              </div>
-            `;
-          })
-          .join("")}
-      </div>
-    `;
+    const entries = Object.entries(grouped).sort((a, b) => mode === "date" ? a[0].localeCompare(b[0]) : b[1] - a[1]);
+    if (!entries.length) return `<div style="padding:24px;text-align:center;color:#94a3b8;font-size:12px;">Graph ke liye Saving Cost data add karein.</div>`;
+    const maxVal = Math.max.apply(null, entries.map((x) => x[1]).concat([1]));
+    return `<div style="display:flex;align-items:flex-end;gap:14px;min-height:190px;padding:14px 8px 6px 8px;overflow-x:auto;">${entries.map((pair) => {
+      const lbl = pair[0], v = pair[1];
+      const h = Math.max(8, Math.round((v / maxVal) * 130));
+      const bg = mode === "date" ? "linear-gradient(180deg,#38bdf8 0%,#0284c7 100%)" : "linear-gradient(180deg,#34d399 0%,#059669 100%)";
+      return `<div style="display:flex;flex-direction:column;align-items:center;min-width:74px;flex:1;"><div style="font-size:10px;font-weight:700;color:#e2e8f0;margin-bottom:6px;white-space:nowrap;">${formatPkr(v)}</div><div title="${safeText(lbl)}: ${formatPkr(v)}" style="width:34px;height:${h}px;border-radius:8px 8px 3px 3px;background:${bg};"></div><div style="margin-top:8px;font-size:11px;color:#cbd5e1;font-weight:600;max-width:105px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${safeText(lbl)}">${safeText(lbl)}</div></div>`;
+    }).join("")}</div>`;
   }
 
   async function renderSavingCostPanel() {
@@ -3502,191 +3249,95 @@
       panel = document.createElement("section");
       panel.id = "ptSavingCostSheetPanel";
       panel.className = "pt-addon-view";
-      panel.style.cssText =
-        "margin:16px;padding:20px;border-radius:16px;background:#0f172a;border:1px solid #1e293b;color:#f8fafc;display:none;";
-      const main = document.querySelector("main") || document.body;
-      main.prepend(panel);
+      panel.style.cssText = "margin:16px;padding:20px;border-radius:16px;background:#0f172a;border:1px solid #1e293b;color:#f8fafc;display:none;";
+      (document.querySelector("main") || document.body).prepend(panel);
     }
-
     const savings = await pullSavingsFromFirestore();
     const todayStr = new Date().toISOString().slice(0, 10);
-    const totalSaving = savings.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    const totalSaving = savings.reduce((s, x) => s + (Number(x.amount) || 0), 0);
 
     panel.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-        <div>
-          <h3 style="font-size:18px;font-weight:800;color:#f59e0b;margin:0;">Prime Traders Project Saving Cost</h3>
-          <p style="font-size:12px;color:#94a3b8;margin:4px 0 0 0;">Saved cost entries manage karein aur Date Wise ya Category Type ke hisaab se graph dekhein.</p>
-        </div>
-        <div style="background:#1e293b;border:1px solid #334155;padding:8px 16px;border-radius:12px;">
-          <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;">Total Saving Cost</div>
-          <div style="font-size:16px;font-weight:800;color:#34d399;">${formatPkr(totalSaving)}</div>
-        </div>
+        <div><h3 style="font-size:18px;font-weight:800;color:#f59e0b;margin:0;">Prime Traders Project Saving Cost</h3><p style="font-size:12px;color:#94a3b8;margin:4px 0 0 0;">Date Wise ya Category Type ke hisaab se saving cost graph aur table manage karein.</p></div>
+        <div style="background:#1e293b;border:1px solid #334155;padding:8px 16px;border-radius:12px;"><div style="font-size:10px;color:#94a3b8;">TOTAL SAVING COST</div><div style="font-size:16px;font-weight:800;color:#34d399;">${formatPkr(totalSaving)}</div></div>
       </div>
-
-      <!-- Add New Line Form -->
       <form id="ptSavingAddForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;background:#020617;padding:14px;border-radius:12px;border:1px solid #1e293b;margin-bottom:16px;">
-        <div>
-          <label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Date</label>
-          <input id="ptSavDate" type="date" value="${todayStr}" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" />
-        </div>
-        <div>
-          <label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Item of Description</label>
-          <input id="ptSavDesc" type="text" placeholder="e.g. Packaging Saving" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" />
-        </div>
-        <div>
-          <label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Amount (PKR)</label>
-          <input id="ptSavAmount" type="number" step="0.01" min="0" placeholder="0" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" />
-        </div>
-        <div>
-          <label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Category Type</label>
-          <input id="ptSavCategoryType" type="text" placeholder="e.g. Logistics, Ads, Stock" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" />
-        </div>
-        <div style="display:flex;align-items:flex-end;">
-          <button type="submit" style="width:100%;padding:9px 14px;border-radius:8px;background:#10b981;color:#fff;font-weight:700;font-size:12px;border:none;cursor:pointer;">
-            + Add Line
-          </button>
-        </div>
+        <div><label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Date</label><input id="ptSavDate" type="date" value="${todayStr}" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" /></div>
+        <div><label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Item of Description</label><input id="ptSavDesc" type="text" placeholder="e.g. Packaging Saving" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" /></div>
+        <div><label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Amount (PKR)</label><input id="ptSavAmount" type="number" step="0.01" min="0" placeholder="0" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" /></div>
+        <div><label style="display:block;font-size:11px;color:#94a3b8;margin-bottom:4px;">Category Type</label><input id="ptSavCategoryType" type="text" placeholder="e.g. Logistics, Ads" required style="width:100%;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #334155;color:#fff;font-size:12px;" /></div>
+        <div style="display:flex;align-items:flex-end;"><button type="submit" style="width:100%;padding:9px 14px;border-radius:8px;background:#10b981;color:#fff;font-weight:700;font-size:12px;border:none;cursor:pointer;">+ Add Line</button></div>
       </form>
-
-      <!-- Graph Box with Date Wise & Category Type Buttons -->
       <div style="background:#020617;padding:14px;border-radius:12px;border:1px solid #1e293b;margin-bottom:16px;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-          <div style="font-size:13px;font-weight:700;color:#e2e8f0;">
-            Saving Cost Graph (${savingGraphMode === "date" ? "Date Wise" : "Category Type"})
-          </div>
+          <div style="font-size:13px;font-weight:700;color:#e2e8f0;">Saving Cost Graph (${savingGraphMode === "date" ? "Date Wise" : "Category Type"})</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button type="button" id="ptGraphDateBtn" style="padding:6px 12px;border-radius:8px;border:1px solid #38bdf8;font-size:11px;font-weight:700;cursor:pointer;background:${savingGraphMode === "date" ? "#0284c7" : "#0f172a"};color:#fff;">
-              Date Wise
-            </button>
-            <button type="button" id="ptGraphCategoryBtn" style="padding:6px 12px;border-radius:8px;border:1px solid #34d399;font-size:11px;font-weight:700;cursor:pointer;background:${savingGraphMode === "category" ? "#059669" : "#0f172a"};color:#fff;">
-              Category Type
-            </button>
+            <button type="button" id="ptGraphDateBtn" style="padding:6px 12px;border-radius:8px;border:1px solid #38bdf8;font-size:11px;font-weight:700;cursor:pointer;background:${savingGraphMode === "date" ? "#0284c7" : "#0f172a"};color:#fff;">Date Wise</button>
+            <button type="button" id="ptGraphCategoryBtn" style="padding:6px 12px;border-radius:8px;border:1px solid #34d399;font-size:11px;font-weight:700;cursor:pointer;background:${savingGraphMode === "category" ? "#059669" : "#0f172a"};color:#fff;">Category Type</button>
           </div>
         </div>
         <div id="ptSavingGraphContainer">${renderSavingGraphHtml(savings, savingGraphMode)}</div>
       </div>
-
-      <!-- Saving Table -->
-      <div style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead>
-            <tr style="border-bottom:1px solid #1e293b;color:#94a3b8;text-align:left;">
-              <th style="padding:8px;">SR#.</th>
-              <th style="padding:8px;">Date</th>
-              <th style="padding:8px;">Item of Description</th>
-              <th style="padding:8px;">Amount</th>
-              <th style="padding:8px;">Category Type</th>
-              <th style="padding:8px;text-align:center;">Action</th>
-            </tr>
-          </thead>
-          <tbody id="ptSavingTableRows"></tbody>
-        </table>
-      </div>
+      <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid #1e293b;color:#94a3b8;text-align:left;"><th style="padding:8px;">SR#.</th><th style="padding:8px;">Date</th><th style="padding:8px;">Item of Description</th><th style="padding:8px;">Amount</th><th style="padding:8px;">Category Type</th><th style="padding:8px;text-align:center;">Action</th></tr></thead><tbody id="ptSavingTableRows"></tbody></table></div>
     `;
-
-    function paintSavingRows() {
+      function paintSavingRows() {
       const tbody = document.getElementById("ptSavingTableRows");
       if (!tbody) return;
-
       if (!savings.length) {
-        tbody.innerHTML = `<tr><td colspan="6" style="padding:14px;text-align:center;color:#94a3b8;">Koi saving cost entry nahi mili. Upar form se line add karein.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="padding:14px;text-align:center;color:#94a3b8;">Koi saving cost entry nahi mili.</td></tr>`;
         return;
       }
+      tbody.innerHTML = savings.map((item, idx) => {
+        const srNo = idx + 1;
+        if (String(editingSavingId) === String(item.id)) {
+          return `<tr style="border-bottom:1px solid #1e293b;background:#111827;">
+            <td style="padding:8px;color:#94a3b8;font-weight:700;">${srNo}</td>
+            <td style="padding:6px;"><input id="ptEditSavDate" type="date" value="${safeText(item.date || "")}" style="padding:5px 7px;border-radius:6px;background:#020617;border:1px solid #475569;color:#fff;font-size:12px;" /></td>
+            <td style="padding:6px;"><input id="ptEditSavDesc" type="text" value="${safeText(item.description || "")}" style="width:100%;min-width:150px;padding:5px 7px;border-radius:6px;background:#020617;border:1px solid #475569;color:#fff;font-size:12px;" /></td>
+            <td style="padding:6px;"><input id="ptEditSavAmount" type="number" step="0.01" min="0" value="${Number(item.amount) || 0}" style="width:100px;padding:5px 7px;border-radius:6px;background:#020617;border:1px solid #475569;color:#fff;font-size:12px;" /></td>
+            <td style="padding:6px;"><input id="ptEditSavCat" type="text" value="${safeText(item.categoryType || "")}" style="width:120px;padding:5px 7px;border-radius:6px;background:#020617;border:1px solid #475569;color:#fff;font-size:12px;" /></td>
+            <td style="padding:6px;text-align:center;white-space:nowrap;">
+              <button type="button" data-save-sav="${safeText(item.id)}" style="padding:4px 10px;border-radius:6px;background:#10b981;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px;">Save</button>
+              <button type="button" data-cancel-sav="1" style="padding:4px 8px;border-radius:6px;background:#334155;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;">Cancel</button>
+            </td>
+          </tr>`;
+        }
+        return `<tr style="border-bottom:1px solid #1e293b;">
+          <td style="padding:8px;color:#94a3b8;font-weight:700;">${srNo}</td>
+          <td style="padding:8px;color:#e2e8f0;font-weight:600;">${safeText(item.date || "-")}</td>
+          <td style="padding:8px;color:#f8fafc;">${safeText(item.description || "-")}</td>
+          <td style="padding:8px;color:#34d399;font-weight:700;">${formatPkr(item.amount)}</td>
+          <td style="padding:8px;color:#fbbf24;font-weight:700;">${safeText(item.categoryType || "-")}</td>
+          <td style="padding:8px;text-align:center;white-space:nowrap;">
+            <button type="button" data-edit-sav="${safeText(item.id)}" style="padding:4px 10px;border-radius:6px;background:#2563eb;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px;">Edit</button>
+            <button type="button" data-del-sav="${safeText(item.id)}" style="padding:4px 10px;border-radius:6px;background:#dc2626;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;">Delete</button>
+          </td>
+        </tr>`;
+      }).join("");
 
-      tbody.innerHTML = savings
-        .map((item, idx) => {
-          const srNo = idx + 1;
-          const isEditing = String(editingSavingId) === String(item.id);
-
-          if (isEditing) {
-            return `
-              <tr style="border-bottom:1px solid #1e293b;background:#111827;">
-                <td style="padding:8px;color:#94a3b8;font-weight:700;">${srNo}</td>
-                <td style="padding:6px;"><input id="ptEditSavDate" type="date" value="${escapeHtml(item.date || "")}" style="padding:5px 7px;border-radius:6px;background:#020617;border:1px solid #475569;color:#fff;font-size:12px;" /></td>
-                <td style="padding:6px;"><input id="ptEditSavDesc" type="text" value="${escapeHtml(item.description || "")}" style="width:100%;min-width:150px;padding:5px 7px;border-radius:6px;background:#020617;border:1px solid #475569;color:#fff;font-size:12px;" /></td>
-                <td style="padding:6px;"><input id="ptEditSavAmount" type="number" step="0.01" min="0" value="${Number(item.amount) || 0}" style="width:100px;padding:5px 7px;border-radius:6px;background:#020617;border:1px solid #475569;color:#fff;font-size:12px;" /></td>
-                <td style="padding:6px;"><input id="ptEditSavCat" type="text" value="${escapeHtml(item.categoryType || "")}" style="width:120px;padding:5px 7px;border-radius:6px;background:#020617;border:1px solid #475569;color:#fff;font-size:12px;" /></td>
-                <td style="padding:6px;text-align:center;white-space:nowrap;">
-                  <button type="button" data-save-sav="${escapeHtml(item.id)}" style="padding:4px 10px;border-radius:6px;background:#10b981;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px;">Save</button>
-                  <button type="button" data-cancel-sav="1" style="padding:4px 8px;border-radius:6px;background:#334155;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;">Cancel</button>
-                </td>
-              </tr>
-            `;
-          }
-
-          return `
-            <tr style="border-bottom:1px solid #1e293b;">
-              <td style="padding:8px;color:#94a3b8;font-weight:700;">${srNo}</td>
-              <td style="padding:8px;color:#e2e8f0;font-weight:600;">${escapeHtml(item.date || "-")}</td>
-              <td style="padding:8px;color:#f8fafc;">${escapeHtml(item.description || "-")}</td>
-              <td style="padding:8px;color:#34d399;font-weight:700;">${formatPkr(item.amount)}</td>
-              <td style="padding:8px;color:#fbbf24;font-weight:700;">${escapeHtml(item.categoryType || "-")}</td>
-              <td style="padding:8px;text-align:center;white-space:nowrap;">
-                <button type="button" data-edit-sav="${escapeHtml(item.id)}" style="padding:4px 10px;border-radius:6px;background:#2563eb;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px;">Edit</button>
-                <button type="button" data-del-sav="${escapeHtml(item.id)}" style="padding:4px 10px;border-radius:6px;background:#dc2626;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;">Delete</button>
-              </td>
-            </tr>
-          `;
-        })
-        .join("");
-
-      tbody.querySelectorAll("[data-edit-sav]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          editingSavingId = btn.getAttribute("data-edit-sav");
-          paintSavingRows();
-        });
-      });
-
-      tbody.querySelectorAll("[data-cancel-sav]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          editingSavingId = null;
-          paintSavingRows();
-        });
-      });
-
+      tbody.querySelectorAll("[data-edit-sav]").forEach((btn) => btn.addEventListener("click", () => { editingSavingId = btn.getAttribute("data-edit-sav"); paintSavingRows(); }));
+      tbody.querySelectorAll("[data-cancel-sav]").forEach((btn) => btn.addEventListener("click", () => { editingSavingId = null; paintSavingRows(); }));
       tbody.querySelectorAll("[data-save-sav]").forEach((btn) => {
         btn.addEventListener("click", async () => {
           const id = btn.getAttribute("data-save-sav");
-          const updatedDate = document.getElementById("ptEditSavDate")?.value || todayStr;
-          const updatedDesc = (document.getElementById("ptEditSavDesc")?.value || "").trim();
-          const updatedAmt = parseFloat(document.getElementById("ptEditSavAmount")?.value || "0");
-          const updatedCat = (document.getElementById("ptEditSavCat")?.value || "").trim() || "General";
-
-          if (!updatedDesc || isNaN(updatedAmt) || updatedAmt < 0) return;
-
-          const current = loadSavingsLocal();
-          let modifiedItem = null;
-          const nextList = current.map((row) => {
-            if (String(row.id) === String(id)) {
-              modifiedItem = {
-                ...row,
-                date: updatedDate,
-                description: updatedDesc,
-                amount: updatedAmt,
-                categoryType: updatedCat,
-                updatedAt: new Date().toISOString()
-              };
-              return modifiedItem;
-            }
-            return row;
-          });
-
-          saveSavingsLocal(nextList);
-          if (modifiedItem) {
-            await syncSavingToFirestore(modifiedItem, "upsert");
-          }
+          const d = document.getElementById("ptEditSavDate")?.value || todayStr;
+          const desc = (document.getElementById("ptEditSavDesc")?.value || "").trim();
+          const amt = parseFloat(document.getElementById("ptEditSavAmount")?.value || "0");
+          const cat = (document.getElementById("ptEditSavCat")?.value || "").trim() || "General";
+          if (!desc || isNaN(amt) || amt < 0) return;
+          let mod = null;
+          const next = loadSavingsLocal().map((r) => String(r.id) === String(id) ? (mod = Object.assign({}, r, { date: d, description: desc, amount: amt, categoryType: cat, updatedAt: new Date().toISOString() })) : r);
+          saveSavingsLocal(next);
+          if (mod) await syncSavingToFirestore(mod, "upsert");
           editingSavingId = null;
           renderSavingCostPanel();
         });
       });
-
       tbody.querySelectorAll("[data-del-sav]").forEach((btn) => {
         btn.addEventListener("click", async () => {
           const id = btn.getAttribute("data-del-sav");
-          const updated = loadSavingsLocal().filter((x) => String(x.id) !== String(id));
-          saveSavingsLocal(updated);
-          await syncSavingToFirestore({ id }, "delete");
+          saveSavingsLocal(loadSavingsLocal().filter((x) => String(x.id) !== String(id)));
+          await syncSavingToFirestore({ id: id }, "delete");
           if (String(editingSavingId) === String(id)) editingSavingId = null;
           renderSavingCostPanel();
         });
@@ -3694,144 +3345,78 @@
     }
 
     paintSavingRows();
-
-    document.getElementById("ptGraphDateBtn")?.addEventListener("click", () => {
-      savingGraphMode = "date";
-      renderSavingCostPanel();
-    });
-
-    document.getElementById("ptGraphCategoryBtn")?.addEventListener("click", () => {
-      savingGraphMode = "category";
-      renderSavingCostPanel();
-    });
-
+    document.getElementById("ptGraphDateBtn")?.addEventListener("click", () => { savingGraphMode = "date"; renderSavingCostPanel(); });
+    document.getElementById("ptGraphCategoryBtn")?.addEventListener("click", () => { savingGraphMode = "category"; renderSavingCostPanel(); });
     document.getElementById("ptSavingAddForm")?.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const dateVal = document.getElementById("ptSavDate")?.value || todayStr;
-      const descVal = (document.getElementById("ptSavDesc")?.value || "").trim();
-      const amtVal = parseFloat(document.getElementById("ptSavAmount")?.value || "0");
-      const catVal = (document.getElementById("ptSavCategoryType")?.value || "").trim();
-
-      if (!descVal || !catVal || isNaN(amtVal) || amtVal < 0) return;
-
-      await addSavingCostEntry({
-        date: dateVal,
-        description: descVal,
-        amount: amtVal,
-        categoryType: catVal
-      });
-
+      const d = document.getElementById("ptSavDate")?.value || todayStr;
+      const desc = (document.getElementById("ptSavDesc")?.value || "").trim();
+      const amt = parseFloat(document.getElementById("ptSavAmount")?.value || "0");
+      const cat = (document.getElementById("ptSavCategoryType")?.value || "").trim();
+      if (!desc || !cat || isNaN(amt) || amt < 0) return;
+      await addSavingCostEntry({ date: d, description: desc, amount: amt, categoryType: cat });
       renderSavingCostPanel();
     });
-
     return panel;
   }
 
-  /* ---------------- SIDEBAR INJECTION ---------------- */
   let isInjectingSidebar = false;
-
   function findWholesellerMenuItem() {
-    const items = Array.from(
-      document.querySelectorAll(
-        "aside a, aside button, nav a, nav button, [class*='sidebar'] a, [class*='sidebar'] button"
-      )
-    );
-    return (
-      items.find((el) => /wholeseller\s*orders?/i.test((el.textContent || "").trim())) || null
-    );
+    const items = Array.from(document.querySelectorAll("aside a, aside button, nav a, nav button, [class*='sidebar'] a, [class*='sidebar'] button"));
+    return items.find((el) => (el.textContent || "").toLowerCase().indexOf("wholeseller") !== -1) || null;
   }
 
   function injectSidebarButtons() {
     if (isInjectingSidebar) return false;
     isInjectingSidebar = true;
-
     try {
-      const wholesellerBtn = findWholesellerMenuItem();
-      if (!wholesellerBtn || !wholesellerBtn.parentElement) return false;
+      const wBtn = findWholesellerMenuItem();
+      if (!wBtn || !wBtn.parentElement) return false;
+      const n1 = wBtn.nextElementSibling, n2 = n1?.nextElementSibling, n3 = n2?.nextElementSibling;
+      if (n1?.id === "ptResellerMenuBtn" && n2?.id === "ptExpenseSheetBtn" && n3?.id === "ptSavingCostBtn") return true;
 
-      const next1 = wholesellerBtn.nextElementSibling;
-      const next2 = next1 ? next1.nextElementSibling : null;
-      const next3 = next2 ? next2.nextElementSibling : null;
+      ["ptResellerMenuBtn", "ptExpenseSheetBtn", "ptSavingCostBtn"].forEach((id) => document.getElementById(id)?.remove());
 
-      if (
-        next1 &&
-        next1.id === "ptResellerMenuBtn" &&
-        next2 &&
-        next2.id === "ptExpenseSheetBtn" &&
-        next3 &&
-        next3.id === "ptSavingCostBtn"
-      ) {
-        return true;
-      }
+      const tag = wBtn.tagName.toLowerCase() === "button" ? "button" : "a";
+      const baseClass = wBtn.className || "";
+      const css = "display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-top:4px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;text-align:left;text-decoration:none;";
 
-      document.getElementById("ptResellerMenuBtn")?.remove();
-      document.getElementById("ptExpenseSheetBtn")?.remove();
-      document.getElementById("ptSavingCostBtn")?.remove();
+      const rBtn = document.createElement(tag);
+      rBtn.id = "ptResellerMenuBtn";
+      if (tag === "button") rBtn.type = "button";
+      if (baseClass) rBtn.className = baseClass;
+      rBtn.innerHTML = `<i class="fas fa-user-tie" style="width:16px;text-align:center;"></i> <span>Reseller</span>`;
+      rBtn.style.cssText = css;
+      rBtn.addEventListener("click", (e) => { e.preventDefault(); const p = ensureResellerPanel(); hideAllMainViewsExcept("ptResellerOrdersPanel"); p.style.display = "block"; });
 
-      const tag = wholesellerBtn.tagName.toLowerCase() === "button" ? "button" : "a";
-      const baseClass = wholesellerBtn.className || "";
-      const btnCss =
-        "display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;margin-top:4px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;text-align:left;text-decoration:none;";
+      const eBtn = document.createElement(tag);
+      eBtn.id = "ptExpenseSheetBtn";
+      if (tag === "button") eBtn.type = "button";
+      if (baseClass) eBtn.className = baseClass;
+      eBtn.innerHTML = `<i class="fas fa-file-invoice-dollar" style="width:16px;text-align:center;"></i> <span>Expensive Sheet</span>`;
+      eBtn.style.cssText = css;
+      eBtn.addEventListener("click", async (e) => { e.preventDefault(); const p = await renderExpenseSheetPanel(); hideAllMainViewsExcept("ptExpenseSheetPanel"); p.style.display = "block"; });
 
-      const resellerBtn = document.createElement(tag);
-      resellerBtn.id = "ptResellerMenuBtn";
-      if (tag === "button") resellerBtn.type = "button";
-      if (baseClass) resellerBtn.className = baseClass;
-      resellerBtn.innerHTML = `<i class="fas fa-user-tie" style="width:16px;text-align:center;"></i> <span>Reseller</span>`;
-      resellerBtn.style.cssText = btnCss;
-      resellerBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const panel = ensureResellerPanel();
-        hideAllMainViewsExcept("ptResellerOrdersPanel");
-        panel.style.display = "block";
-      });
+      const sBtn = document.createElement(tag);
+      sBtn.id = "ptSavingCostBtn";
+      if (tag === "button") sBtn.type = "button";
+      if (baseClass) sBtn.className = baseClass;
+      sBtn.innerHTML = `<i class="fas fa-piggy-bank" style="width:16px;text-align:center;"></i> <span>Saving</span>`;
+      sBtn.style.cssText = css;
+      sBtn.addEventListener("click", async (e) => { e.preventDefault(); const p = await renderSavingCostPanel(); hideAllMainViewsExcept("ptSavingCostSheetPanel"); p.style.display = "block"; });
 
-      const expBtn = document.createElement(tag);
-      expBtn.id = "ptExpenseSheetBtn";
-      if (tag === "button") expBtn.type = "button";
-      if (baseClass) expBtn.className = baseClass;
-      expBtn.innerHTML = `<i class="fas fa-file-invoice-dollar" style="width:16px;text-align:center;"></i> <span>Expensive Sheet</span>`;
-      expBtn.style.cssText = btnCss;
-      expBtn.addEventListener("click", async (e) => {
-        e.preventDefault();
-        const panel = await renderExpenseSheetPanel();
-        hideAllMainViewsExcept("ptExpenseSheetPanel");
-        panel.style.display = "block";
-      });
+      wBtn.insertAdjacentElement("afterend", rBtn);
+      rBtn.insertAdjacentElement("afterend", eBtn);
+      eBtn.insertAdjacentElement("afterend", sBtn);
 
-      const savingBtn = document.createElement(tag);
-      savingBtn.id = "ptSavingCostBtn";
-      if (tag === "button") savingBtn.type = "button";
-      if (baseClass) savingBtn.className = baseClass;
-      savingBtn.innerHTML = `<i class="fas fa-piggy-bank" style="width:16px;text-align:center;"></i> <span>Saving</span>`;
-      savingBtn.style.cssText = btnCss;
-      savingBtn.addEventListener("click", async (e) => {
-        e.preventDefault();
-        const panel = await renderSavingCostPanel();
-        hideAllMainViewsExcept("ptSavingCostSheetPanel");
-        panel.style.display = "block";
-      });
-
-      wholesellerBtn.insertAdjacentElement("afterend", resellerBtn);
-      resellerBtn.insertAdjacentElement("afterend", expBtn);
-      expBtn.insertAdjacentElement("afterend", savingBtn);
-
-      const sidebarParent = wholesellerBtn.parentElement;
-      if (sidebarParent && !sidebarParent.dataset.ptNavBound) {
-        sidebarParent.dataset.ptNavBound = "1";
-        sidebarParent.addEventListener("click", (e) => {
-          const clickedBtn = e.target.closest("a, button");
-          if (
-            clickedBtn &&
-            clickedBtn.id !== "ptResellerMenuBtn" &&
-            clickedBtn.id !== "ptExpenseSheetBtn" &&
-            clickedBtn.id !== "ptSavingCostBtn"
-          ) {
-            hideCustomAddonPanels();
-          }
+      const parent = wBtn.parentElement;
+      if (parent && !parent.dataset.ptNavBound) {
+        parent.dataset.ptNavBound = "1";
+        parent.addEventListener("click", (e) => {
+          const b = e.target.closest("a, button");
+          if (b && ["ptResellerMenuBtn", "ptExpenseSheetBtn", "ptSavingCostBtn"].indexOf(b.id) === -1) hideCustomAddonPanels();
         });
       }
-
       return true;
     } finally {
       isInjectingSidebar = false;
@@ -3846,11 +3431,8 @@
     }
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initAddon, { once: true });
-  } else {
-    initAddon();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAddon, { once: true });
+  else initAddon();
 })();
 </script>
 </body>
