@@ -2985,9 +2985,9 @@
   const SAVING_STORAGE_KEY = "ptProjectSavingCost_v1";
   let savingGraphMode = "date";
   let editingSavingId = null;
-    const INVESTMENT_STORAGE_KEY = "ptInvestmentSheet_v1";
+  const INVESTMENT_STORAGE_KEY = "ptInvestmentSheet_v1";
   let editingInvestmentId = null;
-    const RETURN_AMOUNT_STORAGE_KEY = "ptReturnAmountSheet_v1";
+  const RETURN_AMOUNT_STORAGE_KEY = "ptReturnAmountSheet_v1";
   let editingReturnId = null;
 
   function getExpenseDb() {
@@ -3030,7 +3030,7 @@
         el.classList.remove("hidden");
         return;
       }
-       if (
+      if (
         el.id === "ptResellerOrdersPanel" ||
         el.id === "ptExpenseSheetPanel" ||
         el.id === "ptSavingCostSheetPanel" ||
@@ -3052,7 +3052,11 @@
   }
 
   function safeText(val) {
- return String(val == null ? "" : val).split(String.fromCharCode(38)).join(String.fromCharCode(38) + "amp;").split(String.fromCharCode(60)).join(String.fromCharCode(38) + "lt;").split(String.fromCharCode(62)).join(String.fromCharCode(38) + "gt;").split(String.fromCharCode(34)).join(String.fromCharCode(38) + "quot;");
+    return String(val == null ? "" : val)
+      .split(String.fromCharCode(38)).join(String.fromCharCode(38) + "amp;")
+      .split(String.fromCharCode(60)).join(String.fromCharCode(38) + "lt;")
+      .split(String.fromCharCode(62)).join(String.fromCharCode(38) + "gt;")
+      .split(String.fromCharCode(34)).join(String.fromCharCode(38) + "quot;");
   }
 
   function formatPkr(amount) {
@@ -3235,7 +3239,9 @@
       renderExpenseSheetPanel();
     });
     return panel;
-      function loadReturnAmountsLocal() {
+  }
+
+  function loadReturnAmountsLocal() {
     try {
       const p = JSON.parse(localStorage.getItem(RETURN_AMOUNT_STORAGE_KEY) || "[]");
       return Array.isArray(p) ? p : [];
@@ -3478,7 +3484,8 @@
 
     return panel;
   }
-    function renderSavingGraphHtml(items, mode) {
+
+  function renderSavingGraphHtml(items, mode) {
     const grouped = {};
     items.forEach((r) => {
       const k = mode === "category" ? (String(r.categoryType || "Uncategorized").trim() || "Uncategorized") : (String(r.date || "Unknown").trim() || "Unknown");
@@ -3532,7 +3539,8 @@
       </div>
       <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr style="border-bottom:1px solid #1e293b;color:#94a3b8;text-align:left;"><th style="padding:8px;">SR#.</th><th style="padding:8px;">Date</th><th style="padding:8px;">Item of Description</th><th style="padding:8px;">Amount</th><th style="padding:8px;">Category Type</th><th style="padding:8px;text-align:center;">Action</th></tr></thead><tbody id="ptSavingTableRows"></tbody></table></div>
     `;
-      function paintSavingRows() {
+
+    function paintSavingRows() {
       const tbody = document.getElementById("ptSavingTableRows");
       if (!tbody) return;
       if (!savings.length) {
@@ -3611,7 +3619,8 @@
     });
     return panel;
   }
-function loadInvestmentsLocal() {
+
+  function loadInvestmentsLocal() {
     try {
       const p = JSON.parse(localStorage.getItem(INVESTMENT_STORAGE_KEY) || "[]");
       return Array.isArray(p) ? p : [];
@@ -3831,6 +3840,7 @@ function loadInvestmentsLocal() {
 
     return panel;
   }
+
   let isInjectingSidebar = false;
   function findWholesellerMenuItem() {
     const items = Array.from(document.querySelectorAll("aside a, aside button, nav a, nav button, [class*='sidebar'] a, [class*='sidebar'] button"));
@@ -3843,10 +3853,31 @@ function loadInvestmentsLocal() {
     try {
       const wBtn = findWholesellerMenuItem();
       if (!wBtn || !wBtn.parentElement) return false;
-      const n1 = wBtn.nextElementSibling, n2 = n1?.nextElementSibling, n3 = n2?.nextElementSibling;
-      if (n1?.id === "ptResellerMenuBtn" && n2?.id === "ptExpenseSheetBtn" && n3?.id === "ptSavingCostBtn") return true;
 
-      ["ptResellerMenuBtn", "ptExpenseSheetBtn", "ptSavingCostBtn"].forEach((id) => document.getElementById(id)?.remove());
+      const existing = [
+        "ptResellerMenuBtn",
+        "ptExpenseSheetBtn",
+        "ptSavingCostBtn",
+        "ptInvestmentBtn",
+        "ptReturnAmountBtn"
+      ].map((id) => document.getElementById(id));
+
+      const n1 = wBtn.nextElementSibling;
+      const n2 = n1?.nextElementSibling;
+      const n3 = n2?.nextElementSibling;
+      const n4 = n3?.nextElementSibling;
+      const n5 = n4?.nextElementSibling;
+      if (
+        n1?.id === "ptResellerMenuBtn" &&
+        n2?.id === "ptExpenseSheetBtn" &&
+        n3?.id === "ptSavingCostBtn" &&
+        n4?.id === "ptInvestmentBtn" &&
+        n5?.id === "ptReturnAmountBtn"
+      ) {
+        return true;
+      }
+
+      existing.forEach((el) => el?.remove());
 
       const tag = wBtn.tagName.toLowerCase() === "button" ? "button" : "a";
       const baseClass = wBtn.className || "";
@@ -3858,7 +3889,12 @@ function loadInvestmentsLocal() {
       if (baseClass) rBtn.className = baseClass;
       rBtn.innerHTML = `<i class="fas fa-user-tie" style="width:16px;text-align:center;"></i> <span>Reseller</span>`;
       rBtn.style.cssText = css;
-      rBtn.addEventListener("click", (e) => { e.preventDefault(); const p = ensureResellerPanel(); hideAllMainViewsExcept("ptResellerOrdersPanel"); p.style.display = "block"; });
+      rBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const p = ensureResellerPanel();
+        hideAllMainViewsExcept("ptResellerOrdersPanel");
+        p.style.display = "block";
+      });
 
       const eBtn = document.createElement(tag);
       eBtn.id = "ptExpenseSheetBtn";
@@ -3866,7 +3902,12 @@ function loadInvestmentsLocal() {
       if (baseClass) eBtn.className = baseClass;
       eBtn.innerHTML = `<i class="fas fa-file-invoice-dollar" style="width:16px;text-align:center;"></i> <span>Expensive Sheet</span>`;
       eBtn.style.cssText = css;
-      eBtn.addEventListener("click", async (e) => { e.preventDefault(); const p = await renderExpenseSheetPanel(); hideAllMainViewsExcept("ptExpenseSheetPanel"); p.style.display = "block"; });
+      eBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        const p = await renderExpenseSheetPanel();
+        hideAllMainViewsExcept("ptExpenseSheetPanel");
+        p.style.display = "block";
+      });
 
       const sBtn = document.createElement(tag);
       sBtn.id = "ptSavingCostBtn";
@@ -3874,23 +3915,14 @@ function loadInvestmentsLocal() {
       if (baseClass) sBtn.className = baseClass;
       sBtn.innerHTML = `<i class="fas fa-piggy-bank" style="width:16px;text-align:center;"></i> <span>Saving</span>`;
       sBtn.style.cssText = css;
-      sBtn.addEventListener("click", async (e) => { e.preventDefault(); const p = await renderSavingCostPanel(); hideAllMainViewsExcept("ptSavingCostSheetPanel"); p.style.display = "block"; });
-
-      wBtn.insertAdjacentElement("afterend", rBtn);
-      rBtn.insertAdjacentElement("afterend", eBtn);
-      eBtn.insertAdjacentElement("afterend", sBtn);
-
-      const parent = wBtn.parentElement;
-      if (parent && !parent.dataset.ptNavBound) {
-        parent.dataset.ptNavBound = "1";
-        parent.addEventListener("click", (e) => {
-        const b = e.target.closest("a, button");
-        if (b && ["ptResellerMenuBtn", "ptExpenseSheetBtn", "ptSavingCostBtn", "ptInvestmentBtn", "ptReturnAmountBtn"].indexOf(b.id) === -1) {
-          hideCustomAddonPanels();
-        }
+      sBtn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        const p = await renderSavingCostPanel();
+        hideAllMainViewsExcept("ptSavingCostSheetPanel");
+        p.style.display = "block";
       });
-    }
-          const invBtn = document.createElement(tag);
+
+      const invBtn = document.createElement(tag);
       invBtn.id = "ptInvestmentBtn";
       if (tag === "button") invBtn.type = "button";
       if (baseClass) invBtn.className = baseClass;
@@ -3902,7 +3934,8 @@ function loadInvestmentsLocal() {
         hideAllMainViewsExcept("ptInvestmentPanel");
         p.style.display = "block";
       });
-const retBtn = document.createElement(tag);
+
+      const retBtn = document.createElement(tag);
       retBtn.id = "ptReturnAmountBtn";
       if (tag === "button") retBtn.type = "button";
       if (baseClass) retBtn.className = baseClass;
@@ -3914,11 +3947,24 @@ const retBtn = document.createElement(tag);
         hideAllMainViewsExcept("ptReturnAmountPanel");
         p.style.display = "block";
       });
-wBtn.insertAdjacentElement("afterend", rBtn);
+
+      wBtn.insertAdjacentElement("afterend", rBtn);
       rBtn.insertAdjacentElement("afterend", eBtn);
       eBtn.insertAdjacentElement("afterend", sBtn);
       sBtn.insertAdjacentElement("afterend", invBtn);
       invBtn.insertAdjacentElement("afterend", retBtn);
+
+      const parent = wBtn.parentElement;
+      if (parent && !parent.dataset.ptNavBound) {
+        parent.dataset.ptNavBound = "1";
+        parent.addEventListener("click", (e) => {
+          const b = e.target.closest("a, button");
+          if (b && ["ptResellerMenuBtn", "ptExpenseSheetBtn", "ptSavingCostBtn", "ptInvestmentBtn", "ptReturnAmountBtn"].indexOf(b.id) === -1) {
+            hideCustomAddonPanels();
+          }
+        });
+      }
+
       return true;
     } finally {
       isInjectingSidebar = false;
@@ -3933,8 +3979,12 @@ wBtn.insertAdjacentElement("afterend", rBtn);
     }
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAddon, { once: true });
-  else initAddon();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAddon, { once: true });
+  } else {
+    initAddon();
+  }
+})();
 </script>
 </body>
 </html>
