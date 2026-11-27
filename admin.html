@@ -3911,14 +3911,11 @@ const retBtn = document.createElement(tag);
         hideAllMainViewsExcept("ptReturnAmountPanel");
         p.style.display = "block";
       });
-
-      sBtn.insertAdjacentElement("afterend", invBtn);
-      invBtn.insertAdjacentElement("afterend", retBtn);
-      wBtn.insertAdjacentElement("afterend", rBtn);
+wBtn.insertAdjacentElement("afterend", rBtn);
       rBtn.insertAdjacentElement("afterend", eBtn);
       eBtn.insertAdjacentElement("afterend", sBtn);
       sBtn.insertAdjacentElement("afterend", invBtn);
-      }
+      invBtn.insertAdjacentElement("afterend", retBtn);
       return true;
     } finally {
       isInjectingSidebar = false;
@@ -3935,7 +3932,6 @@ const retBtn = document.createElement(tag);
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAddon, { once: true });
   else initAddon();
-
 </script>
 </body>
 </html>
